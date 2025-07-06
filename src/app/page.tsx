@@ -49,9 +49,8 @@ import {
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -410,36 +409,11 @@ export default function QuestsPage() {
                   control={taskForm.control}
                   name="dueDate"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col pt-2">
-                      <FormLabel className='mb-2'>Due Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date("1900-01-01")}
-                          />
-                        </PopoverContent>
-                      </Popover>
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Due Date & Time</FormLabel>
+                      <FormControl>
+                        <DateTimePicker date={field.value} setDate={field.onChange} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -495,36 +469,14 @@ export default function QuestsPage() {
                 )}
 
                 <>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Date</div>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !task.dueDate && "text-muted-foreground"
-                        )}
-                      >
-                        {task.dueDate ? (
-                          format(new Date(task.dueDate), "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={task.dueDate ? new Date(task.dueDate) : undefined}
-                        onSelect={(date) => {
-                            if (!taskId) return;
-                            updateTaskDetails(taskId, { dueDate: date?.toISOString() });
-                        }}
-                        disabled={(date) => date < new Date("1900-01-01")}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Due Date</div>
+                  <DateTimePicker
+                    date={task.dueDate ? new Date(task.dueDate) : undefined}
+                    setDate={(date) => {
+                      if (!taskId) return;
+                      updateTaskDetails(taskId, { dueDate: date?.toISOString() });
+                    }}
+                  />
                 </>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
