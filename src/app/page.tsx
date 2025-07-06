@@ -25,11 +25,11 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { initialAreas, dailyMissions, user } from '@/lib/mock-data';
-import type { Task, Project, Area } from '@/lib/types';
-import { Swords, PlusCircle, Briefcase, Loader2 } from 'lucide-react';
+import type { Task } from '@/lib/types';
+import { Swords, PlusCircle, Loader2 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { Textarea } from '@/components/ui/textarea';
+import { useQuestData } from '@/context/quest-context';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -51,8 +51,7 @@ const taskDetailSchema = z.object({
 
 export default function QuestsPage() {
   const { toast } = useToast();
-  const [areas, setAreas] = useState(initialAreas);
-  const [currentUser, setCurrentUser] = useState(user);
+  const { areas, user, updateTaskCompletion, getAreaForProject, addTask, addArea, addProject, updateTaskDetails } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [addProjectState, setAddProjectState] = useState<{ open: boolean; areaId: string | null }>({ open: false, areaId: null });
@@ -84,88 +83,15 @@ export default function QuestsPage() {
     },
   });
 
-  const handleTaskToggle = (areaId: string, projectId: string, taskId: string, completed: boolean) => {
-    let taskXp = 0;
-
-    const updatedAreas = areas.map((area) => {
-      if (area.id === areaId) {
-        return {
-          ...area,
-          projects: area.projects.map((project) => {
-            if (project.id === projectId) {
-              return {
-                ...project,
-                tasks: project.tasks.map((task) => {
-                  if (task.id === taskId) {
-                    taskXp = task.xp;
-                    return { ...task, completed };
-                  }
-                  return task;
-                }),
-              };
-            }
-            return project;
-          }),
-        };
-      }
-      return area;
-    });
-
-    setAreas(updatedAreas);
-
-    if (completed) {
-      toast({
-        title: 'Quest Complete!',
-        description: `You earned ${taskXp} XP!`,
-      });
-      const newXp = currentUser.xp + taskXp;
-      const newLevel =
-        newXp >= currentUser.nextLevelXp
-          ? currentUser.level + 1
-          : currentUser.level;
-      const newNextLevelXp =
-        newXp >= currentUser.nextLevelXp
-          ? currentUser.nextLevelXp * 2
-          : currentUser.nextLevelXp;
-
-      setCurrentUser((prev) => ({
-        ...prev,
-        xp: newXp,
-        level: newLevel,
-        nextLevelXp: newNextLevelXp,
-      }));
-    } else {
-      setCurrentUser((prev) => ({
-        ...prev,
-        xp: Math.max(0, prev.xp - taskXp),
-      }));
-    }
-  };
-
   function onAddArea(data: z.infer<typeof areaSchema>) {
-    const newArea: Area = {
-      id: `area-${Date.now()}`,
-      name: data.name,
-      icon: Briefcase,
-      projects: [],
-    };
-    setAreas((prev) => [...prev, newArea]);
+    addArea(data.name);
     areaForm.reset();
     setAddAreaOpen(false);
   }
 
   function onAddProject(data: z.infer<typeof projectSchema>) {
     if (!addProjectState.areaId) return;
-    const newProject: Project = {
-      id: `proj-${Date.now()}`,
-      name: data.name,
-      tasks: [],
-    };
-    setAreas((prev) =>
-      prev.map((area) =>
-        area.id === addProjectState.areaId ? { ...area, projects: [...area.projects, newProject] } : area
-      )
-    );
+    addProject(addProjectState.areaId, data.name);
     projectForm.reset();
     setAddProjectState({ open: false, areaId: null });
   }
@@ -191,26 +117,8 @@ export default function QuestsPage() {
             notes: '',
             links: '',
         };
-
-        setAreas((prev) =>
-            prev.map((area) =>
-                area.id === addTaskState.areaId
-                    ? {
-                        ...area,
-                        projects: area.projects.map((project) =>
-                            project.id === addTaskState.projectId
-                                ? { ...project, tasks: [...project.tasks, newTask] }
-                                : project
-                        ),
-                    }
-                    : area
-            )
-        );
         
-        toast({
-            title: "Quest Created!",
-            description: `AI has assigned ${xp} XP to your new quest.`
-        });
+        addTask(addTaskState.areaId, addTaskState.projectId, newTask);
         
         taskForm.reset();
         setAddTaskState({ open: false, areaId: null, projectId: null });
@@ -251,29 +159,7 @@ export default function QuestsPage() {
     const { areaId, projectId, taskId } = taskDetailState;
     if (!areaId || !projectId || !taskId) return;
 
-    setAreas((prev) =>
-      prev.map((area) =>
-        area.id === areaId
-          ? {
-              ...area,
-              projects: area.projects.map((project) =>
-                project.id === projectId
-                  ? {
-                      ...project,
-                      tasks: project.tasks.map((task) =>
-                        task.id === taskId ? { ...task, ...data } : task
-                      ),
-                    }
-                  : project
-              ),
-            }
-          : area
-      )
-    );
-    toast({
-      title: 'Task Updated!',
-      description: 'Your changes have been saved.',
-    });
+    updateTaskDetails(areaId, projectId, taskId, data);
     setTaskDetailState({ open: false, areaId: null, projectId: null, taskId: null, taskTitle: null });
   }
 
@@ -282,32 +168,13 @@ export default function QuestsPage() {
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-headline font-bold text-primary">Questify</h1>
         <Avatar>
-          <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} data-ai-hint="avatar" />
-          <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+          <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="avatar" />
+          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
         </Avatar>
       </header>
 
-      <section className="mb-8">
-        <h2 className="text-2xl font-headline font-semibold mb-4 flex items-center gap-2">
-          <Swords className="text-primary" /> Daily Missions
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {dailyMissions.map((mission) => (
-            <Card key={mission.id} className="bg-card/80">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">{mission.title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    + {mission.xp} XP, +{mission.tokens} Tokens
-                  </p>
-                </div>
-                <Button size="sm" variant="outline">Start</Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
+      {/* Daily Missions section removed as requested */ }
+      
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline font-semibold">Your Quests</h2>
@@ -345,7 +212,7 @@ export default function QuestsPage() {
                                   id={task.id}
                                   checked={task.completed}
                                   onCheckedChange={(checked) =>
-                                    handleTaskToggle(area.id, project.id, task.id, !!checked)
+                                    updateTaskCompletion(area.id, project.id, task.id, !!checked)
                                   }
                                   className="w-5 h-5"
                                 />

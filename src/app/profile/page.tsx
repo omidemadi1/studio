@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { skills, user as initialUser } from '@/lib/mock-data';
+import { skills } from '@/lib/mock-data';
 import { Settings, Pencil } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
@@ -21,14 +21,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useQuestData } from '@/context/quest-context';
 
 export default function ProfilePage() {
-  const [user, setUser] = useState(initialUser);
+  const { user, updateUser } = useQuestData();
   const [name, setName] = useState(user.name);
   const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
-
-  const { toast } = useToast();
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -43,15 +41,7 @@ export default function ProfilePage() {
   };
 
   const handleSaveChanges = () => {
-    setUser((prevUser) => ({
-      ...prevUser,
-      name: name,
-      avatarUrl: avatarPreview,
-    }));
-    toast({
-      title: 'Profile Updated',
-      description: 'Your changes have been saved successfully.',
-    });
+    updateUser({ name, avatarUrl: avatarPreview });
   };
 
   const xpProgress = (user.xp / user.nextLevelXp) * 100;

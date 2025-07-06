@@ -3,6 +3,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import BottomNav from "@/components/bottom-nav";
 import { Toaster } from "@/components/ui/toaster";
+import { QuestProvider } from "@/context/quest-context";
 
 export const metadata: Metadata = {
   title: "Questify",
@@ -30,11 +31,13 @@ export default function RootLayout({
           "bg-background"
         )}
       >
-        <div className="relative flex min-h-screen w-full flex-col">
-          <main className="flex-1 pb-24">{children}</main>
-          <BottomNav />
-        </div>
-        <Toaster />
+        <QuestProvider>
+          <div className="relative flex min-h-screen w-full flex-col">
+            <main className="flex-1 pb-24">{children}</main>
+            <BottomNav />
+          </div>
+          <Toaster />
+        </QuestProvider>
       </body>
     </html>
   );
