@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Swords, Radar, Store, Sparkles } from 'lucide-react';
+import { Swords, Radar, Store, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { href: '/skills', label: 'Skills', icon: Radar },
   { href: '/market', label: 'Market', icon: Store },
   { href: '/suggest', label: 'Suggest', icon: Sparkles },
+  { href: '/profile', label: 'Profile', icon: User },
 ];
 
 export default function BottomNav() {
@@ -17,7 +18,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-sm">
-      <div className="container mx-auto grid h-16 max-w-md grid-cols-4">
+      <div className="container mx-auto grid h-16 max-w-md grid-cols-5">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
