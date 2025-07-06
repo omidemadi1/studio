@@ -27,7 +27,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { initialAreas, dailyMissions, user } from '@/lib/mock-data';
 import type { Task, Project, Area } from '@/lib/types';
-import { Swords, PlusCircle, Briefcase } from 'lucide-react';
+import { Swords, PlusCircle, Briefcase, Loader2 } from 'lucide-react';
+import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -39,7 +40,6 @@ const projectSchema = z.object({
 
 const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required.'),
-  xp: z.coerce.number().min(1, 'XP must be at least 1.'),
 });
 
 export default function QuestsPage() {
@@ -50,6 +50,7 @@ export default function QuestsPage() {
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [addProjectState, setAddProjectState] = useState<{ open: boolean; areaId: string | null }>({ open: false, areaId: null });
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; areaId: string | null; projectId: string | null }>({ open: false, areaId: null, projectId: null });
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   const areaForm = useForm<z.infer<typeof areaSchema>>({
     resolver: zodResolver(areaSchema),
@@ -63,7 +64,7 @@ export default function QuestsPage() {
 
   const taskForm = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
-    defaultValues: { title: '', xp: 10 },
+    defaultValues: { title: '' },
   });
 
   const handleTaskToggle = (areaId: string, projectId: string, taskId: string, completed: boolean) => {
@@ -152,31 +153,59 @@ export default function QuestsPage() {
     setAddProjectState({ open: false, areaId: null });
   }
 
-  function onAddTask(data: z.infer<typeof taskSchema>) {
+  async function onAddTask(data: z.infer<typeof taskSchema>) {
     if (!addTaskState.areaId || !addTaskState.projectId) return;
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      title: data.title,
-      completed: false,
-      xp: data.xp,
-    };
-    setAreas((prev) =>
-      prev.map((area) =>
-        area.id === addTaskState.areaId
-          ? {
-              ...area,
-              projects: area.projects.map((project) =>
-                project.id === addTaskState.projectId
-                  ? { ...project, tasks: [...project.tasks, newTask] }
-                  : project
-              ),
-            }
-          : area
-      )
-    );
-    taskForm.reset();
-    setAddTaskState({ open: false, areaId: null, projectId: null });
+
+    setIsCreatingTask(true);
+    try {
+        const area = areas.find(a => a.id === addTaskState.areaId);
+        const project = area?.projects.find(p => p.id === addTaskState.projectId);
+        const projectName = project ? project.name : '';
+
+        const result = await suggestXpValue({ title: data.title, projectContext: projectName });
+        const xp = result.xp;
+
+        const newTask: Task = {
+            id: `task-${Date.now()}`,
+            title: data.title,
+            completed: false,
+            xp: xp,
+        };
+
+        setAreas((prev) =>
+            prev.map((area) =>
+                area.id === addTaskState.areaId
+                    ? {
+                        ...area,
+                        projects: area.projects.map((project) =>
+                            project.id === addTaskState.projectId
+                                ? { ...project, tasks: [...project.tasks, newTask] }
+                                : project
+                        ),
+                    }
+                    : area
+            )
+        );
+        
+        toast({
+            title: "Quest Created!",
+            description: `AI has assigned ${xp} XP to your new quest.`
+        });
+        
+        taskForm.reset();
+        setAddTaskState({ open: false, areaId: null, projectId: null });
+    } catch (error) {
+        console.error("Failed to suggest XP value:", error);
+        toast({
+            variant: "destructive",
+            title: "AI Error",
+            description: "Could not determine XP value. Please try again."
+        });
+    } finally {
+        setIsCreatingTask(false);
+    }
   }
+
 
   return (
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
@@ -347,7 +376,7 @@ export default function QuestsPage() {
           <DialogHeader>
             <DialogTitle>Create a New Task</DialogTitle>
             <DialogDescription>
-              Add a new quest to your project. Define its XP value.
+              Add a new quest to your project. The AI will assign a fair XP value.
             </DialogDescription>
           </DialogHeader>
           <Form {...taskForm}>
@@ -365,21 +394,10 @@ export default function QuestsPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={taskForm.control}
-                name="xp"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>XP Value</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="e.g., 50" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <DialogFooter>
-                <Button type="submit">Create Task</Button>
+                <Button type="submit" disabled={isCreatingTask}>
+                    {isCreatingTask ? <Loader2 className="animate-spin" /> : "Create Task" }
+                </Button>
               </DialogFooter>
             </form>
           </Form>
