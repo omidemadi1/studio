@@ -1,101 +1,194 @@
+
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { format, isSameDay } from 'date-fns';
+import React, { useState, useMemo, useCallback } from 'react';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths,
+  addWeeks,
+  subWeeks,
+  getDay,
+} from 'date-fns';
 import { useQuestData } from '@/context/quest-context';
-import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Task } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChevronLeft, ChevronRight, Folder } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
+type CalendarView = 'monthly' | 'weekly';
+
+// Task Card Component
+const TaskCard = ({ task, onUpdate }: { task: Task; onUpdate: (taskId: string, completed: boolean) => void }) => {
+  const { areas } = useQuestData();
+
+  const projectInfo = useMemo(() => {
+    for (const area of areas) {
+      const project = area.projects.find(p => p.id === task.projectId);
+      if (project) {
+        return { name: project.name, areaName: area.name };
+      }
+    }
+    return null;
+  }, [areas, task.projectId]);
+
+  return (
+    <Card className="bg-background/50 p-2 text-xs rounded-md mb-1 shadow-sm">
+      <p className="font-semibold truncate mb-1">{task.title}</p>
+      {projectInfo && (
+        <div className="flex items-center gap-1 text-muted-foreground mb-2">
+          <Folder className="h-3 w-3" />
+          <span className="truncate">{projectInfo.name}</span>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={`cal-task-${task.id}`}
+          checked={task.completed}
+          onCheckedChange={(checked) => onUpdate(task.id, !!checked)}
+          className="h-4 w-4"
+        />
+        <label htmlFor={`cal-task-${task.id}`} className="text-xs">Done</label>
+      </div>
+    </Card>
+  );
+};
+
+
+// Main Calendar Page Component
 export default function CalendarPage() {
   const { tasks, updateTaskCompletion } = useQuestData();
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState<CalendarView>('monthly');
 
   const tasksWithDueDate = useMemo(() => {
     return tasks.filter(task => !!task.dueDate);
   }, [tasks]);
-  
-  const scheduledDays = useMemo(() => {
-    return tasksWithDueDate.map(task => new Date(task.dueDate!));
-  }, [tasksWithDueDate]);
 
-  const tasksForSelectedDay = useMemo(() => {
-    if (!date) return [];
-    return tasksWithDueDate.filter(task => isSameDay(new Date(task.dueDate!), date));
-  }, [date, tasksWithDueDate]);
-
-  const scheduledModifier = { scheduled: scheduledDays };
-  const modifierStyles = {
-    scheduled: {
-      fontWeight: 700,
-      color: 'hsl(var(--primary))',
-    },
+  const handleNext = () => {
+    if (view === 'monthly') {
+      setCurrentDate(addMonths(currentDate, 1));
+    } else {
+      setCurrentDate(addWeeks(currentDate, 1));
+    }
   };
 
+  const handlePrev = () => {
+    if (view === 'monthly') {
+      setCurrentDate(subMonths(currentDate, 1));
+    } else {
+      setCurrentDate(subWeeks(currentDate, 1));
+    }
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const monthDays = useMemo(() => {
+    const start = startOfWeek(startOfMonth(currentDate));
+    const end = endOfWeek(endOfMonth(currentDate));
+    return eachDayOfInterval({ start, end });
+  }, [currentDate]);
+
+  const weekDays = useMemo(() => {
+    const start = startOfWeek(currentDate);
+    const end = endOfWeek(currentDate);
+    return eachDayOfInterval({ start, end });
+  }, [currentDate]);
+
+  const daysToRender = view === 'monthly' ? monthDays : weekDays;
+  const gridClass = view === 'monthly' 
+    ? "grid-rows-5 auto-rows-fr" 
+    : "grid-rows-1";
+
+  const getTasksForDay = useCallback((day: Date) => {
+    return tasksWithDueDate.filter(task => task.dueDate && isSameDay(new Date(task.dueDate), day));
+  }, [tasksWithDueDate]);
+  
+  const weekHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   return (
-    <div className="container mx-auto max-w-4xl p-4 sm:p-6">
-      <header className="mb-6">
-        <h1 className="text-3xl font-headline font-bold">Calendar</h1>
-        <p className="text-muted-foreground">Your quests on a timeline.</p>
+    <div className="container mx-auto p-4 sm:p-6 h-[calc(100vh-8rem)] flex flex-col">
+      <header className="flex items-center justify-between mb-4 flex-shrink-0">
+        <h1 className="text-2xl font-headline font-bold">
+          {format(currentDate, view === 'monthly' ? 'MMMM yyyy' : 'MMMM')}
+        </h1>
+        <div className="flex items-center gap-2">
+          <Tabs value={view} onValueChange={(v) => setView(v as CalendarView)}>
+            <TabsList>
+              <TabsTrigger value="monthly">Month</TabsTrigger>
+              <TabsTrigger value="weekly">Week</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="flex items-center gap-1 rounded-md border p-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrev}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" className="h-8 px-3" onClick={handleToday}>
+              Today
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNext}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </header>
       
-      <div className="flex flex-col md:flex-row gap-6 items-start">
-        <div className="w-full md:w-auto flex justify-center">
-          <Card className="bg-card/80 p-0 md:p-2 inline-block">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              modifiers={scheduledModifier}
-              modifiersStyles={modifierStyles}
-              className="p-0"
-            />
-          </Card>
-        </div>
+      <div className="grid grid-cols-7 flex-shrink-0">
+          {weekHeaders.map(day => (
+              <div key={day} className="text-center text-xs font-bold text-muted-foreground p-2 border-b">
+                  {day}
+              </div>
+          ))}
+      </div>
 
-        <div className="flex-1 w-full">
-            <Card className="bg-card/80">
-                <CardHeader>
-                    <CardTitle className="font-headline text-2xl">
-                        Tasks for {date ? format(date, 'MMMM d, yyyy') : '...'}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {tasksForSelectedDay.length > 0 ? (
-                        <ul className="space-y-3">
-                            {tasksForSelectedDay.map((task: Task) => (
-                            <li
-                                key={task.id}
-                                className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors"
-                            >
-                                <Checkbox
-                                    id={`cal-${task.id}`}
-                                    checked={task.completed}
-                                    onCheckedChange={(checked) =>
-                                        updateTaskCompletion(task.id, !!checked)
-                                    }
-                                    className="w-5 h-5"
-                                />
-                                <span className="flex-1 text-sm font-medium leading-none">
-                                    {task.title}
-                                </span>
-                                {task.xp > 0 && 
-                                  <span className="text-xs font-bold text-primary">
-                                      +{task.xp} XP
-                                  </span>
-                                }
-                            </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <div className="py-6 text-center text-muted-foreground">
-                           <p>No quests scheduled for this day.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+      <div className={cn("grid grid-cols-7 flex-grow overflow-hidden", gridClass)}>
+        {daysToRender.map((day, index) => {
+          const isCurrentMonth = isSameMonth(day, currentDate);
+          const isToday = isSameDay(day, new Date());
+          const tasksForDay = getTasksForDay(day);
+
+          return (
+            <div
+              key={index}
+              className={cn(
+                'border-t border-r p-2 flex flex-col',
+                {
+                  'bg-muted/10': !isCurrentMonth && view === 'monthly',
+                  'border-l': getDay(day) === 0,
+                }
+              )}
+            >
+              <div
+                className={cn(
+                  'text-right text-xs mb-1',
+                  {
+                    'text-muted-foreground': !isCurrentMonth && view === 'monthly',
+                    'text-primary font-bold': isToday,
+                  }
+                )}
+              >
+                {format(day, 'd')}
+              </div>
+              <div className="flex-grow overflow-y-auto space-y-1 pr-1">
+                {tasksForDay.map(task => (
+                  <TaskCard key={task.id} task={task} onUpdate={updateTaskCompletion} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
