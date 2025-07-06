@@ -23,6 +23,15 @@ export async function addTask(areaId: string, projectId: string, task: Task) {
     revalidatePath('/');
 }
 
+export async function addSkill(name: string, icon: string) {
+  const id = `skill-${Date.now()}`;
+  db.prepare(
+    'INSERT INTO skills (id, name, level, points, maxPoints, icon) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(id, name, 1, 0, 1000, icon);
+  revalidatePath('/profile');
+  revalidatePath('/');
+}
+
 export async function updateTaskCompletion(taskId: string, completed: boolean, focusDuration?: number) {
     const transaction = db.transaction(() => {
         if (focusDuration) {

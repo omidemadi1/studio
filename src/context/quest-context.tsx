@@ -16,6 +16,7 @@ interface QuestContextType {
   addArea: (name: string) => void;
   addProject: (areaId: string, name: string) => void;
   addTask: (areaId: string, projectId: string, task: Task) => void;
+  addSkill: (name: string, icon: string) => void;
   updateUser: (newUserData: Partial<User>) => void;
   addXp: (xp: number, message?: string) => void;
   getTask: (taskId: string) => { task: Task; areaId: string; projectId: string } | null;
@@ -122,9 +123,15 @@ export const QuestProvider = ({
       router.refresh();
   };
 
+  const addSkill = async (name: string, icon: string) => {
+    await QuestActions.addSkill(name, icon);
+    toast({ title: 'Skill Added', description: `New skill "${name}" is now ready to level up.` });
+    router.refresh();
+  };
+
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, updateUser, addXp, getTask };
+  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, addSkill, updateUser, addXp, getTask };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };

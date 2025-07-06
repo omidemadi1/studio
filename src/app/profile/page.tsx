@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Settings, Pencil, Lightbulb } from 'lucide-react';
+import { Settings, Pencil, Lightbulb, PlusCircle } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
 import {
@@ -18,16 +21,41 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useQuestData } from '@/context/quest-context';
 import { iconMap } from '@/lib/icon-map';
 
+const skillSchema = z.object({
+  name: z.string().min(1, 'Skill name is required.'),
+  icon: z.string().min(1, 'An icon is required.'),
+});
 
 export default function ProfilePage() {
-  const { user, skills, updateUser } = useQuestData();
+  const { user, skills, updateUser, addSkill } = useQuestData();
   const [name, setName] = useState(user.name);
   const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
+  const [addSkillOpen, setAddSkillOpen] = useState(false);
+
+  const skillForm = useForm<z.infer<typeof skillSchema>>({
+    resolver: zodResolver(skillSchema),
+    defaultValues: { name: '', icon: '' },
+  });
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -43,6 +71,12 @@ export default function ProfilePage() {
 
   const handleSaveChanges = () => {
     updateUser({ name, avatarUrl: avatarPreview });
+  };
+
+  const onAddSkill = (data: z.infer<typeof skillSchema>) => {
+    addSkill(data.name, data.icon);
+    skillForm.reset();
+    setAddSkillOpen(false);
   };
 
   const xpProgress = (user.xp / user.nextLevelXp) * 100;
@@ -62,25 +96,36 @@ export default function ProfilePage() {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-center gap-6">
               <Avatar className="h-24 w-24 border-4 border-primary shrink-0">
-                <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="avatar" />
+                <AvatarImage
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  data-ai-hint="avatar"
+                />
                 <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 w-full">
                 <div className="text-center md:text-left">
                   <div className="flex items-center gap-2 justify-center md:justify-start">
-                    <h2 className="text-2xl font-bold font-headline">{user.name}</h2>
+                    <h2 className="text-2xl font-bold font-headline">
+                      {user.name}
+                    </h2>
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                        >
                           <Pencil className="h-4 w-4" />
-                          <span className='sr-only'>Edit Profile</span>
+                          <span className="sr-only">Edit Profile</span>
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
                           <DialogTitle>Edit Profile</DialogTitle>
                           <DialogDescription>
-                            Make changes to your profile here. Click save when you're done.
+                            Make changes to your profile here. Click save when
+                            you're done.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
@@ -99,20 +144,31 @@ export default function ProfilePage() {
                             <Label htmlFor="picture" className="text-right">
                               Avatar
                             </Label>
-                            <Input id="picture" type="file" onChange={handleAvatarChange} className="col-span-3" accept="image/*" />
+                            <Input
+                              id="picture"
+                              type="file"
+                              onChange={handleAvatarChange}
+                              className="col-span-3"
+                              accept="image/*"
+                            />
                           </div>
-                           <div className="grid grid-cols-4 items-center gap-4">
-                             <div className="col-start-2 col-span-3">
-                               <Avatar className="h-24 w-24">
-                                  <AvatarImage src={avatarPreview} alt="Avatar Preview" />
-                                  <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                             </div>
-                           </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <div className="col-start-2 col-span-3">
+                              <Avatar className="h-24 w-24">
+                                <AvatarImage
+                                  src={avatarPreview}
+                                  alt="Avatar Preview"
+                                />
+                                <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                            </div>
+                          </div>
                         </div>
                         <DialogFooter>
                           <DialogClose asChild>
-                            <Button type="button" onClick={handleSaveChanges}>Save changes</Button>
+                            <Button type="button" onClick={handleSaveChanges}>
+                              Save changes
+                            </Button>
                           </DialogClose>
                         </DialogFooter>
                       </DialogContent>
@@ -128,13 +184,16 @@ export default function ProfilePage() {
                       {user.xp} / {user.nextLevelXp}
                     </span>
                   </div>
-                  <Progress value={xpProgress} aria-label={`${xpProgress}% towards next level`} />
+                  <Progress
+                    value={xpProgress}
+                    aria-label={`${xpProgress}% towards next level`}
+                  />
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="md:col-span-1 bg-card/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base font-headline">
@@ -143,12 +202,14 @@ export default function ProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">{user.tokens.toLocaleString()}</div>
+            <div className="text-3xl font-bold text-primary">
+              {user.tokens.toLocaleString()}
+            </div>
             <p className="text-sm text-muted-foreground">Tokens to spend</p>
           </CardContent>
         </Card>
       </div>
-      
+
       <Card className="bg-card/80 mb-6">
         <CardHeader>
           <CardTitle className="font-headline">Skill Radar</CardTitle>
@@ -159,7 +220,19 @@ export default function ProfilePage() {
       </Card>
 
       <section>
-        <h2 className="text-2xl font-headline font-semibold mb-4">Skill Details</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-headline font-semibold">
+            Skill Details
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setAddSkillOpen(true)}
+          >
+            <PlusCircle className="h-6 w-6 text-primary" />
+            <span className="sr-only">Add Skill</span>
+          </Button>
+        </div>
         <div className="space-y-4">
           {skills.map((skill) => {
             const SkillIcon = iconMap[skill.icon] || Lightbulb;
@@ -167,7 +240,7 @@ export default function ProfilePage() {
               <Card key={skill.id} className="bg-card/80">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <div className='flex items-center gap-3'>
+                    <div className="flex items-center gap-3">
                       <SkillIcon className="h-6 w-6 text-accent" />
                       <span className="font-headline font-semibold">
                         {skill.name} - Lvl {skill.level}
@@ -177,13 +250,83 @@ export default function ProfilePage() {
                       {skill.points} / {skill.maxPoints}
                     </span>
                   </div>
-                  <Progress value={(skill.points / skill.maxPoints) * 100} className="h-2" />
+                  <Progress
+                    value={(skill.points / skill.maxPoints) * 100}
+                    className="h-2"
+                  />
                 </CardContent>
               </Card>
-            )
+            );
           })}
         </div>
       </section>
+
+      <Dialog open={addSkillOpen} onOpenChange={setAddSkillOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create a New Skill</DialogTitle>
+            <DialogDescription>
+              Skills help you track progress in different areas of your life.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...skillForm}>
+            <form
+              onSubmit={skillForm.handleSubmit(onAddSkill)}
+              className="space-y-4 py-4"
+            >
+              <FormField
+                control={skillForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skill Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Programming" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={skillForm.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icon</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an icon" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.keys(iconMap).map((iconName) => {
+                          const IconComponent = iconMap[iconName];
+                          return (
+                            <SelectItem key={iconName} value={iconName}>
+                              <div className="flex items-center gap-2">
+                                <IconComponent className="h-4 w-4" />
+                                <span>{iconName}</span>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Create Skill</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
