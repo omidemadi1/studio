@@ -19,10 +19,10 @@ import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -413,7 +413,7 @@ export default function QuestsPage() {
                   value={editableTaskData.description}
                   onChange={(e) => handleTaskDataChange('description', e.target.value)}
                   placeholder="Add a description..."
-                  className="text-sm"
+                  className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   rows={3}
                 />
                 
@@ -422,7 +422,7 @@ export default function QuestsPage() {
                   value={editableTaskData.notes}
                   onChange={(e) => handleTaskDataChange('notes', e.target.value)}
                   placeholder="Add notes..."
-                  className="text-sm"
+                  className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   rows={3}
                 />
 
@@ -431,7 +431,7 @@ export default function QuestsPage() {
                   value={editableTaskData.links}
                   onChange={(e) => handleTaskDataChange('links', e.target.value)}
                   placeholder="Add links, one per line..."
-                  className="text-sm"
+                  className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   rows={3}
                 />
 
