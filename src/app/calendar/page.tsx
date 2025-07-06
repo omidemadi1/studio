@@ -108,9 +108,6 @@ export default function CalendarPage() {
   }, [currentDate]);
 
   const daysToRender = view === 'monthly' ? monthDays : weekDays;
-  const gridClass = view === 'monthly' 
-    ? "grid-rows-5 auto-rows-fr" 
-    : "grid-rows-1";
 
   const getTasksForDay = useCallback((day: Date) => {
     return tasksWithDueDate.filter(task => task.dueDate && isSameDay(new Date(task.dueDate), day));
@@ -119,7 +116,7 @@ export default function CalendarPage() {
   const weekHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 h-[calc(100vh-8rem)] flex flex-col">
+    <div className="container mx-auto p-4 sm:p-6 flex flex-col">
       <header className="flex items-center justify-between mb-4 flex-shrink-0">
         <h1 className="text-2xl font-headline font-bold">
           {format(currentDate, view === 'monthly' ? 'MMMM yyyy' : 'MMMM')}
@@ -153,7 +150,7 @@ export default function CalendarPage() {
           ))}
       </div>
 
-      <div className={cn("grid grid-cols-7 flex-grow overflow-hidden", gridClass)}>
+      <div className="grid grid-cols-7">
         {daysToRender.map((day, index) => {
           const isCurrentMonth = isSameMonth(day, currentDate);
           const isToday = isSameDay(day, new Date());
@@ -163,7 +160,7 @@ export default function CalendarPage() {
             <div
               key={index}
               className={cn(
-                'border-t border-r p-2 flex flex-col',
+                'border-t border-r p-2 flex flex-col min-h-[120px]',
                 {
                   'bg-muted/10': !isCurrentMonth && view === 'monthly',
                   'border-l': getDay(day) === 0,
@@ -181,7 +178,7 @@ export default function CalendarPage() {
               >
                 {format(day, 'd')}
               </div>
-              <div className="flex-grow overflow-y-auto space-y-1 pr-1">
+              <div className="space-y-1">
                 {tasksForDay.map(task => (
                   <TaskCard key={task.id} task={task} onUpdate={updateTaskCompletion} />
                 ))}
