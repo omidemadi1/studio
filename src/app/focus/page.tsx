@@ -10,13 +10,21 @@ import { Play, Pause, Hourglass, StopCircle } from 'lucide-react';
 
 export default function FocusPage() {
   const { toast } = useToast();
-  const { tasks: allTasks, addXp, getTask } = useQuestData();
-  
+  const {
+    tasks: allTasks,
+    addXp,
+    getTask,
+    updateTaskCompletion,
+  } = useQuestData();
+
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isActive, setIsActive] = useState(false);
 
-  const availableTasks = useMemo(() => allTasks.filter(task => !task.completed), [allTasks]);
+  const availableTasks = useMemo(
+    () => allTasks.filter((task) => !task.completed),
+    [allTasks]
+  );
 
   // Stopwatch logic
   useEffect(() => {
@@ -49,24 +57,41 @@ export default function FocusPage() {
 
   const handleStopwatchFinish = useCallback(() => {
     if (!selectedTaskId || !isActive) return;
-    
+
     setIsActive(false);
     const result = getTask(selectedTaskId);
-    if (!result?.task) return;
+    if (!result) return;
+
+    // Mark the task as completed, which also awards base XP
+    updateTaskCompletion(result.areaId, result.projectId, selectedTaskId, true);
 
     // Calculate bonus XP: 5% of task XP for every 5 minutes of focus
     const minutesFocused = Math.floor(timeElapsed / 60);
     const bonusXp = Math.floor(minutesFocused / 5) * Math.ceil(result.task.xp * 0.05);
 
     if (bonusXp > 0) {
-        addXp(bonusXp, `You focused for ${minutesFocused} minutes and earned a bonus of ${bonusXp} XP!`);
+      addXp(
+        bonusXp,
+        `You focused for ${minutesFocused} minutes and earned a bonus of ${bonusXp} XP!`
+      );
     } else {
-        toast({ title: 'Session Ended', description: 'Focus for at least 5 minutes to earn bonus XP!'});
+      toast({
+        title: 'Session Ended',
+        description: 'Focus for at least 5 minutes to earn bonus XP next time!',
+      });
     }
 
     setTimeElapsed(0);
-
-  }, [selectedTaskId, isActive, timeElapsed, getTask, addXp, toast]);
+    setSelectedTaskId(null);
+  }, [
+    selectedTaskId,
+    isActive,
+    timeElapsed,
+    getTask,
+    addXp,
+    toast,
+    updateTaskCompletion,
+  ]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -75,58 +100,75 @@ export default function FocusPage() {
   };
 
   const selectedTask = useMemo(() => {
-    return allTasks.find(t => t.id === selectedTaskId) || null;
+    return allTasks.find((t) => t.id === selectedTaskId) || null;
   }, [selectedTaskId, allTasks]);
 
   return (
     <div className="container mx-auto max-w-md p-4 sm:p-6 flex flex-col items-center min-h-[calc(100vh-12rem)]">
       <header className="text-center mb-8">
         <h1 className="text-3xl font-headline font-bold">Focus Zone</h1>
-        <p className="text-muted-foreground">Pick a quest, start the stopwatch, and get to work.</p>
+        <p className="text-muted-foreground">
+          Pick a quest, start the stopwatch, and get to work.
+        </p>
       </header>
-      
+
       <Card className="w-full bg-card/80 text-center mt-4">
-          <CardHeader>
-              <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit">
-                  <Hourglass className="h-10 w-10 text-primary" />
-              </div>
-              <CardTitle className="text-6xl font-mono font-bold mt-4">
-                  {formatTime(timeElapsed)}
-              </CardTitle>
-              <CardDescription>
-                  {selectedTask ? `Focusing on: ${selectedTask.title}` : 'Select a quest to begin'}
-              </CardDescription>
-          </CardHeader>
-          <CardContent className="px-6">
-              <Select onValueChange={setSelectedTaskId} value={selectedTaskId || ''} disabled={isActive}>
-                  <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a quest to focus on..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                  {availableTasks.length > 0 ? (
-                      availableTasks.map(task => (
-                      <SelectItem key={task.id} value={task.id}>
-                          {task.title}
-                      </SelectItem>
-                      ))
-                  ) : (
-                      <SelectItem value="no-tasks" disabled>
-                      No available quests to focus on.
-                      </SelectItem>
-                  )}
-                  </SelectContent>
-              </Select>
-          </CardContent>
-          <CardFooter className="flex justify-center gap-4 px-6 pb-6">
-              <Button onClick={handleStartPause} size="lg" className="flex-grow">
-                  {isActive ? <Pause className="h-5 w-5 mr-2" /> : <Play className="h-5 w-5 mr-2" />}
-                  {isActive ? 'Pause' : 'Start'}
-              </Button>
-              <Button onClick={handleStopwatchFinish} variant="destructive" size="lg" disabled={!isActive}>
-                  <StopCircle className="h-5 w-5 mr-2"/>
-                  Finish
-              </Button>
-          </CardFooter>
+        <CardHeader>
+          <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit">
+            <Hourglass className="h-10 w-10 text-primary" />
+          </div>
+          <CardTitle className="text-6xl font-mono font-bold mt-4">
+            {formatTime(timeElapsed)}
+          </CardTitle>
+          <CardDescription>
+            {selectedTask
+              ? `Focusing on: ${selectedTask.title}`
+              : 'Select a quest to begin'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-6">
+          <Select
+            onValueChange={setSelectedTaskId}
+            value={selectedTaskId || ''}
+            disabled={isActive}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a quest to focus on..." />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTasks.length > 0 ? (
+                availableTasks.map((task) => (
+                  <SelectItem key={task.id} value={task.id}>
+                    {task.title}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="no-tasks" disabled>
+                  No available quests to focus on.
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </CardContent>
+        <CardFooter className="flex justify-center gap-4 px-6 pb-6">
+          <Button onClick={handleStartPause} size="lg" className="flex-grow">
+            {isActive ? (
+              <Pause className="h-5 w-5 mr-2" />
+            ) : (
+              <Play className="h-5 w-5 mr-2" />
+            )}
+            {isActive ? 'Pause' : 'Start'}
+          </Button>
+          <Button
+            onClick={handleStopwatchFinish}
+            variant="destructive"
+            size="lg"
+            disabled={!isActive}
+          >
+            <StopCircle className="h-5 w-5 mr-2" />
+            Finish
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );
