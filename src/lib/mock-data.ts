@@ -1,4 +1,4 @@
-import type { User, Skill, Area, DailyMission, MarketItem } from './types';
+import type { User, Skill, Area, MarketItem } from './types';
 import { Briefcase, Heart, Dumbbell, Wallet, BookOpen, Lightbulb } from 'lucide-react';
 
 export const user: User = {
@@ -84,11 +84,6 @@ export const initialAreas: Area[] = [
     ],
   },
 ];
-
-export const dailyMissions: DailyMission[] = [
-    { id: 'dm1', title: 'Complete 3 Quests', xp: 100, tokens: 10 },
-    { id: 'dm2', title: 'Log one fitness activity', xp: 50, tokens: 5 },
-]
 
 export const marketItems: MarketItem[] = [
   {

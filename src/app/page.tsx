@@ -173,8 +173,6 @@ export default function QuestsPage() {
         </Avatar>
       </header>
 
-      {/* Daily Missions section removed as requested */ }
-      
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline font-semibold">Your Quests</h2>

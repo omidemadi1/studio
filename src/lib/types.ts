@@ -41,13 +41,6 @@ export interface Area {
   projects: Project[];
 }
 
-export interface DailyMission {
-    id: string;
-    title: string;
-    xp: number;
-    tokens: number;
-}
-
 export interface MarketItem {
   id: string;
   name: string;
