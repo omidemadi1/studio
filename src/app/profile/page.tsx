@@ -23,46 +23,44 @@ export default function ProfilePage() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <Card className="md:col-span-1 bg-card/80 text-center md:text-left">
-          <CardContent className="p-6 flex flex-col items-center md:items-start">
-            <Avatar className="h-24 w-24 border-4 border-primary">
-              <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="avatar" />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <h2 className="mt-4 text-2xl font-bold font-headline">{user.name}</h2>
-            <p className="text-muted-foreground">Level {user.level}</p>
+        <Card className="md:col-span-2 bg-card/80">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <Avatar className="h-24 w-24 border-4 border-primary shrink-0">
+                <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="avatar" />
+                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 w-full">
+                <div className="text-center md:text-left">
+                  <h2 className="text-2xl font-bold font-headline">{user.name}</h2>
+                  <p className="text-muted-foreground">Level {user.level}</p>
+                </div>
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">XP</span>
+                    <span className="text-sm font-medium">
+                      {user.xp} / {user.nextLevelXp}
+                    </span>
+                  </div>
+                  <Progress value={xpProgress} aria-label={`${xpProgress}% towards next level`} />
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-
-        <div className="md:col-span-2 space-y-6">
-          <Card className="bg-card/80">
-            <CardHeader>
-              <CardTitle className="text-base font-headline">Current Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">XP</span>
-                <span className="text-sm font-medium">
-                  {user.xp} / {user.nextLevelXp}
-                </span>
-              </div>
-              <Progress value={xpProgress} aria-label={`${xpProgress}% towards next level`} />
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-card/80">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base font-headline">
-                <GemIcon className="h-5 w-5 text-primary" />
-                Your Wallet
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">{user.tokens.toLocaleString()}</div>
-              <p className="text-sm text-muted-foreground">Tokens to spend</p>
-            </CardContent>
-          </Card>
-        </div>
+        
+        <Card className="md:col-span-1 bg-card/80">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base font-headline">
+              <GemIcon className="h-5 w-5 text-primary" />
+              Your Wallet
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary">{user.tokens.toLocaleString()}</div>
+            <p className="text-sm text-muted-foreground">Tokens to spend</p>
+          </CardContent>
+        </Card>
       </div>
       
       <Card className="bg-card/80 mb-6">
