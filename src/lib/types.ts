@@ -23,6 +23,9 @@ export interface Task {
   title: string;
   completed: boolean;
   xp: number;
+  description?: string;
+  notes?: string;
+  links?: string;
 }
 
 export interface Project {

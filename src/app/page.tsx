@@ -29,6 +29,7 @@ import { initialAreas, dailyMissions, user } from '@/lib/mock-data';
 import type { Task, Project, Area } from '@/lib/types';
 import { Swords, PlusCircle, Briefcase, Loader2 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
+import { Textarea } from '@/components/ui/textarea';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -42,6 +43,12 @@ const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required.'),
 });
 
+const taskDetailSchema = z.object({
+  description: z.string().optional(),
+  notes: z.string().optional(),
+  links: z.string().optional(),
+});
+
 export default function QuestsPage() {
   const { toast } = useToast();
   const [areas, setAreas] = useState(initialAreas);
@@ -50,6 +57,7 @@ export default function QuestsPage() {
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [addProjectState, setAddProjectState] = useState<{ open: boolean; areaId: string | null }>({ open: false, areaId: null });
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; areaId: string | null; projectId: string | null }>({ open: false, areaId: null, projectId: null });
+  const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; taskId: string | null; taskTitle: string | null; }>({ open: false, areaId: null, projectId: null, taskId: null, taskTitle: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   const areaForm = useForm<z.infer<typeof areaSchema>>({
@@ -65,6 +73,15 @@ export default function QuestsPage() {
   const taskForm = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: { title: '' },
+  });
+
+  const taskDetailForm = useForm<z.infer<typeof taskDetailSchema>>({
+    resolver: zodResolver(taskDetailSchema),
+    defaultValues: {
+      description: '',
+      notes: '',
+      links: '',
+    },
   });
 
   const handleTaskToggle = (areaId: string, projectId: string, taskId: string, completed: boolean) => {
@@ -170,6 +187,9 @@ export default function QuestsPage() {
             title: data.title,
             completed: false,
             xp: xp,
+            description: '',
+            notes: '',
+            links: '',
         };
 
         setAreas((prev) =>
@@ -206,6 +226,56 @@ export default function QuestsPage() {
     }
   }
 
+  function handleTaskClick(areaId: string, projectId: string, taskId: string) {
+    const area = areas.find((a) => a.id === areaId);
+    const project = area?.projects.find((p) => p.id === projectId);
+    const task = project?.tasks.find((t) => t.id === taskId);
+
+    if (task) {
+      taskDetailForm.reset({
+        description: task.description || '',
+        notes: task.notes || '',
+        links: task.links || '',
+      });
+      setTaskDetailState({
+        open: true,
+        areaId,
+        projectId,
+        taskId,
+        taskTitle: task.title,
+      });
+    }
+  }
+
+  function onSaveTaskDetails(data: z.infer<typeof taskDetailSchema>) {
+    const { areaId, projectId, taskId } = taskDetailState;
+    if (!areaId || !projectId || !taskId) return;
+
+    setAreas((prev) =>
+      prev.map((area) =>
+        area.id === areaId
+          ? {
+              ...area,
+              projects: area.projects.map((project) =>
+                project.id === projectId
+                  ? {
+                      ...project,
+                      tasks: project.tasks.map((task) =>
+                        task.id === taskId ? { ...task, ...data } : task
+                      ),
+                    }
+                  : project
+              ),
+            }
+          : area
+      )
+    );
+    toast({
+      title: 'Task Updated!',
+      description: 'Your changes have been saved.',
+    });
+    setTaskDetailState({ open: false, areaId: null, projectId: null, taskId: null, taskTitle: null });
+  }
 
   return (
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
@@ -267,22 +337,24 @@ export default function QuestsPage() {
                           {project.tasks.map((task: Task) => (
                             <li
                               key={task.id}
-                              className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors"
+                              className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                              onClick={() => handleTaskClick(area.id, project.id, task.id)}
                             >
-                              <Checkbox
-                                id={task.id}
-                                checked={task.completed}
-                                onCheckedChange={(checked) =>
-                                  handleTaskToggle(area.id, project.id, task.id, !!checked)
-                                }
-                                className="w-5 h-5"
-                              />
-                              <label
-                                htmlFor={task.id}
-                                className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  id={task.id}
+                                  checked={task.completed}
+                                  onCheckedChange={(checked) =>
+                                    handleTaskToggle(area.id, project.id, task.id, !!checked)
+                                  }
+                                  className="w-5 h-5"
+                                />
+                              </div>
+                              <span
+                                className="flex-1 text-sm font-medium leading-none"
                               >
                                 {task.title}
-                              </label>
+                              </span>
                               <span className="text-xs font-bold text-primary">
                                 +{task.xp} XP
                               </span>
@@ -398,6 +470,63 @@ export default function QuestsPage() {
                 <Button type="submit" disabled={isCreatingTask}>
                     {isCreatingTask ? <Loader2 className="animate-spin" /> : "Create Task" }
                 </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={taskDetailState.open} onOpenChange={(isOpen) => setTaskDetailState(prev => ({ ...prev, open: isOpen }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{taskDetailState.taskTitle}</DialogTitle>
+            <DialogDescription>
+              View and edit additional details for this quest.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...taskDetailForm}>
+            <form onSubmit={taskDetailForm.handleSubmit(onSaveTaskDetails)} className="space-y-4">
+              <FormField
+                control={taskDetailForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Add a description..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={taskDetailForm.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Add personal notes..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={taskDetailForm.control}
+                name="links"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Links</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Add relevant links, one per line..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Save Changes</Button>
               </DialogFooter>
             </form>
           </Form>

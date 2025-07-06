@@ -29,7 +29,7 @@ export const initialAreas: Area[] = [
         id: 'proj1',
         name: 'Q2 Roadmap',
         tasks: [
-          { id: 't1', title: 'Finalize project specs', completed: true, xp: 50 },
+          { id: 't1', title: 'Finalize project specs', completed: true, xp: 50, description: 'Write up the final specifications for the Q2 roadmap.', notes: 'Check with marketing before finalizing.', links: 'https://docs.google.com/document/d/...' },
           { id: 't2', title: 'Develop prototype', completed: false, xp: 150 },
           { id: 't3', title: 'User testing session', completed: false, xp: 100 },
         ],
