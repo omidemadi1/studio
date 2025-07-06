@@ -38,7 +38,7 @@ import {
   Folder,
   Tag,
   Flame,
-  Calendar,
+  Calendar as CalendarIcon,
   AlignLeft,
   ArrowUp,
   StickyNote,
@@ -49,6 +49,7 @@ import { useQuestData } from '@/context/quest-context';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -421,7 +422,7 @@ export default function QuestsPage() {
                               ) : (
                                 <span>Pick a date</span>
                               )}
-                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -431,7 +432,6 @@ export default function QuestsPage() {
                             selected={field.value}
                             onSelect={field.onChange}
                             disabled={(date) => date < new Date("1900-01-01")}
-                            initialFocus
                           />
                         </PopoverContent>
                       </Popover>
@@ -491,7 +491,7 @@ export default function QuestsPage() {
 
                 {task.dueDate && (
                     <>
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Calendar className="h-4 w-4" /> Date</div>
+                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Date</div>
                         <div className="font-semibold">{format(new Date(task.dueDate), 'PPP')}</div>
                     </>
                 )}
@@ -500,7 +500,7 @@ export default function QuestsPage() {
                 <div className="font-semibold">{task.xp}</div>
               </div>
               
-              <div className="mt-4 space-y-2 text-sm">
+              <div className="mt-6 space-y-2 text-sm">
                 <div>
                   <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
                   <Textarea
