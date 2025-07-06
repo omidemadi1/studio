@@ -19,7 +19,7 @@ export const skills: Skill[] = [
   { id: 'knowledge', name: 'Knowledge', level: 7, points: 850, maxPoints: 1000, icon: BookOpen },
 ];
 
-export const areas: Area[] = [
+export const initialAreas: Area[] = [
   {
     id: 'work',
     name: 'Work',
