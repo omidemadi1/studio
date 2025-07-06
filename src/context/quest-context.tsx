@@ -20,6 +20,8 @@ interface QuestContextType {
   updateUser: (newUserData: Partial<User>) => void;
   addXp: (xp: number, message?: string) => void;
   getTask: (taskId: string) => { task: Task; areaId: string; projectId: string } | null;
+  startTaskTimer: (areaId: string, projectId: string, taskId: string) => void;
+  endTaskTimer: (areaId: string, projectId: string, taskId: string) => void;
 }
 
 const QuestContext = createContext<QuestContextType | undefined>(undefined);
@@ -154,6 +156,50 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: 'Profile Updated', description: 'Your changes have been saved successfully.' });
   };
 
+  const startTaskTimer = useCallback((areaId: string, projectId: string, taskId: string) => {
+    setAreas(prev =>
+      prev.map(area =>
+        area.id === areaId
+          ? {
+              ...area,
+              projects: area.projects.map(project =>
+                project.id === projectId
+                  ? {
+                      ...project,
+                      tasks: project.tasks.map(task =>
+                        task.id === taskId ? { ...task, startDate: Date.now(), endDate: undefined } : task
+                      ),
+                    }
+                  : project
+              ),
+            }
+          : area
+      )
+    );
+  }, []);
+
+  const endTaskTimer = useCallback((areaId: string, projectId: string, taskId: string) => {
+    setAreas(prev =>
+      prev.map(area =>
+        area.id === areaId
+          ? {
+              ...area,
+              projects: area.projects.map(project =>
+                project.id === projectId
+                  ? {
+                      ...project,
+                      tasks: project.tasks.map(task =>
+                        task.id === taskId ? { ...task, endDate: Date.now() } : task
+                      ),
+                    }
+                  : project
+              ),
+            }
+          : area
+      )
+    );
+  }, []);
+
   const getTask = useCallback((taskId: string) => {
     for (const area of areas) {
       for (const project of area.projects) {
@@ -170,7 +216,7 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
 
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, tasks: allTasks, getAreaForProject, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, updateUser, addXp, getTask };
+  const value = { areas, user, tasks: allTasks, getAreaForProject, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, updateUser, addXp, getTask, startTaskTimer, endTaskTimer };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };

@@ -29,17 +29,17 @@ export const initialAreas: Area[] = [
         id: 'proj1',
         name: 'Q2 Roadmap',
         tasks: [
-          { id: 't1', title: 'Finalize project specs', completed: true, xp: 50, description: 'Write up the final specifications for the Q2 roadmap.', notes: 'Check with marketing before finalizing.', links: 'https://docs.google.com/document/d/...' },
-          { id: 't2', title: 'Develop prototype', completed: false, xp: 150 },
-          { id: 't3', title: 'User testing session', completed: false, xp: 100 },
+          { id: 't1', title: 'Finalize project specs', completed: true, xp: 50, description: 'Write up the final specifications for the Q2 roadmap.', notes: 'Check with marketing before finalizing.', links: 'https://docs.google.com/document/d/...', difficulty: 'Medium', dueDate: '2025-01-28', skillId: 'career' },
+          { id: 't2', title: 'Develop prototype', completed: false, xp: 150, difficulty: 'Hard', dueDate: '2025-02-15', skillId: 'career', startDate: new Date('2024-01-27T18:30:00').getTime(), endDate: new Date('2024-01-27T21:18:00').getTime() },
+          { id: 't3', title: 'User testing session', completed: false, xp: 100, difficulty: 'Medium', dueDate: '2025-02-20', skillId: 'intellect' },
         ],
       },
       {
         id: 'proj2',
         name: 'Website Redesign',
         tasks: [
-          { id: 't4', title: 'Create wireframes', completed: true, xp: 75 },
-          { id: 't5', title: 'Design mockups', completed: false, xp: 100 },
+          { id: 't4', title: 'Create wireframes', completed: true, xp: 75, difficulty: 'Easy', dueDate: '2025-01-10', skillId: 'career' },
+          { id: 't5', title: 'Design mockups', completed: false, xp: 100, difficulty: 'Medium', dueDate: '2025-01-25', skillId: 'career' },
         ],
       },
     ],
@@ -53,17 +53,17 @@ export const initialAreas: Area[] = [
         id: 'proj3',
         name: 'Workout Routine',
         tasks: [
-          { id: 't6', title: 'Morning run (5km)', completed: true, xp: 40 },
-          { id: 't7', title: 'Strength training', completed: false, xp: 50 },
-          { id: 't8', title: 'Yoga session', completed: false, xp: 30 },
+          { id: 't6', title: 'Morning run (5km)', completed: true, xp: 40, difficulty: 'Easy', skillId: 'health' },
+          { id: 't7', title: 'Strength training', completed: false, xp: 50, difficulty: 'Medium', skillId: 'strength' },
+          { id: 't8', title: 'Yoga session', completed: false, xp: 30, difficulty: 'Easy', skillId: 'health' },
         ],
       },
       {
         id: 'proj4',
         name: 'Meal Plan',
         tasks: [
-            { id: 't9', title: 'Plan weekly meals', completed: true, xp: 25 },
-            { id: 't10', title: 'Go grocery shopping', completed: false, xp: 20 },
+            { id: 't9', title: 'Plan weekly meals', completed: true, xp: 25, difficulty: 'Easy', skillId: 'health' },
+            { id: 't10', title: 'Go grocery shopping', completed: false, xp: 20, difficulty: 'Easy', skillId: 'health' },
         ],
       }
     ],
@@ -77,8 +77,8 @@ export const initialAreas: Area[] = [
         id: 'proj5',
         name: 'Monthly Budget',
         tasks: [
-          { id: 't11', title: 'Review monthly spending', completed: false, xp: 30 },
-          { id: 't12', title: 'Allocate savings', completed: false, xp: 35 },
+          { id: 't11', title: 'Review monthly spending', completed: false, xp: 30, difficulty: 'Medium', skillId: 'finance' },
+          { id: 't12', title: 'Allocate savings', completed: false, xp: 35, difficulty: 'Medium', skillId: 'finance' },
         ],
       },
     ],

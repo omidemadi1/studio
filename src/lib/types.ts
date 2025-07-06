@@ -18,6 +18,8 @@ export interface Skill {
   icon: LucideIcon;
 }
 
+export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Very Hard';
+
 export interface Task {
   id: string;
   title: string;
@@ -26,6 +28,11 @@ export interface Task {
   description?: string;
   notes?: string;
   links?: string;
+  difficulty?: Difficulty;
+  dueDate?: string;
+  startDate?: number;
+  endDate?: number;
+  skillId?: string;
 }
 
 export interface Project {

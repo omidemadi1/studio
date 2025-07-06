@@ -1,9 +1,11 @@
+
 'use client';
 
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { format, formatDistanceStrict } from 'date-fns';
 import {
   Accordion,
   AccordionContent,
@@ -14,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -25,10 +28,26 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { Task } from '@/lib/types';
-import { Swords, PlusCircle, Loader2 } from 'lucide-react';
+import type { Task, Difficulty } from '@/lib/types';
+import { skills } from '@/lib/mock-data';
+import {
+  Swords,
+  PlusCircle,
+  Loader2,
+  Command,
+  Folder,
+  Tag,
+  Flame,
+  Calendar,
+  AlignLeft,
+  ArrowUp,
+  CalendarClock,
+  Hourglass,
+  Play,
+  StopCircle,
+  User,
+} from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
-import { Textarea } from '@/components/ui/textarea';
 import { useQuestData } from '@/context/quest-context';
 
 const areaSchema = z.object({
@@ -43,20 +62,21 @@ const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required.'),
 });
 
-const taskDetailSchema = z.object({
-  description: z.string().optional(),
-  notes: z.string().optional(),
-  links: z.string().optional(),
-});
+const difficultyColors: Record<Difficulty, string> = {
+    Easy: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30',
+    Medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30',
+    Hard: 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30',
+    'Very Hard': 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30',
+};
 
 export default function QuestsPage() {
   const { toast } = useToast();
-  const { areas, user, updateTaskCompletion, getAreaForProject, addTask, addArea, addProject, updateTaskDetails } = useQuestData();
+  const { areas, user, updateTaskCompletion, addTask, addArea, addProject, startTaskTimer, endTaskTimer } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [addProjectState, setAddProjectState] = useState<{ open: boolean; areaId: string | null }>({ open: false, areaId: null });
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; areaId: string | null; projectId: string | null }>({ open: false, areaId: null, projectId: null });
-  const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; taskId: string | null; taskTitle: string | null; }>({ open: false, areaId: null, projectId: null, taskId: null, taskTitle: null });
+  const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; taskId: string | null; }>({ open: false, areaId: null, projectId: null, taskId: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   const areaForm = useForm<z.infer<typeof areaSchema>>({
@@ -72,15 +92,6 @@ export default function QuestsPage() {
   const taskForm = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: { title: '' },
-  });
-
-  const taskDetailForm = useForm<z.infer<typeof taskDetailSchema>>({
-    resolver: zodResolver(taskDetailSchema),
-    defaultValues: {
-      description: '',
-      notes: '',
-      links: '',
-    },
   });
 
   function onAddArea(data: z.infer<typeof areaSchema>) {
@@ -116,6 +127,7 @@ export default function QuestsPage() {
             description: '',
             notes: '',
             links: '',
+            difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
         };
         
         addTask(addTaskState.areaId, addTaskState.projectId, newTask);
@@ -135,33 +147,24 @@ export default function QuestsPage() {
   }
 
   function handleTaskClick(areaId: string, projectId: string, taskId: string) {
-    const area = areas.find((a) => a.id === areaId);
-    const project = area?.projects.find((p) => p.id === projectId);
-    const task = project?.tasks.find((t) => t.id === taskId);
-
-    if (task) {
-      taskDetailForm.reset({
-        description: task.description || '',
-        notes: task.notes || '',
-        links: task.links || '',
-      });
-      setTaskDetailState({
-        open: true,
-        areaId,
-        projectId,
-        taskId,
-        taskTitle: task.title,
-      });
-    }
+    setTaskDetailState({
+      open: true,
+      areaId,
+      projectId,
+      taskId,
+    });
   }
 
-  function onSaveTaskDetails(data: z.infer<typeof taskDetailSchema>) {
-    const { areaId, projectId, taskId } = taskDetailState;
-    if (!areaId || !projectId || !taskId) return;
+  const { areaId, projectId, taskId } = taskDetailState;
+  const area = areas.find((a) => a.id === areaId);
+  const project = area?.projects.find((p) => p.id === projectId);
+  const task = project?.tasks.find((t) => t.id === taskId);
+  const skill = skills.find(s => s.id === task?.skillId);
 
-    updateTaskDetails(areaId, projectId, taskId, data);
-    setTaskDetailState({ open: false, areaId: null, projectId: null, taskId: null, taskTitle: null });
-  }
+  const totalTime = task?.startDate && task?.endDate
+    ? formatDistanceStrict(new Date(task.endDate), new Date(task.startDate))
+    : '0 hours';
+
 
   return (
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
@@ -342,59 +345,82 @@ export default function QuestsPage() {
       </Dialog>
 
       <Dialog open={taskDetailState.open} onOpenChange={(isOpen) => setTaskDetailState(prev => ({ ...prev, open: isOpen }))}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{taskDetailState.taskTitle}</DialogTitle>
-            <DialogDescription>
-              View and edit additional details for this quest.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...taskDetailForm}>
-            <form onSubmit={taskDetailForm.handleSubmit(onSaveTaskDetails)} className="space-y-4">
-              <FormField
-                control={taskDetailForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Add a description..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+        <DialogContent className="sm:max-w-xl">
+          {task && areaId && projectId && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold font-headline pr-10">{task.title}</DialogTitle>
+                <div className="absolute top-6 right-12">
+                   <Checkbox
+                        checked={task.completed}
+                        onCheckedChange={(checked) =>
+                            updateTaskCompletion(areaId, projectId, task.id, !!checked)
+                        }
+                        className="w-5 h-5"
+                    />
+                </div>
+              </DialogHeader>
+              <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
+                
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
+                <div className="font-semibold">{area?.name}</div>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
+                <div className="font-semibold">{project?.name}</div>
+
+                {skill && (
+                  <>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
+                    <div className="font-semibold">{skill.name}</div>
+                  </>
                 )}
-              />
-              <FormField
-                control={taskDetailForm.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Add personal notes..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+
+                {task.difficulty && (
+                    <>
+                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
+                        <div><Badge variant="outline" className={difficultyColors[task.difficulty]}>{task.difficulty}</Badge></div>
+                    </>
                 )}
-              />
-              <FormField
-                control={taskDetailForm.control}
-                name="links"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Links</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Add relevant links, one per line..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+
+                {task.dueDate && (
+                    <>
+                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Calendar className="h-4 w-4" /> Date</div>
+                        <div className="font-semibold">{format(new Date(task.dueDate), 'PPP')}</div>
+                    </>
                 )}
-              />
-              <DialogFooter>
-                <Button type="submit">Save Changes</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><AlignLeft className="h-4 w-4" /> Details</div>
+                <div className="font-semibold text-muted-foreground italic whitespace-pre-wrap">{task.description || 'Empty'}</div>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
+                <div className="font-semibold">{task.xp}</div>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarClock className="h-4 w-4" /> Start Date</div>
+                <div className="font-semibold">{task.startDate ? format(new Date(task.startDate), 'PPP p') : 'Not started'}</div>
+                
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarClock className="h-4 w-4" /> End Date</div>
+                <div className="font-semibold">{task.endDate ? format(new Date(task.endDate), 'PPP p') : 'Not finished'}</div>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Hourglass className="h-4 w-4" /> Total Hours</div>
+                <div className="font-semibold">{totalTime}</div>
+                
+                <div className="flex items-center gap-2 text-muted-foreground font-medium">Start Button</div>
+                <div><Button size="sm" onClick={() => startTaskTimer(areaId, projectId, task.id)} disabled={!!task.startDate && !task.endDate}><Play className="h-4 w-4 mr-2" /> Start</Button></div>
+                
+                <div className="flex items-center gap-2 text-muted-foreground font-medium">End Button</div>
+                <div><Button size="sm" onClick={() => endTaskTimer(areaId, projectId, task.id)} disabled={!task.startDate || !!task.endDate}><StopCircle className="h-4 w-4 mr-2" /> End</Button></div>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><User className="h-4 w-4" /> Assignee</div>
+                <div className="font-semibold flex items-center gap-2">
+                    <Avatar className="h-6 w-6">
+                        <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="avatar" />
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    {user.name}
+                </div>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
