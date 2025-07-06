@@ -75,7 +75,6 @@ export default function QuestsPage() {
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; areaId: string | null; projectId: string | null }>({ open: false, areaId: null, projectId: null });
   const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; taskId: string | null; }>({ open: false, areaId: null, projectId: null, taskId: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
-  const [isEditingTask, setIsEditingTask] = useState(false);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
 
 
@@ -168,7 +167,6 @@ export default function QuestsPage() {
         notes: task.notes || '',
         links: task.links || '',
       });
-      setIsEditingTask(false);
     }
   }, [task]);
 
@@ -179,18 +177,11 @@ export default function QuestsPage() {
   const handleSaveChanges = () => {
     if (!areaId || !projectId || !taskId || !task) return;
     updateTaskDetails(areaId, projectId, taskId, editableTaskData);
-    setIsEditingTask(false);
+    setTaskDetailState({ open: false, areaId: null, projectId: null, taskId: null });
   };
 
-  const handleCancelEdit = () => {
-    setIsEditingTask(false);
-    if (task) {
-      setEditableTaskData({
-        description: task.description || '',
-        notes: task.notes || '',
-        links: task.links || '',
-      });
-    }
+  const handleCancel = () => {
+    setTaskDetailState({ open: false, areaId: null, projectId: null, taskId: null });
   };
 
 
@@ -372,7 +363,7 @@ export default function QuestsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={taskDetailState.open} onOpenChange={(isOpen) => setTaskDetailState(prev => ({ ...prev, open: isOpen }))}>
+      <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
         <DialogContent className="sm:max-w-xl">
           {task && areaId && projectId && (
             <>
@@ -418,56 +409,40 @@ export default function QuestsPage() {
                 )}
                 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><AlignLeft className="h-4 w-4" /> Details</div>
-                {isEditingTask ? (
-                  <Textarea
-                    value={editableTaskData.description}
-                    onChange={(e) => handleTaskDataChange('description', e.target.value)}
-                    placeholder="Add a description..."
-                    className="text-sm"
-                    rows={3}
-                  />
-                ) : (
-                  <div className="font-semibold text-muted-foreground italic whitespace-pre-wrap pt-1">{task.description || 'No description added.'}</div>
-                )}
+                <Textarea
+                  value={editableTaskData.description}
+                  onChange={(e) => handleTaskDataChange('description', e.target.value)}
+                  placeholder="Add a description..."
+                  className="text-sm"
+                  rows={3}
+                />
                 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><StickyNote className="h-4 w-4" /> Notes</div>
-                {isEditingTask ? (
-                  <Textarea
-                    value={editableTaskData.notes}
-                    onChange={(e) => handleTaskDataChange('notes', e.target.value)}
-                    placeholder="Add notes..."
-                    className="text-sm"
-                    rows={3}
-                  />
-                ) : (
-                  <div className="font-semibold text-muted-foreground italic whitespace-pre-wrap pt-1">{task.notes || 'No notes added.'}</div>
-                )}
+                <Textarea
+                  value={editableTaskData.notes}
+                  onChange={(e) => handleTaskDataChange('notes', e.target.value)}
+                  placeholder="Add notes..."
+                  className="text-sm"
+                  rows={3}
+                />
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><LinkIcon className="h-4 w-4" /> Links</div>
-                {isEditingTask ? (
-                  <Textarea
-                    value={editableTaskData.links}
-                    onChange={(e) => handleTaskDataChange('links', e.target.value)}
-                    placeholder="Add links, one per line..."
-                    className="text-sm"
-                    rows={3}
-                  />
-                ) : (
-                  <div className="font-semibold text-muted-foreground italic whitespace-pre-wrap pt-1">{task.links || 'No links added.'}</div>
-                )}
+                <Textarea
+                  value={editableTaskData.links}
+                  onChange={(e) => handleTaskDataChange('links', e.target.value)}
+                  placeholder="Add links, one per line..."
+                  className="text-sm"
+                  rows={3}
+                />
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
                 <div className="font-semibold pt-1">{task.xp}</div>
               </div>
               <DialogFooter className="pt-4">
-              {isEditingTask ? (
                 <div className="flex w-full justify-end gap-2">
-                  <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                  <Button variant="outline" onClick={handleCancel}>Cancel</Button>
                   <Button onClick={handleSaveChanges}>Save Changes</Button>
                 </div>
-              ) : (
-                <Button onClick={() => setIsEditingTask(true)}>Edit Details</Button>
-              )}
             </DialogFooter>
             </>
           )}
