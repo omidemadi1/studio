@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -46,9 +45,12 @@ import {
   Play,
   StopCircle,
   User,
+  StickyNote,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
+import { Textarea } from '@/components/ui/textarea';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -71,13 +73,16 @@ const difficultyColors: Record<Difficulty, string> = {
 
 export default function QuestsPage() {
   const { toast } = useToast();
-  const { areas, user, updateTaskCompletion, addTask, addArea, addProject, startTaskTimer, endTaskTimer } = useQuestData();
+  const { areas, user, updateTaskCompletion, addTask, addArea, addProject, startTaskTimer, endTaskTimer, updateTaskDetails } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [addProjectState, setAddProjectState] = useState<{ open: boolean; areaId: string | null }>({ open: false, areaId: null });
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; areaId: string | null; projectId: string | null }>({ open: false, areaId: null, projectId: null });
   const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; taskId: string | null; }>({ open: false, areaId: null, projectId: null, taskId: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [isEditingTask, setIsEditingTask] = useState(false);
+  const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
+
 
   const areaForm = useForm<z.infer<typeof areaSchema>>({
     resolver: zodResolver(areaSchema),
@@ -164,6 +169,38 @@ export default function QuestsPage() {
   const totalTime = task?.startDate && task?.endDate
     ? formatDistanceStrict(new Date(task.endDate), new Date(task.startDate))
     : '0 hours';
+
+  React.useEffect(() => {
+    if (task) {
+      setEditableTaskData({
+        description: task.description || '',
+        notes: task.notes || '',
+        links: task.links || '',
+      });
+      setIsEditingTask(false);
+    }
+  }, [task]);
+
+  const handleTaskDataChange = (field: 'description' | 'notes' | 'links', value: string) => {
+    setEditableTaskData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveChanges = () => {
+    if (!areaId || !projectId || !taskId || !task) return;
+    updateTaskDetails(areaId, projectId, taskId, editableTaskData);
+    setIsEditingTask(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingTask(false);
+    if (task) {
+      setEditableTaskData({
+        description: task.description || '',
+        notes: task.notes || '',
+        links: task.links || '',
+      });
+    }
+  };
 
 
   return (
@@ -360,18 +397,18 @@ export default function QuestsPage() {
                     />
                 </div>
               </DialogHeader>
-              <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
+              <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
                 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
-                <div className="font-semibold">{area?.name}</div>
+                <div className="font-semibold pt-1">{area?.name}</div>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
-                <div className="font-semibold">{project?.name}</div>
+                <div className="font-semibold pt-1">{project?.name}</div>
 
                 {skill && (
                   <>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
-                    <div className="font-semibold">{skill.name}</div>
+                    <div className="font-semibold pt-1">{skill.name}</div>
                   </>
                 )}
 
@@ -385,24 +422,60 @@ export default function QuestsPage() {
                 {task.dueDate && (
                     <>
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><Calendar className="h-4 w-4" /> Date</div>
-                        <div className="font-semibold">{format(new Date(task.dueDate), 'PPP')}</div>
+                        <div className="font-semibold pt-1">{format(new Date(task.dueDate), 'PPP')}</div>
                     </>
                 )}
-
+                
                 <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><AlignLeft className="h-4 w-4" /> Details</div>
-                <div className="font-semibold text-muted-foreground italic whitespace-pre-wrap">{task.description || 'Empty'}</div>
+                {isEditingTask ? (
+                  <Textarea
+                    value={editableTaskData.description}
+                    onChange={(e) => handleTaskDataChange('description', e.target.value)}
+                    placeholder="Add a description..."
+                    className="text-sm"
+                    rows={3}
+                  />
+                ) : (
+                  <div className="font-semibold text-muted-foreground italic whitespace-pre-wrap pt-1">{task.description || 'No description added.'}</div>
+                )}
+                
+                <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><StickyNote className="h-4 w-4" /> Notes</div>
+                {isEditingTask ? (
+                  <Textarea
+                    value={editableTaskData.notes}
+                    onChange={(e) => handleTaskDataChange('notes', e.target.value)}
+                    placeholder="Add notes..."
+                    className="text-sm"
+                    rows={3}
+                  />
+                ) : (
+                  <div className="font-semibold text-muted-foreground italic whitespace-pre-wrap pt-1">{task.notes || 'No notes added.'}</div>
+                )}
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><LinkIcon className="h-4 w-4" /> Links</div>
+                {isEditingTask ? (
+                  <Textarea
+                    value={editableTaskData.links}
+                    onChange={(e) => handleTaskDataChange('links', e.target.value)}
+                    placeholder="Add links, one per line..."
+                    className="text-sm"
+                    rows={3}
+                  />
+                ) : (
+                  <div className="font-semibold text-muted-foreground italic whitespace-pre-wrap pt-1">{task.links || 'No links added.'}</div>
+                )}
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                <div className="font-semibold">{task.xp}</div>
+                <div className="font-semibold pt-1">{task.xp}</div>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarClock className="h-4 w-4" /> Start Date</div>
-                <div className="font-semibold">{task.startDate ? format(new Date(task.startDate), 'PPP p') : 'Not started'}</div>
+                <div className="font-semibold pt-1">{task.startDate ? format(new Date(task.startDate), 'PPP p') : 'Not started'}</div>
                 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarClock className="h-4 w-4" /> End Date</div>
-                <div className="font-semibold">{task.endDate ? format(new Date(task.endDate), 'PPP p') : 'Not finished'}</div>
+                <div className="font-semibold pt-1">{task.endDate ? format(new Date(task.endDate), 'PPP p') : 'Not finished'}</div>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Hourglass className="h-4 w-4" /> Total Hours</div>
-                <div className="font-semibold">{totalTime}</div>
+                <div className="font-semibold pt-1">{totalTime}</div>
                 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium">Start Button</div>
                 <div><Button size="sm" onClick={() => startTaskTimer(areaId, projectId, task.id)} disabled={!!task.startDate && !task.endDate}><Play className="h-4 w-4 mr-2" /> Start</Button></div>
@@ -411,7 +484,7 @@ export default function QuestsPage() {
                 <div><Button size="sm" onClick={() => endTaskTimer(areaId, projectId, task.id)} disabled={!task.startDate || !!task.endDate}><StopCircle className="h-4 w-4 mr-2" /> End</Button></div>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><User className="h-4 w-4" /> Assignee</div>
-                <div className="font-semibold flex items-center gap-2">
+                <div className="font-semibold flex items-center gap-2 pt-1">
                     <Avatar className="h-6 w-6">
                         <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="avatar" />
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
@@ -419,6 +492,16 @@ export default function QuestsPage() {
                     {user.name}
                 </div>
               </div>
+              <DialogFooter className="pt-4">
+              {isEditingTask ? (
+                <div className="flex w-full justify-end gap-2">
+                  <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                  <Button onClick={handleSaveChanges}>Save Changes</Button>
+                </div>
+              ) : (
+                <Button onClick={() => setIsEditingTask(true)}>Edit Details</Button>
+              )}
+            </DialogFooter>
             </>
           )}
         </DialogContent>
