@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import BottomNav from "@/components/bottom-nav";
 import { Toaster } from "@/components/ui/toaster";
 import { QuestProvider } from "@/context/quest-context";
+import { initDb } from "@/lib/db";
+import { getAreas, getUser, getSkills } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Questify",
@@ -15,6 +17,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Initialize and seed the database.
+  initDb();
+  
+  const areas = getAreas();
+  const user = getUser();
+  const skills = getSkills();
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -31,7 +40,7 @@ export default function RootLayout({
           "bg-background"
         )}
       >
-        <QuestProvider>
+        <QuestProvider initialAreas={areas} initialUser={user} initialSkills={skills}>
           <div className="relative flex min-h-screen w-full flex-col">
             <main className="flex-1 pb-24">{children}</main>
             <BottomNav />

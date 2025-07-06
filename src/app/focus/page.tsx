@@ -63,7 +63,7 @@ export default function FocusPage() {
     if (!result) return;
 
     // Mark the task as completed, which also awards base XP and adds focus time
-    updateTaskCompletion(result.areaId, result.projectId, selectedTaskId, true, timeElapsed);
+    updateTaskCompletion(selectedTaskId, true, timeElapsed);
 
     // Calculate bonus XP: 5% of task XP for every 5 minutes of focus
     const minutesFocused = Math.floor(timeElapsed / 60);

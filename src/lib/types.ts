@@ -1,6 +1,5 @@
-import type { LucideIcon } from 'lucide-react';
-
 export interface User {
+  id: number;
   name: string;
   level: number;
   xp: number;
@@ -15,7 +14,7 @@ export interface Skill {
   level: number;
   points: number;
   maxPoints: number;
-  icon: LucideIcon;
+  icon: string;
 }
 
 export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Very Hard';
@@ -32,18 +31,20 @@ export interface Task {
   dueDate?: string;
   skillId?: string;
   focusDuration?: number;
+  projectId: string;
 }
 
 export interface Project {
   id: string;
   name: string;
   tasks: Task[];
+  areaId: string;
 }
 
 export interface Area {
   id: string;
   name: string;
-  icon: LucideIcon;
+  icon: string;
   projects: Project[];
 }
 

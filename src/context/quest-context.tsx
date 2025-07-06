@@ -1,19 +1,18 @@
-
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
-import type { Area, Task, Project, User } from '@/lib/types';
-import { initialAreas, user as initialUser } from '@/lib/mock-data';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
+import type { Area, Task, Project, User, Skill } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Briefcase } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as QuestActions from '@/actions/quest-actions';
 
 interface QuestContextType {
   areas: Area[];
   user: User;
+  skills: Skill[];
   tasks: Task[];
-  getAreaForProject: (projectId: string) => Area | undefined;
-  updateTaskCompletion: (areaId: string, projectId: string, taskId: string, completed: boolean, focusDuration?: number) => void;
-  updateTaskDetails: (areaId: string, projectId: string, taskId: string, details: Partial<Task>) => void;
+  updateTaskCompletion: (taskId: string, completed: boolean, focusDuration?: number) => void;
+  updateTaskDetails: (taskId: string, details: Partial<Task>) => void;
   addArea: (name: string) => void;
   addProject: (areaId: string, name: string) => void;
   addTask: (areaId: string, projectId: string, task: Task) => void;
@@ -24,137 +23,51 @@ interface QuestContextType {
 
 const QuestContext = createContext<QuestContextType | undefined>(undefined);
 
-export const QuestProvider = ({ children }: { children: ReactNode }) => {
+export const QuestProvider = ({ 
+    children,
+    initialAreas,
+    initialUser,
+    initialSkills,
+}: { 
+    children: ReactNode,
+    initialAreas: Area[],
+    initialUser: User,
+    initialSkills: Skill[],
+}) => {
   const [areas, setAreas] = useState<Area[]>(initialAreas);
   const [user, setUser] = useState<User>(initialUser);
+  const [skills, setSkills] = useState<Skill[]>(initialSkills);
   const { toast } = useToast();
+  const router = useRouter();
 
-  const addXp = useCallback((xp: number, message?: string) => {
-    setUser(currentUser => {
-        const newXp = currentUser.xp + xp;
-        const isLevelUp = newXp >= currentUser.nextLevelXp;
-        const newLevel = isLevelUp ? currentUser.level + 1 : currentUser.level;
-        const newNextLevelXp = isLevelUp ? currentUser.nextLevelXp * 2 : currentUser.nextLevelXp;
-        
-        if(isLevelUp) {
-            toast({ title: "Level Up!", description: `Congratulations, you've reached level ${newLevel}!` });
-        } else if (message) {
-            toast({ title: "XP Gained!", description: message });
-        }
+  useEffect(() => {
+    setAreas(initialAreas);
+  }, [initialAreas]);
 
-        return {
-            ...currentUser,
-            xp: Math.max(0, newXp),
-            level: newLevel,
-            nextLevelXp: newNextLevelXp,
-        };
-    });
-  }, [toast]);
+  useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
 
+  useEffect(() => {
+    setSkills(initialSkills);
+  }, [initialSkills]);
 
-  const updateTaskCompletion = useCallback((areaId: string, projectId: string, taskId: string, completed: boolean, focusDuration?: number) => {
-    let taskXp = 0;
-    let taskTitle = '';
-
-    const updatedAreas = areas.map((area) => {
-      if (area.id === areaId) {
-        return {
-          ...area,
-          projects: area.projects.map((project) => {
-            if (project.id === projectId) {
-              return {
-                ...project,
-                tasks: project.tasks.map((task) => {
-                  if (task.id === taskId) {
-                    taskXp = task.xp;
-                    taskTitle = task.title;
-                    const newFocusDuration = focusDuration !== undefined 
-                      ? (task.focusDuration || 0) + focusDuration 
-                      : task.focusDuration;
-                    return { ...task, completed, focusDuration: newFocusDuration };
-                  }
-                  return task;
-                }),
-              };
-            }
-            return project;
-          }),
-        };
-      }
-      return area;
-    });
-
-    setAreas(updatedAreas);
+  const addXp = useCallback(async (xp: number, message?: string) => {
+    const oldUser = user;
+    const isLevelUp = oldUser.xp + xp >= oldUser.nextLevelXp;
     
-    if (completed) {
-      addXp(taskXp);
-      toast({
-        title: 'Quest Complete!',
-        description: `You earned ${taskXp} XP for "${taskTitle}"!`,
-      });
-    } else {
-      setUser(prev => ({ ...prev, xp: Math.max(0, prev.xp - taskXp) }));
+    await QuestActions.addXp(xp);
+    
+    if (message) {
+        toast({ title: "XP Gained!", description: message });
     }
-  }, [areas, addXp, toast]);
-  
-  const addArea = (name: string) => {
-    const newArea: Area = { id: `area-${Date.now()}`, name, icon: Briefcase, projects: [] };
-    setAreas(prev => [...prev, newArea]);
-  };
+    if (isLevelUp) {
+        toast({ title: "Level Up!", description: `Congratulations, you've reached level ${oldUser.level + 1}!` });
+    }
 
-  const addProject = (areaId: string, name: string) => {
-    const newProject: Project = { id: `proj-${Date.now()}`, name, tasks: [] };
-    setAreas(prev =>
-      prev.map(area =>
-        area.id === areaId ? { ...area, projects: [...area.projects, newProject] } : area
-      )
-    );
-  };
-  
-  const addTask = (areaId: string, projectId: string, task: Task) => {
-    setAreas(prev =>
-      prev.map(area =>
-        area.id === areaId
-          ? {
-              ...area,
-              projects: area.projects.map(project =>
-                project.id === projectId
-                  ? { ...project, tasks: [...project.tasks, task] }
-                  : project
-              ),
-            }
-          : area
-      )
-    );
-    toast({ title: "Quest Created!", description: `AI has assigned ${task.xp} XP to your new quest.` });
-  };
-  
-  const updateTaskDetails = (areaId: string, projectId: string, taskId: string, details: Partial<Task>) => {
-     setAreas(prev =>
-      prev.map(area =>
-        area.id === areaId
-          ? {
-              ...area,
-              projects: area.projects.map(project =>
-                project.id === projectId
-                  ? {
-                      ...project,
-                      tasks: project.tasks.map(task =>
-                        task.id === taskId ? { ...task, ...details } : task
-                      ),
-                    }
-                  : project
-              ),
-            }
-          : area
-      )
-    );
-  };
-  
-  const updateUser = (newUserData: Partial<User>) => {
-      setUser(prevUser => ({ ...prevUser, ...newUserData }));
-      toast({ title: 'Profile Updated', description: 'Your changes have been saved successfully.' });
-  };
+    router.refresh();
+  }, [user, toast, router]);
+
 
   const getTask = useCallback((taskId: string) => {
     for (const area of areas) {
@@ -166,13 +79,52 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, [areas]);
 
-  const getAreaForProject = useCallback((projectId: string) => {
-    return areas.find(area => area.projects.some(p => p.id === projectId));
-  }, [areas]);
+  const updateTaskCompletion = useCallback(async (taskId: string, completed: boolean, focusDuration?: number) => {
+    const taskData = getTask(taskId);
+    if (!taskData) return;
+
+    await QuestActions.updateTaskCompletion(taskId, completed, focusDuration);
+    
+    toast({
+        title: completed ? 'Quest Complete!' : 'Quest Updated',
+        description: completed ? `You earned ${taskData.task.xp} XP for "${taskData.task.title}"!` : 'Quest marked as incomplete.',
+    });
+    router.refresh();
+
+  }, [getTask, toast, router]);
+  
+  const addArea = async (name: string) => {
+    await QuestActions.addArea(name);
+    toast({ title: 'Area Created', description: `New area "${name}" has been added.`});
+    router.refresh();
+  };
+
+  const addProject = async (areaId: string, name: string) => {
+    await QuestActions.addProject(areaId, name);
+    toast({ title: 'Project Created', description: `New project "${name}" has been added.`});
+    router.refresh();
+  };
+  
+  const addTask = async (areaId: string, projectId: string, task: Task) => {
+    await QuestActions.addTask(areaId, projectId, task);
+    toast({ title: "Quest Created!", description: `AI has assigned ${task.xp} XP to your new quest.` });
+    router.refresh();
+  };
+  
+  const updateTaskDetails = async (taskId: string, details: Partial<Task>) => {
+    await QuestActions.updateTaskDetails(taskId, details);
+    router.refresh();
+  };
+  
+  const updateUser = async (newUserData: Partial<User>) => {
+      await QuestActions.updateUser(newUserData);
+      toast({ title: 'Profile Updated', description: 'Your changes have been saved successfully.' });
+      router.refresh();
+  };
 
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, tasks: allTasks, getAreaForProject, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, updateUser, addXp, getTask };
+  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, updateUser, addXp, getTask };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };

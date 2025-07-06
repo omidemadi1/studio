@@ -29,7 +29,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Task, Difficulty } from '@/lib/types';
-import { skills } from '@/lib/mock-data';
+import { iconMap } from '@/lib/icon-map';
 import {
   Swords,
   PlusCircle,
@@ -44,6 +44,7 @@ import {
   StickyNote,
   Link as LinkIcon,
   Clock,
+  Briefcase,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -79,7 +80,7 @@ const difficultyColors: Record<Difficulty, string> = {
 
 export default function QuestsPage() {
   const { toast } = useToast();
-  const { areas, user, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails } = useQuestData();
+  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [addProjectState, setAddProjectState] = useState<{ open: boolean; areaId: string | null }>({ open: false, areaId: null });
@@ -145,6 +146,7 @@ export default function QuestsPage() {
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
             dueDate: data.dueDate?.toISOString(),
             skillId: data.skillId,
+            projectId: addTaskState.projectId,
         };
         
         addTask(addTaskState.areaId, addTaskState.projectId, newTask);
@@ -190,8 +192,8 @@ export default function QuestsPage() {
 
   const handleTaskDataChange = (field: 'description' | 'notes' | 'links', value: string) => {
     setEditableTaskData(prev => ({ ...prev, [field]: value }));
-    if (!areaId || !projectId || !taskId) return;
-    updateTaskDetails(areaId, projectId, taskId, { [field]: value });
+    if (!taskId) return;
+    updateTaskDetails(taskId, { [field]: value });
   };
 
 
@@ -214,11 +216,13 @@ export default function QuestsPage() {
             </Button>
         </div>
         <Accordion type="multiple" defaultValue={areas.map(a => a.id)} className="w-full">
-          {areas.map((area) => (
+          {areas.map((area) => {
+            const AreaIcon = iconMap[area.icon] || Briefcase;
+            return (
             <AccordionItem key={area.id} value={area.id}>
               <AccordionTrigger className="text-xl font-headline hover:no-underline">
                 <div className="flex items-center gap-3">
-                    <area.icon className="w-6 h-6 text-accent" />
+                    <AreaIcon className="w-6 h-6 text-accent" />
                     {area.name}
                 </div>
               </AccordionTrigger>
@@ -242,7 +246,7 @@ export default function QuestsPage() {
                                   id={task.id}
                                   checked={task.completed}
                                   onCheckedChange={(checked) =>
-                                    updateTaskCompletion(area.id, project.id, task.id, !!checked)
+                                    updateTaskCompletion(task.id, !!checked)
                                   }
                                   className="w-5 h-5"
                                 />
@@ -274,7 +278,7 @@ export default function QuestsPage() {
                 </Accordion>
               </AccordionContent>
             </AccordionItem>
-          ))}
+          )})}
         </Accordion>
       </section>
 
@@ -462,7 +466,7 @@ export default function QuestsPage() {
                    <Checkbox
                         checked={task.completed}
                         onCheckedChange={(checked) =>
-                            updateTaskCompletion(areaId, projectId, task.id, !!checked)
+                            updateTaskCompletion(task.id, !!checked)
                         }
                         className="w-5 h-5"
                     />
@@ -514,8 +518,8 @@ export default function QuestsPage() {
                         mode="single"
                         selected={task.dueDate ? new Date(task.dueDate) : undefined}
                         onSelect={(date) => {
-                            if (!areaId || !projectId || !taskId) return;
-                            updateTaskDetails(areaId, projectId, taskId, { dueDate: date?.toISOString() });
+                            if (!taskId) return;
+                            updateTaskDetails(taskId, { dueDate: date?.toISOString() });
                         }}
                         disabled={(date) => date < new Date("1900-01-01")}
                       />

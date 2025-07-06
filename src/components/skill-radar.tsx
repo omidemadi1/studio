@@ -8,15 +8,17 @@ import {
   ResponsiveContainer,
   PolarRadiusAxis,
 } from 'recharts';
-import { skills } from '@/lib/mock-data';
-
-const chartData = skills.map((skill) => ({
-  subject: skill.name,
-  A: skill.level,
-  fullMark: 10,
-}));
+import { useQuestData } from '@/context/quest-context';
 
 export default function SkillRadar() {
+  const { skills } = useQuestData();
+  
+  const chartData = skills.map((skill) => ({
+    subject: skill.name,
+    A: skill.level,
+    fullMark: 10,
+  }));
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>

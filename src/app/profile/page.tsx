@@ -5,8 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { skills } from '@/lib/mock-data';
-import { Settings, Pencil } from 'lucide-react';
+import { Settings, Pencil, Lightbulb } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
 import {
@@ -22,9 +21,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useQuestData } from '@/context/quest-context';
+import { iconMap } from '@/lib/icon-map';
+
 
 export default function ProfilePage() {
-  const { user, updateUser } = useQuestData();
+  const { user, skills, updateUser } = useQuestData();
   const [name, setName] = useState(user.name);
   const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
 
@@ -160,24 +161,27 @@ export default function ProfilePage() {
       <section>
         <h2 className="text-2xl font-headline font-semibold mb-4">Skill Details</h2>
         <div className="space-y-4">
-          {skills.map((skill) => (
-            <Card key={skill.id} className="bg-card/80">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className='flex items-center gap-3'>
-                    <skill.icon className="h-6 w-6 text-accent" />
-                    <span className="font-headline font-semibold">
-                      {skill.name} - Lvl {skill.level}
+          {skills.map((skill) => {
+            const SkillIcon = iconMap[skill.icon] || Lightbulb;
+            return (
+              <Card key={skill.id} className="bg-card/80">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className='flex items-center gap-3'>
+                      <SkillIcon className="h-6 w-6 text-accent" />
+                      <span className="font-headline font-semibold">
+                        {skill.name} - Lvl {skill.level}
+                      </span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {skill.points} / {skill.maxPoints}
                     </span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {skill.points} / {skill.maxPoints}
-                  </span>
-                </div>
-                <Progress value={(skill.points / skill.maxPoints) * 100} className="h-2" />
-              </CardContent>
-            </Card>
-          ))}
+                  <Progress value={(skill.points / skill.maxPoints) * 100} className="h-2" />
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </section>
     </div>
