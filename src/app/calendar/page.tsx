@@ -3,6 +3,16 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import {
+  DndContext,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import {
   format,
   startOfMonth,
   endOfMonth,
@@ -64,12 +74,58 @@ const TaskCard = ({ task, onUpdate }: { task: Task; onUpdate: (taskId: string, c
   );
 };
 
+// Draggable Task Wrapper
+const DraggableTaskWrapper = ({ task, onUpdate }: { task: Task, onUpdate: (taskId: string, completed: boolean) => void }) => {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+        id: task.id,
+    });
+
+    const style = {
+        transform: CSS.Translate.toString(transform),
+        zIndex: isDragging ? 1000 : 'auto',
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div 
+            ref={setNodeRef} 
+            style={style} 
+            {...listeners} 
+            {...attributes}
+            className="relative cursor-grab active:cursor-grabbing"
+        >
+            <TaskCard task={task} onUpdate={onUpdate} />
+        </div>
+    );
+};
+
 
 // Main Calendar Page Component
 export default function CalendarPage() {
-  const { tasks, updateTaskCompletion } = useQuestData();
+  const { tasks, updateTaskCompletion, updateTaskDetails } = useQuestData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarView>('monthly');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require pointer to move 8px before dragging starts
+      },
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+        const taskId = active.id as string;
+        const newDueDateISO = over.id as string;
+
+        const originalTask = tasks.find(t => t.id === taskId);
+        if (originalTask?.dueDate && !isSameDay(new Date(originalTask.dueDate), new Date(newDueDateISO))) {
+            updateTaskDetails(taskId, { dueDate: newDueDateISO });
+        }
+    }
+  };
 
   const tasksWithDueDate = useMemo(() => {
     return tasks.filter(task => !!task.dueDate);
@@ -115,78 +171,93 @@ export default function CalendarPage() {
   
   const weekHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  return (
-    <div className="container mx-auto p-4 sm:p-6 flex flex-col">
-      <header className="flex items-center justify-between mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-headline font-bold">
-          {format(currentDate, view === 'monthly' ? 'MMMM yyyy' : 'MMMM')}
-        </h1>
-        <div className="flex items-center gap-2">
-          <Tabs value={view} onValueChange={(v) => setView(v as CalendarView)}>
-            <TabsList>
-              <TabsTrigger value="monthly">Month</TabsTrigger>
-              <TabsTrigger value="weekly">Week</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="flex items-center gap-1 rounded-md border p-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrev}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" className="h-8 px-3" onClick={handleToday}>
-              Today
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNext}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+  const DayCellDroppable = ({ day, children }: {day: Date, children: React.ReactNode}) => {
+    const { isOver, setNodeRef } = useDroppable({
+        id: day.toISOString(),
+    });
+    return (
+        <div ref={setNodeRef} className={cn('h-full p-1 transition-colors', isOver && 'bg-primary/10 rounded-lg')}>
+            {children}
         </div>
-      </header>
-      
-      <div className="grid grid-cols-7 flex-shrink-0">
-          {weekHeaders.map(day => (
-              <div key={day} className="text-center text-xs font-bold text-muted-foreground p-2 border-b">
-                  {day}
-              </div>
-          ))}
-      </div>
+    )
+  }
 
-      <div className="grid grid-cols-7">
-        {daysToRender.map((day, index) => {
-          const isCurrentMonth = isSameMonth(day, currentDate);
-          const isToday = isSameDay(day, new Date());
-          const tasksForDay = getTasksForDay(day);
-
-          return (
-            <div
-              key={index}
-              className={cn(
-                'border-t border-r p-2 flex flex-col min-h-[120px]',
-                {
-                  'bg-muted/10': !isCurrentMonth && view === 'monthly',
-                  'border-l': getDay(day) === 0,
-                }
-              )}
-            >
-              <div
-                className={cn(
-                  'text-right text-xs mb-1',
-                  {
-                    'text-muted-foreground': !isCurrentMonth && view === 'monthly',
-                    'text-primary font-bold': isToday,
-                  }
-                )}
-              >
-                {format(day, 'd')}
-              </div>
-              <div className="space-y-1">
-                {tasksForDay.map(task => (
-                  <TaskCard key={task.id} task={task} onUpdate={updateTaskCompletion} />
-                ))}
-              </div>
+  return (
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className="container mx-auto p-4 sm:p-6 flex flex-col">
+        <header className="flex items-center justify-between mb-4 flex-shrink-0">
+            <h1 className="text-2xl font-headline font-bold">
+            {format(currentDate, view === 'monthly' ? 'MMMM yyyy' : 'MMMM')}
+            </h1>
+            <div className="flex items-center gap-2">
+            <Tabs value={view} onValueChange={(v) => setView(v as CalendarView)}>
+                <TabsList>
+                <TabsTrigger value="monthly">Month</TabsTrigger>
+                <TabsTrigger value="weekly">Week</TabsTrigger>
+                </TabsList>
+            </Tabs>
+            <div className="flex items-center gap-1 rounded-md border p-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrev}>
+                <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" className="h-8 px-3" onClick={handleToday}>
+                Today
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNext}>
+                <ChevronRight className="h-4 w-4" />
+                </Button>
             </div>
-          );
-        })}
-      </div>
-    </div>
+            </div>
+        </header>
+        
+        <div className="grid grid-cols-7 flex-shrink-0">
+            {weekHeaders.map(dayHeader => (
+                <div key={dayHeader} className="text-center text-xs font-bold text-muted-foreground p-2 border-b">
+                    {dayHeader}
+                </div>
+            ))}
+        </div>
+
+        <div className="grid grid-cols-7">
+            {daysToRender.map((day, index) => {
+            const isCurrentMonth = isSameMonth(day, currentDate);
+            const isToday = isSameDay(day, new Date());
+            const tasksForDay = getTasksForDay(day);
+
+            return (
+                <div
+                key={index}
+                className={cn(
+                    'border-t border-r flex flex-col min-h-[120px]',
+                    {
+                    'bg-muted/10': !isCurrentMonth && view === 'monthly',
+                    'border-l': getDay(day) === 0,
+                    }
+                )}
+                >
+                    <DayCellDroppable day={day}>
+                        <div
+                            className={cn(
+                            'text-right text-xs mb-1 px-1',
+                            {
+                                'text-muted-foreground': !isCurrentMonth && view === 'monthly',
+                                'text-primary font-bold': isToday,
+                            }
+                            )}
+                        >
+                            {format(day, 'd')}
+                        </div>
+                        <div className="space-y-1">
+                            {tasksForDay.map(task => (
+                                <DraggableTaskWrapper key={task.id} task={task} onUpdate={updateTaskCompletion} />
+                            ))}
+                        </div>
+                    </DayCellDroppable>
+                </div>
+            );
+            })}
+        </div>
+        </div>
+    </DndContext>
   );
 }
