@@ -1,15 +1,59 @@
 'use client';
 
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { skills, user } from '@/lib/mock-data';
-import { Settings } from 'lucide-react';
+import { skills, user as initialUser } from '@/lib/mock-data';
+import { Settings, Pencil } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
+  const [user, setUser] = useState(initialUser);
+  const [name, setName] = useState(user.name);
+  const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
+
+  const { toast } = useToast();
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setAvatarPreview(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  const handleSaveChanges = () => {
+    setUser((prevUser) => ({
+      ...prevUser,
+      name: name,
+      avatarUrl: avatarPreview,
+    }));
+    toast({
+      title: 'Profile Updated',
+      description: 'Your changes have been saved successfully.',
+    });
+  };
+
   const xpProgress = (user.xp / user.nextLevelXp) * 100;
 
   return (
@@ -32,7 +76,58 @@ export default function ProfilePage() {
               </Avatar>
               <div className="flex-1 w-full">
                 <div className="text-center md:text-left">
-                  <h2 className="text-2xl font-bold font-headline">{user.name}</h2>
+                  <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <h2 className="text-2xl font-bold font-headline">{user.name}</h2>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Pencil className="h-4 w-4" />
+                          <span className='sr-only'>Edit Profile</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Edit Profile</DialogTitle>
+                          <DialogDescription>
+                            Make changes to your profile here. Click save when you're done.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="name" className="text-right">
+                              Name
+                            </Label>
+                            <Input
+                              id="name"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              className="col-span-3"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="picture" className="text-right">
+                              Avatar
+                            </Label>
+                            <Input id="picture" type="file" onChange={handleAvatarChange} className="col-span-3" accept="image/*" />
+                          </div>
+                           <div className="grid grid-cols-4 items-center gap-4">
+                             <div className="col-start-2 col-span-3">
+                               <Avatar className="h-24 w-24">
+                                  <AvatarImage src={avatarPreview} alt="Avatar Preview" />
+                                  <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                             </div>
+                           </div>
+                        </div>
+                        <DialogFooter>
+                          <DialogClose asChild>
+                            <Button type="button" onClick={handleSaveChanges}>Save changes</Button>
+                          </DialogClose>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
                   <p className="text-muted-foreground">Level {user.level}</p>
                 </div>
                 <div className="mt-4">
