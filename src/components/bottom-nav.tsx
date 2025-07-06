@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Swords, Store, Sparkles, User, Crosshair } from 'lucide-react';
+import { Swords, Store, User, Crosshair, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Quests', icon: Swords },
   { href: '/market', label: 'Market', icon: Store },
+  { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/focus', label: 'Focus', icon: Crosshair },
-  { href: '/suggest', label: 'Suggest', icon: Sparkles },
   { href: '/profile', label: 'Profile', icon: User },
 ];
 
