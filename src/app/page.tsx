@@ -71,20 +71,6 @@ export default function QuestsPage() {
         </Avatar>
       </header>
 
-      <Card className="mb-6 bg-card/80 border-primary/20">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-headline font-semibold text-lg">
-              Level {currentUser.level}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {currentUser.xp} / {currentUser.nextLevelXp} XP
-            </span>
-          </div>
-          <Progress value={xpProgress} className="h-3" />
-        </CardContent>
-      </Card>
-
       <section className="mb-8">
         <h2 className="text-2xl font-headline font-semibold mb-4 flex items-center gap-2">
           <Swords className="text-primary" /> Daily Missions
