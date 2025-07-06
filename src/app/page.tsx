@@ -490,12 +490,38 @@ export default function QuestsPage() {
                     </>
                 )}
 
-                {task.dueDate && (
-                    <>
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Date</div>
-                        <div className="font-semibold">{format(new Date(task.dueDate), 'PPP')}</div>
-                    </>
-                )}
+                <>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Date</div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !task.dueDate && "text-muted-foreground"
+                        )}
+                      >
+                        {task.dueDate ? (
+                          format(new Date(task.dueDate), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={task.dueDate ? new Date(task.dueDate) : undefined}
+                        onSelect={(date) => {
+                            if (!areaId || !projectId || !taskId) return;
+                            updateTaskDetails(areaId, projectId, taskId, { dueDate: date?.toISOString() });
+                        }}
+                        disabled={(date) => date < new Date("1900-01-01")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
                 <div className="font-semibold">{task.xp}</div>
