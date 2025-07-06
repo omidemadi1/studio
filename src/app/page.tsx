@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   Accordion,
   AccordionContent,
@@ -46,6 +47,8 @@ import {
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -57,7 +60,13 @@ const projectSchema = z.object({
 
 const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required.'),
+  description: z.string().optional(),
+  notes: z.string().optional(),
+  links: z.string().optional(),
+  dueDate: z.date().optional(),
+  skillId: z.string().optional(),
 });
+
 
 const difficultyColors: Record<Difficulty, string> = {
     Easy: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30',
@@ -90,7 +99,12 @@ export default function QuestsPage() {
 
   const taskForm = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
-    defaultValues: { title: '' },
+    defaultValues: {
+      title: '',
+      description: '',
+      notes: '',
+      links: '',
+    },
   });
 
   function onAddArea(data: z.infer<typeof areaSchema>) {
@@ -123,10 +137,12 @@ export default function QuestsPage() {
             title: data.title,
             completed: false,
             xp: xp,
-            description: '',
-            notes: '',
-            links: '',
+            description: data.description || '',
+            notes: data.notes || '',
+            links: data.links || '',
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
+            dueDate: data.dueDate?.toISOString(),
+            skillId: data.skillId,
         };
         
         addTask(addTaskState.areaId, addTaskState.projectId, newTask);
@@ -332,7 +348,7 @@ export default function QuestsPage() {
           </DialogHeader>
           <Form {...taskForm}>
             <form onSubmit={taskForm.handleSubmit(onAddTask)} className="space-y-4">
-              <FormField
+               <FormField
                 control={taskForm.control}
                 name="title"
                 render={({ field }) => (
@@ -345,6 +361,86 @@ export default function QuestsPage() {
                   </FormItem>
                 )}
               />
+              
+              <FormField
+                control={taskForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Add a description..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                  control={taskForm.control}
+                  name="skillId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Skill Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a skill" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {skills.map(skill => (
+                            <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={taskForm.control}
+                  name="dueDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col pt-2">
+                      <FormLabel className='mb-2'>Due Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date("1900-01-01")}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <DialogFooter>
                 <Button type="submit" disabled={isCreatingTask}>
                     {isCreatingTask ? <Loader2 className="animate-spin" /> : "Create Task" }
