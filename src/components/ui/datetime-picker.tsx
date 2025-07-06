@@ -8,7 +8,13 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface DateTimePickerProps {
   date: Date | undefined;
@@ -36,17 +42,22 @@ export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
     setDate(newDate);
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    const [hours, minutes] = value.split(':').map(Number);
-    
+  const handleTimeChange = (type: 'hours' | 'minutes', value: string) => {
     const newDate = date ? new Date(date) : new Date();
+    const numericValue = parseInt(value, 10);
 
-    if (!isNaN(hours)) newDate.setHours(hours);
-    if (!isNaN(minutes)) newDate.setMinutes(minutes);
-
+    if (isNaN(numericValue)) return;
+    
+    if (type === 'hours') {
+        newDate.setHours(numericValue);
+    } else {
+        newDate.setMinutes(numericValue);
+    }
     setDate(newDate);
-  };
+  }
+  
+  const hours = date ? date.getHours() : 0;
+  const minutes = date ? date.getMinutes() : 0;
   
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -69,14 +80,41 @@ export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
           onSelect={handleDateSelect}
           disabled={(d) => d < new Date('1900-01-01')}
         />
-        <div className="p-3 border-t border-border flex items-center gap-2">
+        <div className="p-3 border-t border-border flex items-center justify-center gap-2">
             <Clock className="h-4 w-4" />
-            <Input
-                type="time"
-                className="w-full"
-                value={date ? format(date, 'HH:mm') : ''}
-                onChange={handleTimeChange}
-            />
+            <div className="flex items-center gap-1">
+              <Select
+                value={String(hours).padStart(2, '0')}
+                onValueChange={(value) => handleTimeChange('hours', value)}
+              >
+                <SelectTrigger className="w-[60px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <SelectItem key={i} value={String(i).padStart(2, '0')}>
+                      {String(i).padStart(2, '0')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span>:</span>
+              <Select
+                value={String(minutes).padStart(2, '0')}
+                onValueChange={(value) => handleTimeChange('minutes', value)}
+              >
+                <SelectTrigger className="w-[60px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 60 }, (_, i) => (
+                    <SelectItem key={i} value={String(i).padStart(2, '0')}>
+                      {String(i).padStart(2, '0')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
         </div>
       </PopoverContent>
     </Popover>
