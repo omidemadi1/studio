@@ -371,18 +371,18 @@ export default function QuestsPage() {
                     />
                 </div>
               </DialogHeader>
-              <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
+              <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
                 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
-                <div className="font-semibold pt-1">{area?.name}</div>
+                <div className="font-semibold">{area?.name}</div>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
-                <div className="font-semibold pt-1">{project?.name}</div>
+                <div className="font-semibold">{project?.name}</div>
 
                 {skill && (
                   <>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
-                    <div className="font-semibold pt-1">{skill.name}</div>
+                    <div className="font-semibold">{skill.name}</div>
                   </>
                 )}
 
@@ -396,39 +396,47 @@ export default function QuestsPage() {
                 {task.dueDate && (
                     <>
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><Calendar className="h-4 w-4" /> Date</div>
-                        <div className="font-semibold pt-1">{format(new Date(task.dueDate), 'PPP')}</div>
+                        <div className="font-semibold">{format(new Date(task.dueDate), 'PPP')}</div>
                     </>
                 )}
-                
-                <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><AlignLeft className="h-4 w-4" /> Details</div>
-                <Textarea
-                  value={editableTaskData.description}
-                  onChange={(e) => handleTaskDataChange('description', e.target.value)}
-                  placeholder="Add a description..."
-                  className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                  rows={3}
-                />
-                
-                <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><StickyNote className="h-4 w-4" /> Notes</div>
-                <Textarea
-                  value={editableTaskData.notes}
-                  onChange={(e) => handleTaskDataChange('notes', e.target.value)}
-                  placeholder="Add notes..."
-                  className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                  rows={3}
-                />
-
-                <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-1"><LinkIcon className="h-4 w-4" /> Links</div>
-                <Textarea
-                  value={editableTaskData.links}
-                  onChange={(e) => handleTaskDataChange('links', e.target.value)}
-                  placeholder="Add links, one per line..."
-                  className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                  rows={3}
-                />
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                <div className="font-semibold pt-1">{task.xp}</div>
+                <div className="font-semibold">{task.xp}</div>
+              </div>
+              
+              <div className="mt-4 space-y-2 text-sm">
+                <div>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
+                  <Textarea
+                    value={editableTaskData.description}
+                    onChange={(e) => handleTaskDataChange('description', e.target.value)}
+                    placeholder="Add a description..."
+                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    rows={3}
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
+                  <Textarea
+                    value={editableTaskData.notes}
+                    onChange={(e) => handleTaskDataChange('notes', e.target.value)}
+                    placeholder="Add notes..."
+                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
+                  <Textarea
+                    value={editableTaskData.links}
+                    onChange={(e) => handleTaskDataChange('links', e.target.value)}
+                    placeholder="Add links, one per line..."
+                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    rows={3}
+                  />
+                </div>
               </div>
             </>
           )}
