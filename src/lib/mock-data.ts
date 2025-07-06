@@ -1,5 +1,5 @@
 import type { User, Skill, Area, DailyMission, MarketItem } from './types';
-import { Briefcase, Heart, Dumbbell, Wallet, BarChart, BookOpen, Lightbulb } from 'lucide-react';
+import { Briefcase, Heart, Dumbbell, Wallet, BookOpen, Lightbulb } from 'lucide-react';
 
 export const user: User = {
   name: 'Hero Gamer',
