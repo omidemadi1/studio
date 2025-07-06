@@ -30,7 +30,7 @@ export const initialAreas: Area[] = [
         name: 'Q2 Roadmap',
         tasks: [
           { id: 't1', title: 'Finalize project specs', completed: true, xp: 50, description: 'Write up the final specifications for the Q2 roadmap.', notes: 'Check with marketing before finalizing.', links: 'https://docs.google.com/document/d/...', difficulty: 'Medium', dueDate: '2025-01-28', skillId: 'career' },
-          { id: 't2', title: 'Develop prototype', completed: false, xp: 150, difficulty: 'Hard', dueDate: '2025-02-15', skillId: 'career', startDate: new Date('2024-01-27T18:30:00').getTime(), endDate: new Date('2024-01-27T21:18:00').getTime() },
+          { id: 't2', title: 'Develop prototype', completed: false, xp: 150, difficulty: 'Hard', dueDate: '2025-02-15', skillId: 'career' },
           { id: 't3', title: 'User testing session', completed: false, xp: 100, difficulty: 'Medium', dueDate: '2025-02-20', skillId: 'intellect' },
         ],
       },

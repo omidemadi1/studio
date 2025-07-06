@@ -30,8 +30,6 @@ export interface Task {
   links?: string;
   difficulty?: Difficulty;
   dueDate?: string;
-  startDate?: number;
-  endDate?: number;
   skillId?: string;
 }
 
