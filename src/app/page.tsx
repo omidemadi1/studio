@@ -146,6 +146,16 @@ export default function QuestsPage() {
   }
 
   function handleTaskClick(areaId: string, projectId: string, taskId: string) {
+    const area = areas.find((a) => a.id === areaId);
+    const project = area?.projects.find((p) => p.id === projectId);
+    const task = project?.tasks.find((t) => t.id === taskId);
+    if (task) {
+      setEditableTaskData({
+        description: task.description || '',
+        notes: task.notes || '',
+        links: task.links || '',
+      });
+    }
     setTaskDetailState({
       open: true,
       areaId,
@@ -160,28 +170,10 @@ export default function QuestsPage() {
   const task = project?.tasks.find((t) => t.id === taskId);
   const skill = skills.find(s => s.id === task?.skillId);
 
-  React.useEffect(() => {
-    if (task) {
-      setEditableTaskData({
-        description: task.description || '',
-        notes: task.notes || '',
-        links: task.links || '',
-      });
-    }
-  }, [task]);
-
   const handleTaskDataChange = (field: 'description' | 'notes' | 'links', value: string) => {
     setEditableTaskData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveChanges = () => {
-    if (!areaId || !projectId || !taskId || !task) return;
-    updateTaskDetails(areaId, projectId, taskId, editableTaskData);
-    setTaskDetailState({ open: false, areaId: null, projectId: null, taskId: null });
-  };
-
-  const handleCancel = () => {
-    setTaskDetailState({ open: false, areaId: null, projectId: null, taskId: null });
+    if (!areaId || !projectId || !taskId) return;
+    updateTaskDetails(areaId, projectId, taskId, { [field]: value });
   };
 
 
@@ -438,12 +430,6 @@ export default function QuestsPage() {
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
                 <div className="font-semibold pt-1">{task.xp}</div>
               </div>
-              <DialogFooter className="pt-4">
-                <div className="flex w-full justify-end gap-2">
-                  <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-                  <Button onClick={handleSaveChanges}>Save Changes</Button>
-                </div>
-            </DialogFooter>
             </>
           )}
         </DialogContent>

@@ -146,7 +146,6 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
           : area
       )
     );
-    toast({ title: 'Task Updated!', description: 'Your changes have been saved.' });
   };
   
   const updateUser = (newUserData: Partial<User>) => {
