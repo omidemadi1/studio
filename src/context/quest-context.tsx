@@ -12,8 +12,8 @@ interface QuestContextType {
   user: User;
   tasks: Task[];
   getAreaForProject: (projectId: string) => Area | undefined;
-  updateTaskCompletion: (areaId: string, projectId: string, taskId: string, completed: boolean) => void;
-  updateTaskDetails: (areaId: string, projectId: string, taskId: string, details: Partial<Omit<Task, 'id' | 'xp' | 'completed' | 'title'>>) => void;
+  updateTaskCompletion: (areaId: string, projectId: string, taskId: string, completed: boolean, focusDuration?: number) => void;
+  updateTaskDetails: (areaId: string, projectId: string, taskId: string, details: Partial<Task>) => void;
   addArea: (name: string) => void;
   addProject: (areaId: string, name: string) => void;
   addTask: (areaId: string, projectId: string, task: Task) => void;
@@ -52,7 +52,7 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
 
-  const updateTaskCompletion = useCallback((areaId: string, projectId: string, taskId: string, completed: boolean) => {
+  const updateTaskCompletion = useCallback((areaId: string, projectId: string, taskId: string, completed: boolean, focusDuration?: number) => {
     let taskXp = 0;
     let taskTitle = '';
 
@@ -68,7 +68,10 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
                   if (task.id === taskId) {
                     taskXp = task.xp;
                     taskTitle = task.title;
-                    return { ...task, completed };
+                    const newFocusDuration = focusDuration !== undefined 
+                      ? (task.focusDuration || 0) + focusDuration 
+                      : task.focusDuration;
+                    return { ...task, completed, focusDuration: newFocusDuration };
                   }
                   return task;
                 }),
@@ -126,7 +129,7 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: "Quest Created!", description: `AI has assigned ${task.xp} XP to your new quest.` });
   };
   
-  const updateTaskDetails = (areaId: string, projectId: string, taskId: string, details: Partial<Omit<Task, 'id' | 'xp' | 'completed' | 'title'>>) => {
+  const updateTaskDetails = (areaId: string, projectId: string, taskId: string, details: Partial<Task>) => {
      setAreas(prev =>
       prev.map(area =>
         area.id === areaId

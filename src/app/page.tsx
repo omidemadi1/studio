@@ -43,6 +43,7 @@ import {
   ArrowUp,
   StickyNote,
   Link as LinkIcon,
+  Clock,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -498,6 +499,15 @@ export default function QuestsPage() {
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
                 <div className="font-semibold">{task.xp}</div>
+                
+                {task.focusDuration && task.focusDuration > 0 && (
+                  <>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>
+                    <div className="font-semibold">
+                      {`${Math.floor(task.focusDuration / 3600)}h ${Math.floor((task.focusDuration % 3600) / 60)}m`}
+                    </div>
+                  </>
+                )}
               </div>
               
               <div className="mt-6 space-y-2 text-sm">
