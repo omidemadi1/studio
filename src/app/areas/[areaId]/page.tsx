@@ -29,6 +29,7 @@ import {
   ArrowUp,
   Filter,
   ArrowUpDown,
+  Trash2,
 } from 'lucide-react';
 import type { Task, Difficulty, Project } from '@/lib/types';
 import { z } from 'zod';
@@ -43,16 +44,29 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,6 +77,7 @@ import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const projectSchema = z.object({
   name: z.string().min(1, 'Project name is required.'),
@@ -89,7 +104,7 @@ type TaskFilterOption = 'all' | 'incomplete' | 'completed';
 export default function AreaDetailPage() {
   const { toast } = useToast();
   const { areaId } = useParams();
-  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails } = useQuestData();
+  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject } = useQuestData();
 
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; projectId: string | null }>({ open: false, projectId: null });
@@ -233,6 +248,10 @@ export default function AreaDetailPage() {
     updateTaskDetails(taskId, { [field]: value });
   };
 
+  const handleDeleteProject = (id: string) => {
+    deleteProject(id, area.id)
+  };
+
   return (
     <>
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
@@ -289,40 +308,64 @@ export default function AreaDetailPage() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline font-semibold">Projects</h2>
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Filter className="mr-2 h-4 w-4" /> Filter Tasks
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuRadioGroup value={taskFilter} onValueChange={(v) => setTaskFilter(v as TaskFilterOption)}>
-                  <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="incomplete">Incomplete</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="completed">Completed</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <TooltipProvider>
+                <Tooltip>
+                    <DropdownMenu>
+                        <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <Filter className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuRadioGroup value={taskFilter} onValueChange={(v) => setTaskFilter(v as TaskFilterOption)}>
+                            <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="incomplete">Incomplete</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="completed">Completed</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <TooltipContent>
+                        <p>Filter tasks</p>
+                    </TooltipContent>
+                </Tooltip>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <ArrowUpDown className="mr-2 h-4 w-4" /> Sort By
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as ProjectSortOption)}>
-                  <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="progress-desc">Progress (High-Low)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="progress-asc">Progress (Low-High)</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <Tooltip>
+                    <DropdownMenu>
+                        <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <ArrowUpDown className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as ProjectSortOption)}>
+                            <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="progress-desc">Progress (High-Low)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="progress-asc">Progress (Low-High)</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                     <TooltipContent>
+                        <p>Sort projects</p>
+                    </TooltipContent>
+                </Tooltip>
 
-            <Button onClick={() => setAddProjectOpen(true)} size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Project
-            </Button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                         <Button onClick={() => setAddProjectOpen(true)} size="icon" variant="ghost">
+                            <PlusCircle className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                     <TooltipContent>
+                        <p>Add project</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -335,53 +378,79 @@ export default function AreaDetailPage() {
             const completedProjectTasks = projectTasks.filter(t => t.completed).length;
             const projectCompletion = projectTasks.length > 0 ? (completedProjectTasks / projectTasks.length) * 100 : 0;
             return (
-              <Card key={project.id} className="bg-card/80 overflow-hidden flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold font-headline">{project.name}</CardTitle>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{completedProjectTasks} / {projectTasks.length} Done</span>
-                    <Progress value={projectCompletion} className="w-24 h-2" />
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <ul className="space-y-2">
-                    {filteredTasks.map((task: Task) => (
-                        <li
-                            key={task.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
-                            onClick={() => handleTaskClick(project.id, task.id)}
-                        >
-                            <div onClick={(e) => e.stopPropagation()}>
-                            <Checkbox
-                                id={`task-${task.id}`}
-                                checked={task.completed}
-                                onCheckedChange={(checked) =>
-                                    updateTaskCompletion(task.id, !!checked)
-                                }
-                                className="w-5 h-5"
-                            />
-                            </div>
-                            <span
-                            className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
+            <ContextMenu>
+              <ContextMenuTrigger>
+                <Card key={project.id} className="bg-card/80 overflow-hidden flex flex-col">
+                    <CardHeader>
+                    <CardTitle className="text-xl font-bold font-headline">{project.name}</CardTitle>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{completedProjectTasks} / {projectTasks.length} Done</span>
+                        <Progress value={projectCompletion} className="w-24 h-2" />
+                    </div>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                    <ul className="space-y-2">
+                        {filteredTasks.map((task: Task) => (
+                            <li
+                                key={task.id}
+                                className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                                onClick={() => handleTaskClick(project.id, task.id)}
                             >
-                            {task.title}
-                            </span>
-                            <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
-                        </li>
-                    ))}
-                     {filteredTasks.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                            {taskFilter === 'all' ? 'No tasks in this project yet.' : `No ${taskFilter} tasks.`}
-                        </p>
-                     )}
-                  </ul>
-                </CardContent>
-                <CardFooter className='bg-muted/30 p-2 justify-center'>
-                    <Button variant="ghost" size="sm" onClick={() => setAddTaskState({open: true, projectId: project.id})}>
-                        <PlusCircle className='h-4 w-4 mr-2'/> Add Task
-                    </Button>
-                </CardFooter>
-              </Card>
+                                <div onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                    id={`task-${task.id}`}
+                                    checked={task.completed}
+                                    onCheckedChange={(checked) =>
+                                        updateTaskCompletion(task.id, !!checked)
+                                    }
+                                    className="w-5 h-5"
+                                />
+                                </div>
+                                <span
+                                className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
+                                >
+                                {task.title}
+                                </span>
+                                <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
+                            </li>
+                        ))}
+                        {filteredTasks.length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                                {taskFilter === 'all' ? 'No tasks in this project yet.' : `No ${taskFilter} tasks.`}
+                            </p>
+                        )}
+                    </ul>
+                    </CardContent>
+                    <CardFooter className='bg-muted/30 p-2 justify-center'>
+                        <Button variant="ghost" size="sm" onClick={() => setAddTaskState({open: true, projectId: project.id})}>
+                            <PlusCircle className='h-4 w-4 mr-2'/> Add Task
+                        </Button>
+                    </CardFooter>
+                </Card>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                         <ContextMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Trash2 className='h-4 w-4 mr-2'/> Delete Project
+                        </ContextMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the 
+                            <span className="font-bold"> {project.name}</span> project and all its tasks.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteProject(project.id)}>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+              </ContextMenuContent>
+            </ContextMenu>
             )
           })}
            {area.projects.length === 0 && (
@@ -617,3 +686,5 @@ export default function AreaDetailPage() {
     </>
   );
 }
+
+    
