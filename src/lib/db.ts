@@ -10,14 +10,15 @@ declare global {
   var db: Database.Database | undefined;
 }
 
+const dbPath = path.join(process.cwd(), '.db');
+const dbFile = path.join(dbPath, 'questify.db');
+
 const initializeDb = () => {
     // Ensure the directory exists
-    const dbPath = path.join(process.cwd(), '.db');
     if (!fs.existsSync(dbPath)) {
         fs.mkdirSync(dbPath, { recursive: true });
     }
-    const dbFile = path.join(dbPath, 'questify.db');
-
+    
     const dbInstance = new Database(dbFile);
     dbInstance.pragma('journal_mode = WAL');
     console.log('Database connection established.');
@@ -97,7 +98,7 @@ const initializeDb = () => {
     return dbInstance;
 }
 
-const db: Database.Database = global.db ?? initializeDb();
+let db: Database.Database = global.db ?? initializeDb();
 
 if (process.env.NODE_ENV !== 'production') {
   global.db = db;
@@ -106,6 +107,19 @@ if (process.env.NODE_ENV !== 'production') {
 export function initDb() {
     // This function is now just a placeholder to ensure the db is initialized.
     // The logic is handled in the global singleton pattern above.
+}
+
+export function resetDbFile() {
+    if (global.db) {
+        global.db.close();
+        global.db = undefined;
+    }
+    if (fs.existsSync(dbFile)) {
+        fs.unlinkSync(dbFile);
+    }
+    console.log("Database file deleted.");
+    db = initializeDb();
+    global.db = db;
 }
 
 

@@ -29,6 +29,7 @@ interface QuestContextType {
   getTask: (taskId: string) => { task: Task; areaId: string; projectId: string } | null;
   getAreaById: (areaId: string) => Area | undefined;
   getTasksByAreaId: (areaId: string) => Task[];
+  resetDatabase: () => void;
 }
 
 const QuestContext = createContext<QuestContextType | undefined>(undefined);
@@ -193,9 +194,15 @@ export const QuestProvider = ({
     router.refresh();
   };
 
+  const resetDatabase = async () => {
+    await QuestActions.resetDatabase();
+    toast({ title: 'Data Reset', description: 'All your data has been wiped clean.' });
+    router.refresh();
+  }
+
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, updateArea, deleteArea, addProject, updateProject, addTask, addSkill, updateSkill, deleteSkill, deleteProject, updateUser, addXp, getTask, getAreaById, getTasksByAreaId };
+  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, updateArea, deleteArea, addProject, updateProject, addTask, addSkill, updateSkill, deleteSkill, deleteProject, updateUser, addXp, getTask, getAreaById, getTasksByAreaId, resetDatabase };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };

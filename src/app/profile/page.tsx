@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check, Settings, LogOut } from 'lucide-react';
+import { Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check, Settings, LogOut, Trash2 } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
 import {
@@ -24,6 +24,16 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -63,8 +73,9 @@ const defaultAvatars = [
 ];
 
 export default function ProfilePage() {
-  const { user, skills, updateUser, addSkill } = useQuestData();
+  const { user, skills, updateUser, addSkill, resetDatabase } = useQuestData();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [deleteDataOpen, setDeleteDataOpen] = useState(false);
   const [name, setName] = useState(user.name);
   const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
   const [addSkillOpen, setAddSkillOpen] = useState(false);
@@ -97,9 +108,15 @@ export default function ProfilePage() {
     setAddSkillOpen(false);
   };
 
+  const handleDeleteData = () => {
+    setDeleteDataOpen(false);
+    resetDatabase();
+  };
+
   const xpProgress = (user.xp / user.nextLevelXp) * 100;
 
   return (
+    <>
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-headline font-bold">Profile & Skills</h1>
@@ -113,10 +130,14 @@ export default function ProfilePage() {
                 <DropdownMenuItem asChild>
                    <ThemeToggle />
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log Out</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setDeleteDataOpen(true)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete All Data</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -408,5 +429,21 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
     </div>
+    <AlertDialog open={deleteDataOpen} onOpenChange={setDeleteDataOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete all your data,
+                    including quests, skills, and progress.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteData}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

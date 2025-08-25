@@ -1,7 +1,7 @@
 
 'use server'
 
-import { db } from '@/lib/db'
+import { db, resetDbFile } from '@/lib/db'
 import type { Task, User, Skill } from '@/lib/types'
 import { revalidatePath } from 'next/cache'
 
@@ -187,4 +187,9 @@ export async function addXp(xp: number) {
     transaction();
     revalidatePath('/profile');
     revalidatePath('/focus');
+}
+
+export async function resetDatabase() {
+    resetDbFile();
+    revalidatePath('/');
 }
