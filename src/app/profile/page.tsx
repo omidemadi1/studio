@@ -1,8 +1,8 @@
 
 
 'use client';
-
-import React, { useState } from 'react';
+import React from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -58,6 +58,8 @@ import { useQuestData } from '@/context/quest-context';
 import { iconMap } from '@/lib/icon-map';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
+import type { Skill } from '@/lib/types';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 
 const skillSchema = z.object({
   name: z.string().min(1, 'Skill name is required.'),
@@ -74,12 +76,14 @@ const defaultAvatars = [
 ];
 
 export default function ProfilePage() {
-  const { user, skills, updateUser, addSkill, resetDatabase } = useQuestData();
+  const { user, skills, updateUser, addSkill, resetDatabase, updateSkill, deleteSkill } = useQuestData();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [deleteDataOpen, setDeleteDataOpen] = useState(false);
   const [name, setName] = useState(user.name);
   const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
   const [addSkillOpen, setAddSkillOpen] = useState(false);
+  const [editSkillState, setEditSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
+  const [deleteSkillState, setDeleteSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
 
   const skillForm = useForm<z.infer<typeof skillSchema>>({
     resolver: zodResolver(skillSchema),
@@ -107,6 +111,18 @@ export default function ProfilePage() {
     addSkill(data.name, data.icon);
     skillForm.reset();
     setAddSkillOpen(false);
+  };
+
+  const onEditSkill = (data: z.infer<typeof skillSchema>) => {
+    if (!editSkillState.skill) return;
+    updateSkill(editSkillState.skill.id, data.name, data.icon);
+    setEditSkillState({ open: false, skill: null });
+  };
+
+  const handleDeleteSkill = () => {
+    if (!deleteSkillState.skill) return;
+    deleteSkill(deleteSkillState.skill.id);
+    setDeleteSkillState({ open: false, skill: null });
   };
 
   const handleDeleteData = () => {
@@ -327,27 +343,42 @@ export default function ProfilePage() {
           {skills.map((skill) => {
             const SkillIcon = iconMap[skill.icon] || Lightbulb;
             return (
-              <Link href={`/skills/${skill.id}`} key={skill.id} className="block hover:scale-[1.02] transition-transform duration-200">
-                <Card className="bg-card/80 h-full">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <SkillIcon className="h-6 w-6 text-accent" />
-                        <span className="font-headline font-semibold">
-                          {skill.name} - Lvl {skill.level}
-                        </span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {skill.points} / {skill.maxPoints}
-                      </span>
-                    </div>
-                    <Progress
-                      value={(skill.points / skill.maxPoints) * 100}
-                      className="h-2"
-                    />
-                  </CardContent>
-                </Card>
-              </Link>
+              <ContextMenu key={skill.id}>
+                  <ContextMenuTrigger>
+                      <Link href={`/skills/${skill.id}`} className="block hover:scale-[1.02] transition-transform duration-200">
+                        <Card className="bg-card/80 h-full">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <SkillIcon className="h-6 w-6 text-accent" />
+                                <span className="font-headline font-semibold">
+                                  {skill.name} - Lvl {skill.level}
+                                </span>
+                              </div>
+                              <span className="text-sm text-muted-foreground">
+                                {skill.points} / {skill.maxPoints}
+                              </span>
+                            </div>
+                            <Progress
+                              value={(skill.points / skill.maxPoints) * 100}
+                              className="h-2"
+                            />
+                          </CardContent>
+                        </Card>
+                      </Link>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem onSelect={() => {
+                        skillForm.reset({ name: skill.name, icon: skill.icon });
+                        setEditSkillState({ open: true, skill });
+                    }}>
+                        <Pencil className="h-4 w-4 mr-2" /> Edit Skill
+                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => setDeleteSkillState({ open: true, skill })}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete Skill
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+              </ContextMenu>
             );
           })}
         </div>
@@ -442,6 +473,101 @@ export default function ProfilePage() {
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDeleteData}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+     <Dialog open={editSkillState.open} onOpenChange={(open) => setEditSkillState({ open, skill: open ? editSkillState.skill : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Skill</DialogTitle>
+            <DialogDescription>
+              Update the details of your skill.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...skillForm}>
+            <form
+              onSubmit={skillForm.handleSubmit(onEditSkill)}
+              className="space-y-4 py-4"
+            >
+              <FormField
+                control={skillForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skill Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Programming" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={skillForm.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icon</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button variant="outline" className="w-full justify-start" type="button">
+                                    {field.value ? (
+                                        <>
+                                            {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
+                                            {field.value}
+                                        </>
+                                    ) : 'Select an icon'}
+                                </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2 max-w-[240px] max-h-[200px] overflow-y-auto">
+                            <div className="grid grid-cols-6 gap-1">
+                                {Object.keys(iconMap).map((iconName) => {
+                                    const IconComponent = iconMap[iconName];
+                                    return (
+                                        <Button
+                                            key={iconName}
+                                            variant="ghost"
+                                            size="icon"
+                                            type="button"
+                                            onClick={() => field.onChange(iconName)}
+                                            className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
+                                        >
+                                            <IconComponent className="h-5 w-5" />
+                                            {field.value === iconName && <Check className="absolute bottom-0 right-0 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                 <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+    <AlertDialog open={deleteSkillState.open} onOpenChange={(open) => setDeleteSkillState({ open, skill: open ? deleteSkillState.skill : null })}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the 
+                <span className="font-bold"> {deleteSkillState.skill?.name}</span> skill.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteSkillState({open: false, skill: null})}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSkill}>Continue</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>

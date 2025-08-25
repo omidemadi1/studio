@@ -19,11 +19,12 @@ interface QuestContextType {
   deleteArea: (id: string) => void;
   addProject: (areaId: string, name: string) => void;
   updateProject: (id: string, name: string) => void;
+  deleteProject: (id: string, areaId: string) => void;
   addTask: (areaId: string, projectId: string, task: Task) => void;
+  deleteTask: (id: string) => void;
   addSkill: (name: string, icon: string) => void;
   updateSkill: (id: string, name: string, icon: string) => void;
   deleteSkill: (id: string) => void;
-  deleteProject: (id: string, areaId: string) => void;
   updateUser: (newUserData: Partial<User>) => void;
   addXp: (xp: number, message?: string) => void;
   getTask: (taskId: string) => { task: Task; areaId: string; projectId: string } | null;
@@ -155,9 +156,21 @@ export const QuestProvider = ({
     router.refresh();
   };
   
+  const deleteProject = async (id: string, areaId: string) => {
+    await QuestActions.deleteProject(id, areaId);
+    toast({ title: 'Project Deleted' });
+    router.refresh();
+  };
+
   const addTask = async (areaId: string, projectId: string, task: Task) => {
     await QuestActions.addTask(areaId, projectId, task);
     toast({ title: "Quest Created!", description: `AI has assigned ${task.xp} XP to your new quest.` });
+    router.refresh();
+  };
+
+  const deleteTask = async (id: string) => {
+    await QuestActions.deleteTask(id);
+    toast({ title: 'Task Deleted', variant: "destructive" });
     router.refresh();
   };
   
@@ -187,12 +200,6 @@ export const QuestProvider = ({
     await QuestActions.deleteSkill(id);
     router.refresh();
   }
-  
-  const deleteProject = async (id: string, areaId: string) => {
-    await QuestActions.deleteProject(id, areaId);
-    toast({ title: 'Project Deleted' });
-    router.refresh();
-  };
 
   const resetDatabase = async () => {
     await QuestActions.resetDatabase();
@@ -202,7 +209,7 @@ export const QuestProvider = ({
 
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, updateArea, deleteArea, addProject, updateProject, addTask, addSkill, updateSkill, deleteSkill, deleteProject, updateUser, addXp, getTask, getAreaById, getTasksByAreaId, resetDatabase };
+  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, updateArea, deleteArea, addProject, updateProject, deleteProject, addTask, deleteTask, addSkill, updateSkill, deleteSkill, updateUser, addXp, getTask, getAreaById, getTasksByAreaId, resetDatabase };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };

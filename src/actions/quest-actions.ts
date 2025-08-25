@@ -47,6 +47,11 @@ export async function addTask(areaId: string, projectId: string, task: Task) {
     revalidatePath('/');
 }
 
+export async function deleteTask(id: string) {
+    db.prepare('DELETE FROM tasks WHERE id = ?').run(id);
+    revalidatePath('/');
+}
+
 export async function addSkill(name: string, icon: string) {
   const id = `skill-${Date.now()}`;
   db.prepare(
