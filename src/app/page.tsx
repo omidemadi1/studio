@@ -84,6 +84,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CalendarView from '@/components/calendar-view';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 
 
 const areaSchema = z.object({
@@ -669,12 +670,7 @@ export default function QuestsPage() {
                   name="skillId"
                   render={({ field }) => (
                     <FormItem>
-                        <div className="flex items-center justify-between">
-                            <FormLabel>Skill Category</FormLabel>
-                            <Button variant="ghost" size="sm" type="button" onClick={() => setAddSkillOpen(true)}>
-                                <PlusCircle className="h-4 w-4 mr-1" /> Add
-                            </Button>
-                        </div>
+                        <FormLabel>Skill Category</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -685,6 +681,20 @@ export default function QuestsPage() {
                           {skills.map(skill => (
                             <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
                           ))}
+                            <Separator />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start opacity-70"
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setAddTaskState({ open: false, areaId: null, projectId: null });
+                                    setAddSkillOpen(true);
+                                }}
+                            >
+                                <PlusCircle className="h-4 w-4 mr-2" /> Add new skill...
+                            </Button>
                         </SelectContent>
                       </Select>
                       <FormMessage />
