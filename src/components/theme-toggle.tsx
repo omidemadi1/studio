@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState('dark');
@@ -27,25 +28,47 @@ export function ThemeToggle() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
   
-  const renderIcon = () => {
-    if (theme === 'dark') {
-      return <Moon className="h-4 w-4 mr-2 hidden dark:inline-block" />;
-    }
-    return <Sun className="h-4 w-4 mr-2 inline-block dark:hidden" />;
+  if (!mounted) {
+      return <div className="h-6 w-[52px]" />; // Placeholder for server render to avoid layout shift
   }
 
   return (
-    <button onClick={toggleTheme} disabled={!mounted} className="w-full flex items-center">
-        {mounted ? (
-            theme === 'dark' ? (
-                <Moon className="h-4 w-4 mr-2" />
-            ) : (
-                <Sun className="h-4 w-4 mr-2" />
-            )
-        ) : (
-            <div className="h-4 w-4 mr-2" />
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-medium">Theme</span>
+      <button
+        onClick={toggleTheme}
+        className={cn(
+          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          theme === 'dark' ? 'bg-primary' : 'bg-input'
         )}
-        <span>Toggle Theme</span>
-    </button>
+      >
+        <span className="sr-only">Toggle theme</span>
+        <span
+          className={cn(
+            'pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out',
+            theme === 'dark' ? 'translate-x-5' : 'translate-x-0'
+          )}
+        >
+          <span
+            className={cn(
+              'absolute inset-0 flex h-full w-full items-center justify-center transition-opacity',
+              theme === 'dark' ? 'opacity-0 duration-100 ease-out' : 'opacity-100 duration-200 ease-in'
+            )}
+            aria-hidden="true"
+          >
+            <Sun className="h-3 w-3 text-foreground" />
+          </span>
+          <span
+            className={cn(
+              'absolute inset-0 flex h-full w-full items-center justify-center transition-opacity',
+              theme === 'dark' ? 'opacity-100 duration-200 ease-in' : 'opacity-0 duration-100 ease-out'
+            )}
+            aria-hidden="true"
+          >
+            <Moon className="h-3 w-3 text-primary" />
+          </span>
+        </span>
+      </button>
+    </div>
   );
 }

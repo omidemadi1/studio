@@ -126,8 +126,8 @@ export default function ProfilePage() {
                     <Settings className="h-6 w-6" />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
+            <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild className="focus:bg-transparent">
                    <ThemeToggle />
                 </DropdownMenuItem>
                 <DropdownMenuItem>
