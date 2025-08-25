@@ -27,8 +27,10 @@ import {
   Link as LinkIcon,
   Clock,
   ArrowUp,
+  Filter,
+  ArrowUpDown,
 } from 'lucide-react';
-import type { Task, Difficulty } from '@/lib/types';
+import type { Task, Difficulty, Project } from '@/lib/types';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -40,6 +42,17 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -69,6 +82,9 @@ const difficultyColors: Record<Difficulty, string> = {
     'Very Hard': 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30',
 };
 
+type ProjectSortOption = 'name-asc' | 'name-desc' | 'progress-asc' | 'progress-desc';
+type TaskFilterOption = 'all' | 'incomplete' | 'completed';
+
 
 export default function AreaDetailPage() {
   const { toast } = useToast();
@@ -80,6 +96,8 @@ export default function AreaDetailPage() {
   const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; projectId: string | null; taskId: string | null; }>({ open: false, projectId: null, taskId: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
+  const [sortOption, setSortOption] = useState<ProjectSortOption>('name-asc');
+  const [taskFilter, setTaskFilter] = useState<TaskFilterOption>('all');
 
 
   const area = useMemo(() => getAreaById(areaId as string), [areaId, getAreaById]);
@@ -97,6 +115,36 @@ export default function AreaDetailPage() {
       description: '',
     },
   });
+
+  const sortedAndFilteredProjects = useMemo(() => {
+    if (!area) return [];
+
+    const getProjectProgress = (project: Project) => {
+        const totalTasks = project.tasks.length;
+        if (totalTasks === 0) return 0;
+        const completedTasks = project.tasks.filter(t => t.completed).length;
+        return (completedTasks / totalTasks) * 100;
+    };
+    
+    let sorted = [...area.projects];
+
+    switch (sortOption) {
+        case 'name-asc':
+            sorted.sort((a, b) => a.name.localeCompare(b.name));
+            break;
+        case 'name-desc':
+            sorted.sort((a, b) => b.name.localeCompare(a.name));
+            break;
+        case 'progress-asc':
+            sorted.sort((a, b) => getProjectProgress(a) - getProjectProgress(b));
+            break;
+        case 'progress-desc':
+            sorted.sort((a, b) => getProjectProgress(b) - getProjectProgress(a));
+            break;
+    }
+
+    return sorted;
+  }, [area, sortOption]);
 
   if (!area) {
     notFound();
@@ -240,13 +288,50 @@ export default function AreaDetailPage() {
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline font-semibold">Projects</h2>
-          <Button onClick={() => setAddProjectOpen(true)} size="sm">
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Project
-          </Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="mr-2 h-4 w-4" /> Filter Tasks
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuRadioGroup value={taskFilter} onValueChange={(v) => setTaskFilter(v as TaskFilterOption)}>
+                  <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="incomplete">Incomplete</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="completed">Completed</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <ArrowUpDown className="mr-2 h-4 w-4" /> Sort By
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as ProjectSortOption)}>
+                  <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="progress-desc">Progress (High-Low)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="progress-asc">Progress (Low-High)</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button onClick={() => setAddProjectOpen(true)} size="sm">
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Project
+            </Button>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {area.projects.map((project) => {
+          {sortedAndFilteredProjects.map((project) => {
             const projectTasks = project.tasks;
+            const filteredTasks = projectTasks.filter(task => {
+                if (taskFilter === 'all') return true;
+                return taskFilter === 'completed' ? task.completed : !task.completed;
+            });
             const completedProjectTasks = projectTasks.filter(t => t.completed).length;
             const projectCompletion = projectTasks.length > 0 ? (completedProjectTasks / projectTasks.length) * 100 : 0;
             return (
@@ -260,7 +345,7 @@ export default function AreaDetailPage() {
                 </CardHeader>
                 <CardContent className="flex-1">
                   <ul className="space-y-2">
-                    {projectTasks.map((task: Task) => (
+                    {filteredTasks.map((task: Task) => (
                         <li
                             key={task.id}
                             className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
@@ -284,8 +369,10 @@ export default function AreaDetailPage() {
                             <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
                         </li>
                     ))}
-                     {projectTasks.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">No tasks in this project yet.</p>
+                     {filteredTasks.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                            {taskFilter === 'all' ? 'No tasks in this project yet.' : `No ${taskFilter} tasks.`}
+                        </p>
                      )}
                   </ul>
                 </CardContent>
