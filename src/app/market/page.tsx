@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { marketItems } from '@/lib/data';
+import { marketItems } from '@/lib/mock-data';
 import { GemIcon } from '@/components/icons/gem-icon';
 
 export default function MarketPage() {
