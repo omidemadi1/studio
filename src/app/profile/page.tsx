@@ -51,12 +51,12 @@ const skillSchema = z.object({
 });
 
 const defaultAvatars = [
-    'https://placehold.co/100x100.png?text=Mage',
-    'https://placehold.co/100x100.png?text=Warrior',
-    'https://placehold.co/100x100.png?text=Rogue',
-    'https://placehold.co/100x100.png?text=Paladin',
-    'https://placehold.co/100x100.png?text=Hunter',
-    'https://placehold.co/100x100.png?text=Druid',
+    'https://placehold.co/100x100.png?text=Elf+Ranger',
+    'https://placehold.co/100x100.png?text=Dwarf+Knight',
+    'https://placehold.co/100x100.png?text=Human+Sorcerer',
+    'https://placehold.co/100x100.png?text=Orc+Barbarian',
+    'https://placehold.co/100x100.png?text=Gnome+Artificer',
+    'https://placehold.co/100x100.png?text=Undead+Warlock',
 ];
 
 export default function ProfilePage() {
@@ -374,3 +374,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
