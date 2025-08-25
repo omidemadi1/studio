@@ -88,6 +88,7 @@ const projectSchema = z.object({
 
 const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required.'),
+  projectId: z.string({ required_error: 'Please select a project.'}),
   description: z.string().optional(),
   dueDate: z.date().optional(),
   skillId: z.string().optional(),
@@ -232,11 +233,12 @@ export default function AreaDetailPage() {
   }
 
   async function onAddTask(data: z.infer<typeof taskSchema>) {
-    if (!area || !addTaskState.projectId) return;
+    const projectId = addTaskState.projectId || data.projectId;
+    if (!area || !projectId) return;
 
     setIsCreatingTask(true);
     try {
-        const project = area.projects.find(p => p.id === addTaskState.projectId);
+        const project = area.projects.find(p => p.id === projectId);
         const projectName = project ? project.name : '';
 
         const result = await suggestXpValue({ title: data.title, projectContext: projectName });
@@ -253,10 +255,10 @@ export default function AreaDetailPage() {
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
             dueDate: data.dueDate?.toISOString(),
             skillId: data.skillId,
-            projectId: addTaskState.projectId,
+            projectId: projectId,
         };
         
-        addTask(area.id, addTaskState.projectId, newTask);
+        addTask(area.id, projectId, newTask);
         
         taskForm.reset();
         setAddTaskState({ open: false, projectId: null });
@@ -433,6 +435,19 @@ export default function AreaDetailPage() {
                         <p>Add project</p>
                     </TooltipContent>
                 </Tooltip>
+                
+                {viewMode === 'tasks' && (
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button onClick={() => setAddTaskState({open: true, projectId: null})} size="icon" variant="ghost">
+                              <PlusCircle className="h-4 w-4 text-primary" />
+                          </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>Add task</p>
+                      </TooltipContent>
+                  </Tooltip>
+                )}
             </TooltipProvider>
 
           </div>
@@ -626,6 +641,31 @@ export default function AreaDetailPage() {
                   </FormItem>
                 )}
               />
+
+              {!addTaskState.projectId && (
+                <FormField
+                    control={taskForm.control}
+                    name="projectId"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Project</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a project" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {area.projects.map(project => (
+                                        <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+              )}
               
               <FormField
                 control={taskForm.control}
