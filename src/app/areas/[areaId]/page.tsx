@@ -435,19 +435,6 @@ export default function AreaDetailPage() {
                         <p>Add project</p>
                     </TooltipContent>
                 </Tooltip>
-                
-                {viewMode === 'tasks' && (
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                          <Button onClick={() => setAddTaskState({open: true, projectId: null})} size="icon" variant="ghost">
-                              <PlusCircle className="h-4 w-4 text-primary" />
-                          </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <p>Add task</p>
-                      </TooltipContent>
-                  </Tooltip>
-                )}
             </TooltipProvider>
 
           </div>
@@ -549,6 +536,13 @@ export default function AreaDetailPage() {
           </div>
         ) : (
             <div className="space-y-2">
+                <Card 
+                    className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer border-2 border-dashed"
+                    onClick={() => setAddTaskState({open: true, projectId: null})}
+                >
+                    <PlusCircle className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">Add new Task</span>
+                </Card>
                 {sortedAndFilteredTasks.map((task: Task) => (
                     <Card
                         key={task.id}
