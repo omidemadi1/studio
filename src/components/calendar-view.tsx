@@ -47,12 +47,15 @@ import {
   Clock,
   ArrowUp,
   PlusCircle,
+  Crosshair,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useRouter } from 'next/navigation';
 
 type CalendarViewMode = 'monthly' | 'weekly';
 
@@ -137,6 +140,7 @@ const DayCellDroppable = ({ day, children }: {day: Date, children: React.ReactNo
 
 // Main Calendar View Component
 export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
+  const router = useRouter();
   const { tasks, areas, skills, updateTaskCompletion, updateTaskDetails } = useQuestData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewMode>('monthly');
@@ -191,6 +195,12 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
     updateTaskDetails(selectedTask.id, { [field]: value });
   };
   
+  const handleFocusClick = () => {
+    if (!selectedTask) return;
+    setSelectedTask(null);
+    router.push(`/focus?taskId=${selectedTask.id}`);
+  };
+
   const { project, area } = useMemo(() => {
     if (!selectedTask) return { project: null, area: null };
     for (const currentArea of areas) {
@@ -343,9 +353,21 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
         <DialogContent className="sm:max-w-xl">
           {selectedTask && (
             <>
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold font-headline pr-10">{selectedTask.title}</DialogTitle>
-                <div className="absolute top-6 right-12">
+              <DialogHeader className="flex flex-row items-center justify-between">
+                <DialogTitle className="text-2xl font-bold font-headline">{selectedTask.title}</DialogTitle>
+                <div className='flex items-center gap-2'>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={selectedTask.completed}>
+                            <Crosshair className="h-5 w-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Focus on this task</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                    <Checkbox
                         checked={selectedTask.completed}
                         onCheckedChange={(checked) =>
