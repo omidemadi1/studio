@@ -244,7 +244,7 @@ export default function AreaDetailPage() {
             <PlusCircle className="mr-2 h-4 w-4" /> Add Project
           </Button>
         </div>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {area.projects.map((project) => {
             const projectTasks = project.tasks;
             const completedProjectTasks = projectTasks.filter(t => t.completed).length;
@@ -298,7 +298,7 @@ export default function AreaDetailPage() {
             )
           })}
            {area.projects.length === 0 && (
-              <Card className="bg-card/80 border-2 border-dashed">
+              <Card className="bg-card/80 border-2 border-dashed md:col-span-2">
                 <CardContent className="p-10 text-center">
                     <p className="text-muted-foreground mb-4">No projects here yet. Ready to start a new quest line?</p>
                     <Button variant="outline" onClick={() => setAddProjectOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
@@ -530,4 +530,3 @@ export default function AreaDetailPage() {
     </>
   );
 }
-
