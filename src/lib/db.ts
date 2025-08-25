@@ -1,3 +1,4 @@
+
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
@@ -7,8 +8,31 @@ const dbPath = path.join(process.cwd(), '.db');
 fs.mkdirSync(dbPath, { recursive: true });
 const dbFile = path.join(dbPath, 'questify.db');
 
-export const db = new Database(dbFile);
-db.pragma('journal_mode = WAL');
+// This helps avoid new connections on every hot-reload in development
+declare global {
+  // allow global `var` declarations
+  // eslint-disable-next-line no-var
+  var db: Database.Database | undefined;
+}
+
+const db: Database.Database =
+  global.db ??
+  (() => {
+    try {
+      const instance = new Database(dbFile);
+      instance.pragma('journal_mode = WAL');
+      console.log('Database connection established.');
+      return instance;
+    } catch (error) {
+      console.error('Failed to open database:', error);
+      throw error;
+    }
+  })();
+
+if (process.env.NODE_ENV !== 'production') {
+  global.db = db;
+}
+
 
 export function initDb() {
     // Check if tables exist
@@ -167,3 +191,5 @@ export function initDb() {
 
     console.log("Database initialized successfully.");
 }
+
+export { db };

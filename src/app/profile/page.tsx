@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Settings, Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check } from 'lucide-react';
+import { Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
 import {
@@ -38,6 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuestData } from '@/context/quest-context';
 import { iconMap } from '@/lib/icon-map';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const skillSchema = z.object({
   name: z.string().min(1, 'Skill name is required.'),
@@ -94,24 +95,29 @@ export default function ProfilePage() {
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-headline font-bold">Profile & Skills</h1>
-        <Button variant="ghost" size="icon">
-          <Settings className="h-6 w-6" />
-          <span className="sr-only">Settings</span>
-        </Button>
+        <ThemeToggle />
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card className="md:col-span-2 bg-card/80">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-center gap-6">
-              <Avatar className="h-24 w-24 border-4 border-primary shrink-0">
-                <AvatarImage
-                  src={user.avatarUrl}
-                  alt={user.name}
-                  data-ai-hint="avatar"
-                />
-                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-24 w-24 border-4 border-primary shrink-0">
+                  <AvatarImage
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    data-ai-hint="avatar"
+                  />
+                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                    <div className="text-xs font-bold bg-primary text-primary-foreground rounded-full px-2 py-0.5">
+                        Lvl {user.level}
+                    </div>
+                </div>
+              </div>
+
               <div className="flex-1 w-full">
                 <div className="text-center md:text-left">
                   <div className="flex items-center gap-2 justify-center md:justify-start">
@@ -157,7 +163,7 @@ export default function ProfilePage() {
                                 />
                             </div>
                             <div className="w-full md:w-2/3">
-                                <Tabs defaultValue="upload">
+                                <Tabs defaultValue="default">
                                 <TabsList className="grid w-full grid-cols-3">
                                     <TabsTrigger value="upload"><Upload className="h-4 w-4 mr-2" />Upload</TabsTrigger>
                                     <TabsTrigger value="default"><Library className="h-4 w-4 mr-2" />Defaults</TabsTrigger>
@@ -183,7 +189,8 @@ export default function ProfilePage() {
                                                 <Image
                                                     src={src}
                                                     alt={`Default avatar ${index + 1}`}
-                                                    layout="fill"
+                                                    width={100}
+                                                    height={100}
                                                     className={cn("rounded-md object-cover hover:ring-2 hover:ring-primary", avatarPreview === src && "ring-2 ring-primary")}
                                                     data-ai-hint="fantasy character"
                                                 />
@@ -212,19 +219,18 @@ export default function ProfilePage() {
                       </DialogContent>
                     </Dialog>
                   </div>
-
-                  <p className="text-muted-foreground">Level {user.level}</p>
                 </div>
                 <div className="mt-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">XP</span>
-                    <span className="text-sm font-medium">
-                      {user.xp} / {user.nextLevelXp}
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Next Level</span>
+                    <span className="font-medium">
+                      {user.xp} / {user.nextLevelXp} XP
                     </span>
                   </div>
                   <Progress
                     value={xpProgress}
                     aria-label={`${xpProgress}% towards next level`}
+                    className="h-2"
                   />
                 </div>
               </div>
@@ -344,8 +350,8 @@ export default function ProfilePage() {
                                 </Button>
                             </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-2">
-                            <div className="grid grid-cols-6 gap-2">
+                        <PopoverContent className="w-auto p-2 max-w-[240px] max-h-[200px] overflow-y-auto">
+                            <div className="grid grid-cols-6 gap-1">
                                 {Object.keys(iconMap).map((iconName) => {
                                     const IconComponent = iconMap[iconName];
                                     return (
@@ -354,10 +360,10 @@ export default function ProfilePage() {
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => field.onChange(iconName)}
-                                            className={cn("relative", field.value === iconName && "bg-accent")}
+                                            className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
                                         >
                                             <IconComponent className="h-5 w-5" />
-                                            {field.value === iconName && <Check className="absolute bottom-1 right-1 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
+                                            {field.value === iconName && <Check className="absolute bottom-0 right-0 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
                                         </Button>
                                     );
                                 })}
