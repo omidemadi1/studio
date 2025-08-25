@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -281,25 +282,27 @@ export default function ProfilePage() {
           {skills.map((skill) => {
             const SkillIcon = iconMap[skill.icon] || Lightbulb;
             return (
-              <Card key={skill.id} className="bg-card/80">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <SkillIcon className="h-6 w-6 text-accent" />
-                      <span className="font-headline font-semibold">
-                        {skill.name} - Lvl {skill.level}
+              <Link href={`/skills/${skill.id}`} key={skill.id} className="block hover:scale-[1.02] transition-transform duration-200">
+                <Card className="bg-card/80 h-full">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <SkillIcon className="h-6 w-6 text-accent" />
+                        <span className="font-headline font-semibold">
+                          {skill.name} - Lvl {skill.level}
+                        </span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {skill.points} / {skill.maxPoints}
                       </span>
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {skill.points} / {skill.maxPoints}
-                    </span>
-                  </div>
-                  <Progress
-                    value={(skill.points / skill.maxPoints) * 100}
-                    className="h-2"
-                  />
-                </CardContent>
-              </Card>
+                    <Progress
+                      value={(skill.points / skill.maxPoints) * 100}
+                      className="h-2"
+                    />
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

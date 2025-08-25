@@ -18,6 +18,9 @@ interface QuestContextType {
   addProject: (areaId: string, name: string) => void;
   addTask: (areaId: string, projectId: string, task: Task) => void;
   addSkill: (name: string, icon: string) => void;
+  updateSkill: (id: string, name: string, icon: string) => void;
+  deleteSkill: (id: string) => void;
+  deleteProject: (id: string, areaId: string) => void;
   updateUser: (newUserData: Partial<User>) => void;
   addXp: (xp: number, message?: string) => void;
   getTask: (taskId: string) => { task: Task; areaId: string; projectId: string } | null;
@@ -142,9 +145,25 @@ export const QuestProvider = ({
     router.refresh();
   };
 
+  const updateSkill = async (id: string, name: string, icon: string) => {
+    await QuestActions.updateSkill(id, name, icon);
+    router.refresh();
+  }
+
+  const deleteSkill = async (id: string) => {
+    await QuestActions.deleteSkill(id);
+    router.refresh();
+  }
+  
+  const deleteProject = async (id: string, areaId: string) => {
+    await QuestActions.deleteProject(id, areaId);
+    toast({ title: 'Project Deleted' });
+    router.refresh();
+  };
+
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, addSkill, updateUser, addXp, getTask, getAreaById, getTasksByAreaId };
+  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, addSkill, updateSkill, deleteSkill, deleteProject, updateUser, addXp, getTask, getAreaById, getTasksByAreaId };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };
