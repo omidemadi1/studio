@@ -86,6 +86,7 @@ import CalendarView from '@/components/calendar-view';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 
 const areaSchema = z.object({
@@ -842,6 +843,10 @@ export default function QuestsPage() {
           {currentTask && areaId && projectId && (
             <>
               <DialogHeader className="flex flex-row items-start justify-between gap-4">
+                <VisuallyHidden>
+                    <DialogTitle>{editableTaskData.title}</DialogTitle>
+                    <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
+                 </VisuallyHidden>
                 <Input
                   value={editableTaskData.title}
                   onChange={(e) => handleTaskDataChange('title', e.target.value)}
@@ -1049,3 +1054,5 @@ export default function QuestsPage() {
     </div>
   );
 }
+
+    

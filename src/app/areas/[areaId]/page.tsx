@@ -89,6 +89,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 
 const projectSchema = z.object({
@@ -838,6 +839,10 @@ export default function AreaDetailPage() {
           {currentTask && (
             <>
               <DialogHeader className="flex flex-row items-start justify-between gap-4">
+                 <VisuallyHidden>
+                    <DialogTitle>{editableTaskData.title}</DialogTitle>
+                    <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
+                 </VisuallyHidden>
                  <Input
                     value={editableTaskData.title}
                     onChange={(e) => handleTaskDataChange('title', e.target.value)}
@@ -1031,3 +1036,5 @@ export default function AreaDetailPage() {
   </>
   );
 }
+
+    

@@ -47,6 +47,7 @@ import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 
 const skillSchema = z.object({
@@ -292,11 +293,15 @@ export default function SkillDetailPage() {
                 {currentTask && (
                     <>
                     <DialogHeader className="flex flex-row items-start justify-between gap-4">
-                      <Input
-                        value={editableTaskData.title}
-                        onChange={(e) => handleTaskDataChange('title', e.target.value)}
-                        className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                      />
+                        <VisuallyHidden>
+                            <DialogTitle>{editableTaskData.title}</DialogTitle>
+                            <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
+                        </VisuallyHidden>
+                        <Input
+                            value={editableTaskData.title}
+                            onChange={(e) => handleTaskDataChange('title', e.target.value)}
+                            className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
                         <div className='flex items-center gap-2 flex-shrink-0'>
                           <TooltipProvider>
                             <Tooltip>
@@ -402,3 +407,5 @@ export default function SkillDetailPage() {
         </>
     );
 }
+
+    

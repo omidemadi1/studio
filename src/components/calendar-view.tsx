@@ -50,12 +50,13 @@ import {
   Crosshair,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRouter } from 'next/navigation';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 type CalendarViewMode = 'monthly' | 'weekly';
 
@@ -183,13 +184,14 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
     setEditableTaskData({
+        title: task.title,
         description: task.description || '',
         notes: task.notes || '',
         links: task.links || '',
     });
   };
 
-  const handleTaskDataChange = (field: 'description' | 'notes' | 'links', value: string) => {
+  const handleTaskDataChange = (field: keyof Task, value: string) => {
     if (!selectedTask) return;
     setEditableTaskData(prev => ({ ...prev, [field]: value }));
     updateTaskDetails(selectedTask.id, { [field]: value });
@@ -353,9 +355,17 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
         <DialogContent className="sm:max-w-xl">
           {selectedTask && (
             <>
-              <DialogHeader className="flex flex-row items-center justify-between">
-                <DialogTitle className="text-2xl font-bold font-headline">{selectedTask.title}</DialogTitle>
-                <div className='flex items-center gap-2'>
+              <DialogHeader className="flex flex-row items-center justify-between gap-4">
+                <VisuallyHidden>
+                    <DialogTitle>{editableTaskData.title}</DialogTitle>
+                    <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
+                </VisuallyHidden>
+                 <Input
+                    value={editableTaskData.title}
+                    onChange={(e) => handleTaskDataChange('title', e.target.value)}
+                    className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                <div className='flex items-center gap-2 flex-shrink-0'>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -464,3 +474,5 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
     </>
   );
 }
+
+    
