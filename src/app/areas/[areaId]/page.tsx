@@ -859,3 +859,5 @@ export default function AreaDetailPage() {
     </>
   );
 }
+
+    
