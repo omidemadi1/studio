@@ -203,7 +203,13 @@ export default function QuestsPage() {
     if (addTaskState.open && addTaskState.date) {
         taskForm.setValue('dueDate', addTaskState.date);
     }
-  }, [addTaskState.open, addTaskState.date, taskForm]);
+     if (addTaskState.open) {
+      taskForm.reset();
+      if (addTaskState.areaId) taskForm.setValue('areaId', addTaskState.areaId);
+      if (addTaskState.projectId) taskForm.setValue('projectId', addTaskState.projectId);
+      if (addTaskState.date) taskForm.setValue('dueDate', addTaskState.date);
+    }
+  }, [addTaskState, taskForm]);
 
   const selectedAreaIdForTask = taskForm.watch('areaId');
   const availableProjects = areas.find(a => a.id === selectedAreaIdForTask)?.projects || [];
@@ -242,8 +248,8 @@ export default function QuestsPage() {
   };
 
   async function onAddTask(data: z.infer<typeof taskSchema>) {
-    const areaId = addTaskState.areaId || data.areaId;
-    const projectId = addTaskState.projectId || data.projectId;
+    const areaId = data.areaId;
+    const projectId = data.projectId;
 
     if (!areaId || !projectId) return;
 
@@ -601,54 +607,52 @@ export default function QuestsPage() {
                 )}
               />
               
-              {!addTaskState.projectId && (
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                    control={taskForm.control}
-                    name="areaId"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Area</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select an area" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {areas.map(area => (
-                                <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={taskForm.control}
-                    name="projectId"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Project</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedAreaIdForTask}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a project" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {availableProjects.map(project => (
-                                <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
-              )}
+              <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                  control={taskForm.control}
+                  name="areaId"
+                  render={({ field }) => (
+                      <FormItem>
+                      <FormLabel>Area</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!!addTaskState.areaId}>
+                          <FormControl>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Select an area" />
+                          </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                          {areas.map(area => (
+                              <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                          ))}
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+                  />
+                  <FormField
+                  control={taskForm.control}
+                  name="projectId"
+                  render={({ field }) => (
+                      <FormItem>
+                      <FormLabel>Project</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!!addTaskState.projectId || !selectedAreaIdForTask}>
+                          <FormControl>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Select a project" />
+                          </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                          {availableProjects.map(project => (
+                              <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                          ))}
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+                  />
+              </div>
 
               <FormField
                 control={taskForm.control}
@@ -671,7 +675,7 @@ export default function QuestsPage() {
                   render={({ field }) => (
                     <FormItem>
                         <FormLabel>Skill Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a skill" />
