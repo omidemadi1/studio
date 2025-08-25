@@ -337,7 +337,7 @@ export default function AreaDetailPage() {
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-headline font-semibold capitalize">{viewMode}</h2>
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-              <TabsList>
+              <TabsList className="bg-transparent p-0">
                 <TabsTrigger value="projects"><Columns className="h-4 w-4" /></TabsTrigger>
                 <TabsTrigger value="tasks"><LayoutList className="h-4 w-4" /></TabsTrigger>
               </TabsList>
