@@ -100,15 +100,26 @@ export const QuestProvider = ({
     const taskData = getTask(taskId);
     if (!taskData) return;
 
-    await QuestActions.updateTaskCompletion(taskId, completed, focusDuration);
+    const result = await QuestActions.updateTaskCompletion(taskId, completed, focusDuration);
     
     toast({
         title: completed ? 'Quest Complete!' : 'Quest Updated',
         description: completed ? `You earned ${taskData.task.xp} XP for "${taskData.task.title}"!` : 'Quest marked as incomplete.',
     });
+    
+    if (result?.skillLeveledUp) {
+        const skill = skills.find(s => s.id === result.skillId);
+        if (skill) {
+            toast({
+                title: "Skill Level Up!",
+                description: `${skill.name} has reached level ${skill.level + 1}!`
+            });
+        }
+    }
+
     router.refresh();
 
-  }, [getTask, toast, router]);
+  }, [getTask, toast, router, skills]);
   
   const addArea = async (name: string) => {
     await QuestActions.addArea(name);

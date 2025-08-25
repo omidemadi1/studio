@@ -1,7 +1,8 @@
+
 'use server'
 
 import { db } from '@/lib/db'
-import type { Task, User } from '@/lib/types'
+import type { Task, User, Skill } from '@/lib/types'
 import { revalidatePath } from 'next/cache'
 
 export async function addArea(name: string) {
@@ -39,6 +40,8 @@ export async function addSkill(name: string, icon: string) {
 export async function updateTaskCompletion(taskId: string, completed: boolean, focusDuration?: number) {
     const transaction = db.transaction(() => {
         let skillIdToRevalidate: string | undefined;
+        let skillLeveledUp = false;
+        let newSkillLevel = 0;
 
         if (focusDuration) {
             db.prepare('UPDATE tasks SET completed = ?, focusDuration = (focusDuration + ?) WHERE id = ?').run(completed ? 1 : 0, focusDuration, taskId);
@@ -51,31 +54,51 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
             const xpChange = completed ? task.xp : -task.xp;
             skillIdToRevalidate = task.skillId;
             
+            // Update user XP and level
             const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
-            if (!user) return;
-
-            const newXp = user.xp + xpChange;
-            let newLevel = user.level;
-            let newNextLevelXp = user.nextLevelXp;
-
-            // Handle Level Up
-            if (completed && newXp >= user.nextLevelXp) {
-                newLevel = user.level + 1;
-                newNextLevelXp = user.nextLevelXp * 2;
+            if (user) {
+                const newXp = user.xp + xpChange;
+                let newLevel = user.level;
+                let newNextLevelXp = user.nextLevelXp;
+                if (completed && newXp >= user.nextLevelXp) {
+                    newLevel = user.level + 1;
+                    newNextLevelXp = user.nextLevelXp * 2;
+                }
+                db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp);
             }
-            
-            db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp);
+
+            // Update skill points and level
+            if (task.skillId) {
+                const skill = db.prepare('SELECT * FROM skills WHERE id = ?').get(task.skillId) as Skill;
+                if (skill) {
+                    const newPoints = skill.points + xpChange;
+                    let newSkillLevel = skill.level;
+                    let newMaxPoints = skill.maxPoints;
+
+                    if (completed && newPoints >= skill.maxPoints) {
+                        newSkillLevel = skill.level + 1;
+                        newMaxPoints = Math.floor(skill.maxPoints * 1.5);
+                        skillLeveledUp = true;
+                    }
+                    
+                    db.prepare('UPDATE skills SET points = ?, level = ?, maxPoints = ? WHERE id = ?')
+                      .run(newPoints, newSkillLevel, newMaxPoints, task.skillId);
+                }
+            }
         }
-        return skillIdToRevalidate;
+        return { skillId: skillIdToRevalidate, skillLeveledUp };
     });
     
-    const skillId = transaction();
+    const result = transaction();
+
     revalidatePath('/')
     revalidatePath('/profile');
     revalidatePath('/focus');
-    if (skillId) {
-        revalidatePath(`/skills/${skillId}`);
+    if (result && result.skillId) {
+        revalidatePath(`/skills/${result.skillId}`);
     }
+
+    return result;
 }
 
 export async function updateTaskDetails(taskId: string, details: Partial<Task>) {
