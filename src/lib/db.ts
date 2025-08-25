@@ -3,11 +3,6 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-// Ensure the directory exists
-const dbPath = path.join(process.cwd(), '.db');
-fs.mkdirSync(dbPath, { recursive: true });
-const dbFile = path.join(dbPath, 'questify.db');
-
 // This helps avoid new connections on every hot-reload in development
 declare global {
   // allow global `var` declarations
@@ -15,35 +10,27 @@ declare global {
   var db: Database.Database | undefined;
 }
 
-const db: Database.Database =
-  global.db ??
-  (() => {
-    try {
-      const instance = new Database(dbFile);
-      instance.pragma('journal_mode = WAL');
-      console.log('Database connection established.');
-      return instance;
-    } catch (error) {
-      console.error('Failed to open database:', error);
-      throw error;
+const initializeDb = () => {
+    // Ensure the directory exists
+    const dbPath = path.join(process.cwd(), '.db');
+    if (!fs.existsSync(dbPath)) {
+        fs.mkdirSync(dbPath, { recursive: true });
     }
-  })();
+    const dbFile = path.join(dbPath, 'questify.db');
 
-if (process.env.NODE_ENV !== 'production') {
-  global.db = db;
-}
+    const dbInstance = new Database(dbFile);
+    dbInstance.pragma('journal_mode = WAL');
+    console.log('Database connection established.');
 
-
-export function initDb() {
     // Check if tables exist
-    const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'users'").get();
+    const tableCheck = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'users'").get();
     if (tableCheck) {
-        return; // DB already initialized
+        return dbInstance; // DB already initialized
     }
 
     console.log("Initializing database schema and seeding data...");
 
-    db.exec(`
+    dbInstance.exec(`
         CREATE TABLE users (
             id INTEGER PRIMARY KEY NOT NULL,
             name TEXT NOT NULL,
@@ -95,10 +82,10 @@ export function initDb() {
     `);
 
     // Seed data
-    const insertUser = db.prepare('INSERT INTO users (id, name, level, xp, nextLevelXp, tokens, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    const insertUser = dbInstance.prepare('INSERT INTO users (id, name, level, xp, nextLevelXp, tokens, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)');
     insertUser.run(1, 'Hero Gamer', 5, 1250, 2000, 420, 'https://placehold.co/100x100.png');
 
-    const insertSkill = db.prepare('INSERT INTO skills (id, name, level, points, maxPoints, icon) VALUES (?, ?, ?, ?, ?, ?)');
+    const insertSkill = dbInstance.prepare('INSERT INTO skills (id, name, level, points, maxPoints, icon) VALUES (?, ?, ?, ?, ?, ?)');
     const skillsToSeed = [
         { id: 'strength', name: 'Strength', level: 4, points: 300, maxPoints: 1000, icon: 'Dumbbell' },
         { id: 'intellect', name: 'Intellect', level: 6, points: 750, maxPoints: 1000, icon: 'Lightbulb' },
@@ -109,9 +96,9 @@ export function initDb() {
     ];
     skillsToSeed.forEach(skill => insertSkill.run(skill.id, skill.name, skill.level, skill.points, skill.maxPoints, skill.icon));
 
-    const insertArea = db.prepare('INSERT INTO areas (id, name, icon) VALUES (?, ?, ?)');
-    const insertProject = db.prepare('INSERT INTO projects (id, name, areaId) VALUES (?, ?, ?)');
-    const insertTask = db.prepare('INSERT INTO tasks (id, title, completed, xp, description, notes, links, difficulty, dueDate, skillId, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const insertArea = dbInstance.prepare('INSERT INTO areas (id, name, icon) VALUES (?, ?, ?)');
+    const insertProject = dbInstance.prepare('INSERT INTO projects (id, name, areaId) VALUES (?, ?, ?)');
+    const insertTask = dbInstance.prepare('INSERT INTO tasks (id, title, completed, xp, description, notes, links, difficulty, dueDate, skillId, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     
     const initialAreas = [
       {
@@ -190,6 +177,19 @@ export function initDb() {
     });
 
     console.log("Database initialized successfully.");
+    return dbInstance;
 }
+
+const db: Database.Database = global.db ?? initializeDb();
+
+if (process.env.NODE_ENV !== 'production') {
+  global.db = db;
+}
+
+export function initDb() {
+    // This function is now just a placeholder to ensure the db is initialized.
+    // The logic is handled in the global singleton pattern above.
+}
+
 
 export { db };

@@ -2,30 +2,52 @@ import 'server-only';
 import { db } from './db';
 import type { User, Area, Project, Task, Skill, MarketItem } from './types';
 
+function withErrorHandling<T>(fn: () => T, fallback: T): T {
+    try {
+        return fn();
+    } catch (error) {
+        console.error("Database operation failed:", error);
+        return fallback;
+    }
+}
+
 export function getUser(): User {
-    const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
-    return user;
+    return withErrorHandling(() => {
+        const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
+        return user;
+    }, { 
+        id: 1, 
+        name: 'Error User', 
+        level: 1, 
+        xp: 0, 
+        nextLevelXp: 100, 
+        tokens: 0, 
+        avatarUrl: '' 
+    });
 }
 
 export function getSkills(): Skill[] {
-    const skills = db.prepare('SELECT * FROM skills').all() as Skill[];
-    return skills;
+    return withErrorHandling(() => {
+        return db.prepare('SELECT * FROM skills').all() as Skill[];
+    }, []);
 }
 
 export function getAreas(): Area[] {
-    const areas = db.prepare('SELECT * FROM areas').all() as Area[];
-    
-    const projectsStmt = db.prepare('SELECT * FROM projects WHERE areaId = ?');
-    const tasksStmt = db.prepare('SELECT * FROM tasks WHERE projectId = ?');
+    return withErrorHandling(() => {
+        const areas = db.prepare('SELECT * FROM areas').all() as Area[];
+        
+        const projectsStmt = db.prepare('SELECT * FROM projects WHERE areaId = ?');
+        const tasksStmt = db.prepare('SELECT * FROM tasks WHERE projectId = ?');
 
-    return areas.map(area => {
-        const projects = projectsStmt.all(area.id) as Project[];
-        const projectsWithTasks = projects.map(project => {
-            const tasks = tasksStmt.all(project.id).map(t => ({...t, completed: !!(t as any).completed})) as Task[];
-            return { ...project, tasks };
+        return areas.map(area => {
+            const projects = projectsStmt.all(area.id) as Project[];
+            const projectsWithTasks = projects.map(project => {
+                const tasks = tasksStmt.all(project.id).map(t => ({...t, completed: !!(t as any).completed})) as Task[];
+                return { ...project, tasks };
+            });
+            return { ...area, projects: projectsWithTasks };
         });
-        return { ...area, projects: projectsWithTasks };
-    });
+    }, []);
 }
 
 // Keep market items "mocked" as they are static
