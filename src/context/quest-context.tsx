@@ -31,6 +31,9 @@ interface QuestContextType {
   getAreaById: (areaId: string) => Area | undefined;
   getTasksByAreaId: (areaId: string) => Task[];
   resetDatabase: () => void;
+  duplicateArea: (areaId: string) => void;
+  duplicateProject: (projectId: string) => void;
+  duplicateTask: (taskId: string) => void;
 }
 
 const QuestContext = createContext<QuestContextType | undefined>(undefined);
@@ -207,9 +210,27 @@ export const QuestProvider = ({
     router.refresh();
   }
 
+  const duplicateArea = async (areaId: string) => {
+    await QuestActions.duplicateArea(areaId);
+    toast({ title: 'Area Duplicated' });
+    router.refresh();
+  }
+
+  const duplicateProject = async (projectId: string) => {
+    await QuestActions.duplicateProject(projectId);
+    toast({ title: 'Project Duplicated' });
+    router.refresh();
+  }
+
+  const duplicateTask = async (taskId: string) => {
+    await QuestActions.duplicateTask(taskId);
+    toast({ title: 'Task Duplicated' });
+    router.refresh();
+  }
+
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, updateArea, deleteArea, addProject, updateProject, deleteProject, addTask, deleteTask, addSkill, updateSkill, deleteSkill, updateUser, addXp, getTask, getAreaById, getTasksByAreaId, resetDatabase };
+  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, updateArea, deleteArea, addProject, updateProject, deleteProject, addTask, deleteTask, addSkill, updateSkill, deleteSkill, updateUser, addXp, getTask, getAreaById, getTasksByAreaId, resetDatabase, duplicateArea, duplicateProject, duplicateTask };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };

@@ -72,6 +72,7 @@ import {
   Pencil,
   Trash2,
   Check,
+  Copy,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -124,7 +125,7 @@ type ViewMode = 'list' | 'calendar';
 export default function QuestsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks, deleteArea, updateArea, addSkill, deleteTask, deleteProject, updateProject } = useQuestData();
+  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks, deleteArea, updateArea, addSkill, deleteTask, deleteProject, updateProject, duplicateArea, duplicateProject, duplicateTask } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [editAreaState, setEditAreaState] = useState<{ open: boolean; area: Area | null }>({ open: false, area: null });
@@ -464,10 +465,13 @@ export default function QuestsPage() {
                                         </ContextMenuTrigger>
                                         <ContextMenuContent>
                                           <ContextMenuItem onSelect={() => handleTaskClick(area.id, project.id, task.id)}>
-                                            <Pencil className="h-4 w-4 mr-2" /> View/Edit Details
+                                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                                          </ContextMenuItem>
+                                          <ContextMenuItem onSelect={() => duplicateTask(task.id)}>
+                                            <Copy className="h-4 w-4 mr-2" /> Duplicate
                                           </ContextMenuItem>
                                           <ContextMenuItem onSelect={() => setDeleteTaskState({ open: true, task })}>
-                                            <Trash2 className="h-4 w-4 mr-2" /> Delete Task
+                                            <Trash2 className="h-4 w-4 mr-2" /> Delete
                                           </ContextMenuItem>
                                         </ContextMenuContent>
                                       </ContextMenu>
@@ -486,10 +490,13 @@ export default function QuestsPage() {
                                     projectForm.setValue('name', project.name);
                                     setEditProjectState({ open: true, project });
                                 }}>
-                                    <Pencil className="h-4 w-4 mr-2" /> Edit Project
+                                    <Pencil className="h-4 w-4 mr-2" /> Edit
+                                </ContextMenuItem>
+                                <ContextMenuItem onSelect={() => duplicateProject(project.id)}>
+                                  <Copy className="h-4 w-4 mr-2" /> Duplicate
                                 </ContextMenuItem>
                                 <ContextMenuItem onSelect={() => setDeleteProjectState({ open: true, project })}>
-                                    <Trash2 className="h-4 w-4 mr-2" /> Delete Project
+                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
                                 </ContextMenuItem>
                             </ContextMenuContent>
                           </ContextMenu>
@@ -508,10 +515,13 @@ export default function QuestsPage() {
                         areaForm.setValue('name', area.name);
                         setEditAreaState({ open: true, area });
                     }}>
-                        <Pencil className="h-4 w-4 mr-2" /> Edit Area
+                        <Pencil className="h-4 w-4 mr-2" /> Edit
+                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => duplicateArea(area.id)}>
+                        <Copy className="h-4 w-4 mr-2" /> Duplicate
                     </ContextMenuItem>
                     <ContextMenuItem onSelect={() => setDeleteAreaState({ open: true, area })}>
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete Area
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete
                     </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>

@@ -2,7 +2,7 @@
 'use server'
 
 import { db, resetDbFile } from '@/lib/db'
-import type { Task, User, Skill } from '@/lib/types'
+import type { Task, User, Skill, Project, Area } from '@/lib/types'
 import { revalidatePath } from 'next/cache'
 
 export async function addArea(name: string) {
@@ -196,5 +196,58 @@ export async function addXp(xp: number) {
 
 export async function resetDatabase() {
     resetDbFile();
+    revalidatePath('/');
+}
+
+const duplicateTaskTransaction = db.transaction((task: Task, newProjectId: string) => {
+    const newTaskId = `task-${Date.now()}`;
+    const newTask = { ...task, id: newTaskId, projectId: newProjectId, title: `${task.title} (copy)` };
+    db.prepare('INSERT INTO tasks (id, title, completed, xp, description, notes, links, difficulty, dueDate, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.description, newTask.notes, newTask.links, newTask.difficulty, newTask.dueDate, newTask.skillId, newTask.focusDuration || 0, newProjectId);
+});
+
+const duplicateProjectTransaction = db.transaction((project: Project, newAreaId: string) => {
+    const newProjectId = `proj-${Date.now()}`;
+    const newProject = { ...project, id: newProjectId, areaId: newAreaId, name: `${project.name} (copy)` };
+    db.prepare('INSERT INTO projects (id, name, areaId) VALUES (?, ?, ?)').run(newProject.id, newProject.name, newProject.areaId);
+
+    const tasks = db.prepare('SELECT * FROM tasks WHERE projectId = ?').all(project.id) as Task[];
+    for (const task of tasks) {
+        duplicateTaskTransaction(task, newProjectId);
+    }
+});
+
+export async function duplicateTask(taskId: string) {
+    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as Task;
+    if (task) {
+        duplicateTaskTransaction(task, task.projectId);
+        revalidatePath('/');
+    }
+}
+
+export async function duplicateProject(projectId: string) {
+    const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(projectId) as Project;
+    if (project) {
+        duplicateProjectTransaction(project, project.areaId);
+        revalidatePath('/');
+    }
+}
+
+export async function duplicateArea(areaId: string) {
+    const transaction = db.transaction(() => {
+        const area = db.prepare('SELECT * FROM areas WHERE id = ?').get(areaId) as Area;
+        if (!area) return;
+
+        const newAreaId = `area-${Date.now()}`;
+        const newAreaName = `${area.name} (copy)`;
+        db.prepare('INSERT INTO areas (id, name, icon) VALUES (?, ?, ?)').run(newAreaId, newAreaName, area.icon);
+
+        const projects = db.prepare('SELECT * FROM projects WHERE areaId = ?').all(areaId) as Project[];
+        for (const project of projects) {
+            duplicateProjectTransaction(project, newAreaId);
+        }
+    });
+
+    transaction();
     revalidatePath('/');
 }

@@ -37,6 +37,7 @@ import {
   Crosshair,
   Pencil,
   Check,
+  Copy,
 } from 'lucide-react';
 import type { Task, Difficulty, Project } from '@/lib/types';
 import { z } from 'zod';
@@ -123,7 +124,7 @@ export default function AreaDetailPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { areaId } = useParams();
-  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject, addSkill } = useQuestData();
+  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject, addSkill, duplicateProject } = useQuestData();
 
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [editProjectState, setEditProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
@@ -559,6 +560,9 @@ export default function AreaDetailPage() {
                         setEditProjectState({ open: true, project });
                     }}>
                         <Pencil className="h-4 w-4 mr-2" /> Edit
+                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => duplicateProject(project.id)}>
+                        <Copy className="h-4 w-4 mr-2" /> Duplicate
                     </ContextMenuItem>
                     <ContextMenuItem onSelect={() => setDeleteProjectState({ open: true, project })}>
                         <Trash2 className="h-4 w-4 mr-2" /> Delete
@@ -1019,5 +1023,6 @@ export default function AreaDetailPage() {
         </DialogContent>
       </Dialog>
     </div>
+  </>
   );
 }
