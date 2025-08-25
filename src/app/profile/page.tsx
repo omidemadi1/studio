@@ -5,11 +5,12 @@ import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Settings, Pencil, Lightbulb, PlusCircle } from 'lucide-react';
+import { Settings, Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
 import {
@@ -39,16 +40,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuestData } from '@/context/quest-context';
 import { iconMap } from '@/lib/icon-map';
+import { cn } from '@/lib/utils';
 
 const skillSchema = z.object({
   name: z.string().min(1, 'Skill name is required.'),
   icon: z.string().min(1, 'An icon is required.'),
 });
 
+const defaultAvatars = [
+    'https://placehold.co/100x100.png?text=Mage',
+    'https://placehold.co/100x100.png?text=Warrior',
+    'https://placehold.co/100x100.png?text=Rogue',
+    'https://placehold.co/100x100.png?text=Paladin',
+    'https://placehold.co/100x100.png?text=Hunter',
+    'https://placehold.co/100x100.png?text=Druid',
+];
+
 export default function ProfilePage() {
   const { user, skills, updateUser, addSkill } = useQuestData();
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [name, setName] = useState(user.name);
   const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
   const [addSkillOpen, setAddSkillOpen] = useState(false);
@@ -72,6 +85,7 @@ export default function ProfilePage() {
 
   const handleSaveChanges = () => {
     updateUser({ name, avatarUrl: avatarPreview });
+    setEditProfileOpen(false);
   };
 
   const onAddSkill = (data: z.infer<typeof skillSchema>) => {
@@ -110,7 +124,13 @@ export default function ProfilePage() {
                     <h2 className="text-2xl font-bold font-headline">
                       {user.name}
                     </h2>
-                    <Dialog>
+                    <Dialog open={editProfileOpen} onOpenChange={(open) => {
+                      setEditProfileOpen(open);
+                      if (open) {
+                        setName(user.name);
+                        setAvatarPreview(user.avatarUrl);
+                      }
+                    }}>
                       <DialogTrigger asChild>
                         <Button
                           variant="ghost"
@@ -121,56 +141,79 @@ export default function ProfilePage() {
                           <span className="sr-only">Edit Profile</span>
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px]">
+                      <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
                           <DialogTitle>Edit Profile</DialogTitle>
                           <DialogDescription>
-                            Make changes to your profile here. Click save when
-                            you're done.
+                            Customize your adventurer's appearance and name.
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">
-                              Name
-                            </Label>
-                            <Input
-                              id="name"
-                              value={name}
-                              onChange={(e) => setName(e.target.value)}
-                              className="col-span-3"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="picture" className="text-right">
-                              Avatar
-                            </Label>
-                            <Input
-                              id="picture"
-                              type="file"
-                              onChange={handleAvatarChange}
-                              className="col-span-3"
-                              accept="image/*"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <div className="col-start-2 col-span-3">
-                              <Avatar className="h-24 w-24">
-                                <AvatarImage
-                                  src={avatarPreview}
-                                  alt="Avatar Preview"
+                        <div className="flex flex-col md:flex-row gap-6 py-4">
+                            <div className="w-full md:w-1/3 flex flex-col items-center gap-4">
+                                <Label htmlFor="name">Profile Preview</Label>
+                                <Avatar className="h-32 w-32 border-4 border-primary">
+                                    <AvatarImage src={avatarPreview} alt="Avatar Preview" />
+                                    <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <Input
+                                    id="name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="text-center text-lg font-bold"
                                 />
-                                <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-                              </Avatar>
                             </div>
-                          </div>
+                            <div className="w-full md:w-2/3">
+                                <Tabs defaultValue="upload">
+                                <TabsList className="grid w-full grid-cols-3">
+                                    <TabsTrigger value="upload"><Upload className="h-4 w-4 mr-2" />Upload</TabsTrigger>
+                                    <TabsTrigger value="default"><Library className="h-4 w-4 mr-2" />Defaults</TabsTrigger>
+                                    <TabsTrigger value="nft"><Wallet className="h-4 w-4 mr-2" />NFT</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="upload" className="mt-4">
+                                    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg">
+                                        <Upload className="h-12 w-12 text-muted-foreground" />
+                                        <p className="mt-2 text-sm text-muted-foreground">Drop an image or click to select</p>
+                                        <Input
+                                            id="picture"
+                                            type="file"
+                                            onChange={handleAvatarChange}
+                                            className="mt-4"
+                                            accept="image/*"
+                                        />
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value="default" className="mt-4">
+                                    <div className="grid grid-cols-3 gap-4 max-h-48 overflow-y-auto p-2">
+                                        {defaultAvatars.map((src, index) => (
+                                            <div key={index} className="relative aspect-square cursor-pointer" onClick={() => setAvatarPreview(src)}>
+                                                <Image
+                                                    src={src}
+                                                    alt={`Default avatar ${index + 1}`}
+                                                    layout="fill"
+                                                    className={cn("rounded-md object-cover hover:ring-2 hover:ring-primary", avatarPreview === src && "ring-2 ring-primary")}
+                                                    data-ai-hint="fantasy character"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value="nft" className="mt-4">
+                                    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg">
+                                        <Wallet className="h-12 w-12 text-muted-foreground" />
+                                        <p className="mt-2 text-sm text-muted-foreground">Connect your wallet to select an NFT.</p>
+                                        <Button className="mt-4" disabled>Connect Wallet (Coming Soon)</Button>
+                                    </div>
+                                </TabsContent>
+                                </Tabs>
+                            </div>
                         </div>
                         <DialogFooter>
                           <DialogClose asChild>
-                            <Button type="button" onClick={handleSaveChanges}>
-                              Save changes
-                            </Button>
+                            <Button type="button" variant="ghost">Cancel</Button>
                           </DialogClose>
+                          <Button type="button" onClick={handleSaveChanges}>
+                            Save changes
+                          </Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
