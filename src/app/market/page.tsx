@@ -1,14 +1,15 @@
-'use client';
-
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { marketItems } from '@/lib/mock-data';
 import { GemIcon } from '@/components/icons/gem-icon';
+import { getMarketItems } from '@/lib/data';
+import type { MarketItem } from '@/lib/types';
+
 
 export default function MarketPage() {
   const { toast } = useToast();
+  const marketItems: MarketItem[] = getMarketItems();
 
   const handleBuy = (itemName: string, price: number) => {
     toast({

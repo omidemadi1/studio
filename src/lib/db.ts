@@ -79,6 +79,14 @@ const initializeDb = () => {
             FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE,
             FOREIGN KEY (skillId) REFERENCES skills (id)
         );
+
+        CREATE TABLE market_items (
+            id TEXT PRIMARY KEY NOT NULL,
+            name TEXT NOT NULL,
+            price INTEGER NOT NULL,
+            imageUrl TEXT NOT NULL,
+            description TEXT NOT NULL
+        );
     `);
 
     // Seed data
@@ -175,6 +183,18 @@ const initializeDb = () => {
             });
         });
     });
+
+    const insertMarketItem = dbInstance.prepare('INSERT INTO market_items (id, name, price, imageUrl, description) VALUES (?, ?, ?, ?, ?)');
+    const marketItemsToSeed = [
+        { id: 'item1', name: 'Health Potion', price: 50, imageUrl: 'https://placehold.co/200x200.png', description: 'Recovers 50 health points instantly.'},
+        { id: 'item2', name: 'XP Booster (1hr)', price: 100, imageUrl: 'https://placehold.co/200x200.png', description: 'Doubles XP gain from all quests for one hour.'},
+        { id: 'item3', name: 'Golden Key', price: 250, imageUrl: 'https://placehold.co/200x200.png', description: 'Unlocks a special legendary quest line.'},
+        { id: 'item4', name: 'Ancient Scroll', price: 80, imageUrl: 'https://placehold.co/200x200.png', description: 'Reveals a hint for a difficult quest.'},
+        { id: 'item5', name: 'Mystic Orb', price: 150, imageUrl: 'https://placehold.co/200x200.png', description: 'Increases Intellect skill points by 100.'},
+        { id: 'item6', name: 'Premium Theme', price: 500, imageUrl: 'https://placehold.co/200x200.png', description: 'Unlock a new exclusive theme for the app.'},
+    ];
+    marketItemsToSeed.forEach(item => insertMarketItem.run(item.id, item.name, item.price, item.imageUrl, item.description));
+
 
     console.log("Database initialized successfully.");
     return dbInstance;

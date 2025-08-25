@@ -1,6 +1,6 @@
 import 'server-only';
 import { db } from './db';
-import type { User, Area, Project, Task, Skill } from './types';
+import type { User, Area, Project, Task, Skill, MarketItem } from './types';
 
 function withErrorHandling<T>(fn: () => T, fallback: T): T {
     try {
@@ -47,5 +47,11 @@ export function getAreas(): Area[] {
             });
             return { ...area, projects: projectsWithTasks };
         });
+    }, []);
+}
+
+export function getMarketItems(): MarketItem[] {
+    return withErrorHandling(() => {
+        return db.prepare('SELECT * FROM market_items').all() as MarketItem[];
     }, []);
 }
