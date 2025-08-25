@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { useQuestData } from '@/context/quest-context';
 import { Play, Pause, Hourglass, StopCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function FocusPage() {
+function FocusPageContents() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
 
@@ -41,7 +41,7 @@ export default function FocusPage() {
         setIsActive(false);
         setTimeElapsed(0);
     }
-  }, [paramTaskId, isActive]);
+  }, [paramTaskId]);
 
   // Stopwatch logic
   useEffect(() => {
@@ -124,13 +124,6 @@ export default function FocusPage() {
   }, [selectedTaskId, allTasks]);
 
   return (
-    <div className="relative min-h-[calc(100vh-8rem)] w-full overflow-hidden">
-      <div className="absolute inset-0 z-0">
-          <div className="focus-bg-orb orb1"></div>
-          <div className="focus-bg-orb orb2"></div>
-          <div className="focus-bg-orb orb3"></div>
-          <div className="focus-bg-orb orb4"></div>
-      </div>
       <div className="container relative z-10 mx-auto max-w-md p-4 sm:p-6 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
         <header className="text-center mb-8">
           <h1 className="text-3xl font-headline font-bold">Focus Zone</h1>
@@ -207,6 +200,21 @@ export default function FocusPage() {
           </CardFooter>
         </Card>
       </div>
-    </div>
   );
+}
+
+export default function FocusPage() {
+    return (
+        <div className="relative min-h-[calc(100vh-8rem)] w-full overflow-hidden">
+            <div className="absolute inset-0 z-0">
+                <div className="focus-bg-orb orb1"></div>
+                <div className="focus-bg-orb orb2"></div>
+                <div className="focus-bg-orb orb3"></div>
+                <div className="focus-bg-orb orb4"></div>
+            </div>
+            <Suspense fallback={<div>Loading...</div>}>
+                <FocusPageContents />
+            </Suspense>
+        </div>
+    )
 }
