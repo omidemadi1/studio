@@ -289,10 +289,13 @@ export default function SkillDetailPage() {
                 <DialogContent className="sm:max-w-xl">
                 {currentTask && (
                     <>
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold font-headline pr-10">{currentTask.title}</DialogTitle>
-                        <div className="absolute top-6 right-12">
-                        <Checkbox
+                    <DialogHeader className="flex flex-row items-center justify-between">
+                        <DialogTitle className="text-2xl font-bold font-headline">{currentTask.title}</DialogTitle>
+                        <div className='flex items-center gap-2'>
+                            <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
+                                <Crosshair className="h-5 w-5" />
+                            </Button>
+                            <Checkbox
                                 checked={currentTask.completed}
                                 onCheckedChange={(checked) =>
                                     updateTaskCompletion(currentTask.id, !!checked)
@@ -377,12 +380,6 @@ export default function SkillDetailPage() {
                         />
                         </div>
                     </div>
-                    <DialogFooter className="mt-4">
-                        <Button variant="outline" onClick={handleFocusClick} disabled={currentTask.completed}>
-                        <Crosshair className="mr-2 h-4 w-4" />
-                        Focus on Task
-                        </Button>
-                    </DialogFooter>
                     </>
                 )}
                 </DialogContent>
