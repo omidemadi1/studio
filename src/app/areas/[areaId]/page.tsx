@@ -790,7 +790,7 @@ export default function AreaDetailPage() {
                                 type="button"
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    setAddTaskState({ open: false, projectId: null });
+                                    setAddTaskState(prev => ({...prev, open: false}));
                                     setAddSkillOpen(true);
                                 }}
                             >
@@ -975,7 +975,7 @@ export default function AreaDetailPage() {
                     <Popover>
                         <PopoverTrigger asChild>
                             <FormControl>
-                                <Button variant="outline" className="w-full justify-start">
+                                <Button variant="outline" className="w-full justify-start" type="button">
                                     {field.value ? (
                                         <>
                                             {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
@@ -1011,13 +1011,13 @@ export default function AreaDetailPage() {
                 )}
               />
               <DialogFooter>
-                <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
+                 <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
                 <Button type="submit">Create Skill</Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

@@ -689,7 +689,7 @@ export default function QuestsPage() {
                                 type="button"
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    setAddTaskState({ open: false, areaId: null, projectId: null });
+                                    setAddTaskState(prev => ({ ...prev, open: false }));
                                     setAddSkillOpen(true);
                                 }}
                             >
