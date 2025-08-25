@@ -97,7 +97,7 @@ const difficultyColors: Record<Difficulty, string> = {
     'Very Hard': 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30',
 };
 
-type ProjectSortOption = 'name-asc' | 'name-desc' | 'progress-asc' | 'progress-desc';
+type ProjectSortOption = 'name-asc' | 'name-desc' | 'progress-asc' | 'progress-desc' | 'date-asc' | 'date-desc';
 type TaskFilterOption = 'all' | 'incomplete' | 'completed';
 
 
@@ -140,6 +140,16 @@ export default function AreaDetailPage() {
         const completedTasks = project.tasks.filter(t => t.completed).length;
         return (completedTasks / totalTasks) * 100;
     };
+
+    const getProjectDate = (project: Project, direction: 'asc' | 'desc'): number => {
+        const dueDates = project.tasks
+            .map(t => t.dueDate ? new Date(t.dueDate).getTime() : null)
+            .filter((d): d is number => d !== null);
+        if (dueDates.length === 0) {
+            return direction === 'asc' ? Infinity : -Infinity;
+        }
+        return direction === 'asc' ? Math.min(...dueDates) : Math.max(...dueDates);
+    };
     
     let sorted = [...area.projects];
 
@@ -155,6 +165,12 @@ export default function AreaDetailPage() {
             break;
         case 'progress-desc':
             sorted.sort((a, b) => getProjectProgress(b) - getProjectProgress(a));
+            break;
+        case 'date-asc':
+            sorted.sort((a, b) => getProjectDate(a, 'asc') - getProjectDate(b, 'asc'));
+            break;
+        case 'date-desc':
+            sorted.sort((a, b) => getProjectDate(b, 'desc') - getProjectDate(a, 'desc'));
             break;
     }
 
@@ -346,6 +362,8 @@ export default function AreaDetailPage() {
                             <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
                             <DropdownMenuRadioItem value="progress-desc">Progress (High-Low)</DropdownMenuRadioItem>
                             <DropdownMenuRadioItem value="progress-asc">Progress (Low-High)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="date-asc">Due Date (Soonest)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="date-desc">Due Date (Latest)</DropdownMenuRadioItem>
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -686,3 +704,5 @@ export default function AreaDetailPage() {
     </>
   );
 }
+
+    
