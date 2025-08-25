@@ -626,7 +626,7 @@ export default function QuestsPage() {
                 </div>
               </div>
                <DialogFooter className="mt-4">
-                <Button variant="outline" onClick={handleFocusClick}>
+                <Button variant="outline" onClick={handleFocusClick} disabled={currentTask.completed}>
                   <Crosshair className="mr-2 h-4 w-4" />
                   Focus on Task
                 </Button>
