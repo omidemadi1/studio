@@ -751,9 +751,18 @@ export default function AreaDetailPage() {
               <DialogHeader className="flex flex-row items-center justify-between">
                 <DialogTitle className="text-2xl font-bold font-headline">{currentTask.title}</DialogTitle>
                 <div className='flex items-center gap-2'>
-                    <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
-                        <Crosshair className="h-5 w-5" />
-                    </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
+                            <Crosshair className="h-5 w-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Focus on this task</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                    <Checkbox
                         checked={currentTask.completed}
                         onCheckedChange={(checked) =>

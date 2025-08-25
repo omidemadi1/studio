@@ -62,6 +62,7 @@ import { suggestSmartTasks } from '@/ai/flows/suggest-smart-tasks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CalendarView from '@/components/calendar-view';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -304,7 +305,7 @@ export default function QuestsPage() {
                   </TabsList>
               </Tabs>
               <Button variant="ghost" size="icon" onClick={() => setAddAreaOpen(true)}>
-                  <PlusCircle className="h-6 w-6 text-primary" />
+                  <PlusCircle className="h-6 h-6 text-primary" />
                   <span className="sr-only">Add Area</span>
               </Button>
             </div>
@@ -537,9 +538,18 @@ export default function QuestsPage() {
               <DialogHeader className="flex flex-row items-center justify-between">
                 <DialogTitle className="text-2xl font-bold font-headline">{currentTask.title}</DialogTitle>
                 <div className='flex items-center gap-2'>
-                    <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
-                        <Crosshair className="h-5 w-5" />
-                    </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
+                            <Crosshair className="h-5 w-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Focus on this task</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                     <Checkbox
                         checked={currentTask.completed}
                         onCheckedChange={(checked) =>

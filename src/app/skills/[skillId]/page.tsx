@@ -46,6 +46,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const skillSchema = z.object({
@@ -292,9 +293,18 @@ export default function SkillDetailPage() {
                     <DialogHeader className="flex flex-row items-center justify-between">
                         <DialogTitle className="text-2xl font-bold font-headline">{currentTask.title}</DialogTitle>
                         <div className='flex items-center gap-2'>
-                            <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
-                                <Crosshair className="h-5 w-5" />
-                            </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
+                                    <Crosshair className="h-5 w-5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Focus on this task</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                             <Checkbox
                                 checked={currentTask.completed}
                                 onCheckedChange={(checked) =>
