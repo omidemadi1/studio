@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -62,7 +63,7 @@ const difficultyColors: Record<Difficulty, string> = {
 };
 
 // Task Card Component
-const TaskCard = ({ task, onUpdate }: { task: Task; onUpdate: (taskId: string, completed: boolean) => void }) => {
+const TaskCard = ({ task }: { task: Task; }) => {
   const { areas } = useQuestData();
 
   const projectInfo = useMemo(() => {
@@ -76,29 +77,23 @@ const TaskCard = ({ task, onUpdate }: { task: Task; onUpdate: (taskId: string, c
   }, [areas, task.projectId]);
 
   return (
-    <Card className="bg-background/50 p-2 text-xs rounded-md mb-1 shadow-sm">
-      <p className="font-semibold truncate mb-1">{task.title}</p>
+    <Card className={cn("p-2 text-xs rounded-md mb-1 shadow-sm", task.completed ? 'bg-muted/50' : 'bg-background/50')}>
+      <p className={cn("font-semibold truncate mb-1", task.completed && "line-through text-muted-foreground")}>{task.title}</p>
       {projectInfo && (
         <div className="flex items-center gap-1 text-muted-foreground mb-2">
           <Folder className="h-3 w-3" />
           <span className="truncate">{projectInfo.name}</span>
         </div>
       )}
-      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-        <Checkbox
-          id={`cal-task-${task.id}`}
-          checked={task.completed}
-          onCheckedChange={(checked) => onUpdate(task.id, !!checked)}
-          className="h-4 w-4"
-        />
-        <label htmlFor={`cal-task-${task.id}`} className="text-xs">Done</label>
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <span className="text-xs font-bold text-primary/80">+{task.xp} XP</span>
       </div>
     </Card>
   );
 };
 
 // Draggable Task Wrapper
-const DraggableTaskWrapper = ({ task, onUpdate, onClick }: { task: Task, onUpdate: (taskId: string, completed: boolean) => void, onClick: () => void }) => {
+const DraggableTaskWrapper = ({ task, onClick }: { task: Task, onClick: () => void }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: task.id,
     });
@@ -118,7 +113,7 @@ const DraggableTaskWrapper = ({ task, onUpdate, onClick }: { task: Task, onUpdat
             onClick={onClick}
             className="relative cursor-grab active:cursor-grabbing"
         >
-            <TaskCard task={task} onUpdate={onUpdate} />
+            <TaskCard task={task} />
         </div>
     );
 };
@@ -319,7 +314,7 @@ export default function CalendarView() {
                             </div>
                             <div className="space-y-1">
                                 {tasksForDay.map(task => (
-                                    <DraggableTaskWrapper key={task.id} task={task} onUpdate={updateTaskCompletion} onClick={() => handleTaskClick(task)} />
+                                    <DraggableTaskWrapper key={task.id} task={task} onClick={() => handleTaskClick(task)} />
                                 ))}
                             </div>
                         </DayCellDroppable>

@@ -338,7 +338,7 @@ export default function QuestsPage() {
                                   />
                                 </div>
                                 <span
-                                  className="flex-1 text-sm font-medium leading-none"
+                                  className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
                                 >
                                   {task.title}
                                 </span>
@@ -554,7 +554,7 @@ export default function QuestsPage() {
                 {currentTask.difficulty && (
                     <>
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
-                        <div><Badge variant="outline" className={difficultyColors[currentTask.difficulty]}>{currentTask.difficulty}</Badge></div>
+                        <div><Badge variant="outline" className={cn(currentTask.difficulty ? difficultyColors[currentTask.difficulty] : '')}>{currentTask.difficulty}</Badge></div>
                     </>
                 )}
 
