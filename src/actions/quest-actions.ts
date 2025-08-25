@@ -41,7 +41,6 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
     const transaction = db.transaction(() => {
         let skillIdToRevalidate: string | undefined;
         let skillLeveledUp = false;
-        let newSkillLevel = 0;
 
         if (focusDuration) {
             db.prepare('UPDATE tasks SET completed = ?, focusDuration = (focusDuration + ?) WHERE id = ?').run(completed ? 1 : 0, focusDuration, taskId);
@@ -63,6 +62,9 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
                 if (completed && newXp >= user.nextLevelXp) {
                     newLevel = user.level + 1;
                     newNextLevelXp = user.nextLevelXp * 2;
+                } else if (!completed && newXp < user.nextLevelXp / 2 && newLevel > 1) {
+                    newLevel = user.level -1;
+                    newNextLevelXp = user.nextLevelXp / 2;
                 }
                 db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp);
             }
@@ -71,7 +73,7 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
             if (task.skillId) {
                 const skill = db.prepare('SELECT * FROM skills WHERE id = ?').get(task.skillId) as Skill;
                 if (skill) {
-                    const newPoints = skill.points + xpChange;
+                    let newPoints = skill.points + xpChange;
                     let newSkillLevel = skill.level;
                     let newMaxPoints = skill.maxPoints;
 
@@ -79,6 +81,12 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
                         newSkillLevel = skill.level + 1;
                         newMaxPoints = Math.floor(skill.maxPoints * 1.5);
                         skillLeveledUp = true;
+                    } else if (!completed && newPoints < 0 && newSkillLevel > 1) {
+                        // De-leveling logic
+                        const prevMaxPoints = Math.ceil(skill.maxPoints / 1.5);
+                        newSkillLevel = skill.level - 1;
+                        newMaxPoints = prevMaxPoints;
+                        newPoints = prevMaxPoints + newPoints; // newPoints is negative here
                     }
                     
                     db.prepare('UPDATE skills SET points = ?, level = ?, maxPoints = ? WHERE id = ?')
