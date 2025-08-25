@@ -134,11 +134,42 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
 }
 
 export async function updateTaskDetails(taskId: string, details: Partial<Task>) {
-  const { description, notes, links, dueDate, skillId } = details;
+  const { title, description, notes, links, dueDate, skillId } = details;
   const oldTask = db.prepare('SELECT skillId FROM tasks WHERE id = ?').get(taskId) as Task;
   
-  db.prepare('UPDATE tasks SET description = ?, notes = ?, links = ?, dueDate = ?, skillId = ? WHERE id = ?')
-    .run(description, notes, links, dueDate, skillId, taskId);
+  const updates: string[] = [];
+  const params: (string|number|null|undefined)[] = [];
+
+  if (title !== undefined) {
+    updates.push('title = ?');
+    params.push(title);
+  }
+  if (description !== undefined) {
+    updates.push('description = ?');
+    params.push(description);
+  }
+  if (notes !== undefined) {
+    updates.push('notes = ?');
+    params.push(notes);
+  }
+  if (links !== undefined) {
+    updates.push('links = ?');
+    params.push(links);
+  }
+  if (dueDate !== undefined) {
+    updates.push('dueDate = ?');
+    params.push(dueDate);
+  }
+  if (skillId !== undefined) {
+    updates.push('skillId = ?');
+    params.push(skillId);
+  }
+  
+  if (updates.length > 0) {
+    params.push(taskId);
+    const query = `UPDATE tasks SET ${updates.join(', ')} WHERE id = ?`;
+    db.prepare(query).run(...params);
+  }
   
   revalidatePath('/');
   if (oldTask?.skillId) revalidatePath(`/skills/${oldTask.skillId}`);

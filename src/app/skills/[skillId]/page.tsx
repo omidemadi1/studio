@@ -101,6 +101,7 @@ export default function SkillDetailPage() {
         const task = relatedTasks.find(t => t.id === taskId);
         if (task) {
           setEditableTaskData({
+            title: task.title,
             description: task.description || '',
             notes: task.notes || '',
             links: task.links || '',
@@ -109,7 +110,7 @@ export default function SkillDetailPage() {
         setTaskDetailState({ open: true, taskId });
     };
 
-    const handleTaskDataChange = (field: 'description' | 'notes' | 'links', value: string) => {
+    const handleTaskDataChange = (field: keyof Task, value: string) => {
         if (!taskDetailState.taskId) return;
         setEditableTaskData(prev => ({ ...prev, [field]: value }));
         updateTaskDetails(taskDetailState.taskId, { [field]: value });
@@ -290,9 +291,13 @@ export default function SkillDetailPage() {
                 <DialogContent className="sm:max-w-xl">
                 {currentTask && (
                     <>
-                    <DialogHeader className="flex flex-row items-center justify-between">
-                        <DialogTitle className="text-2xl font-bold font-headline">{currentTask.title}</DialogTitle>
-                        <div className='flex items-center gap-2'>
+                    <DialogHeader className="flex flex-row items-start justify-between gap-4">
+                      <Input
+                        value={editableTaskData.title}
+                        onChange={(e) => handleTaskDataChange('title', e.target.value)}
+                        className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      />
+                        <div className='flex items-center gap-2 flex-shrink-0'>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -314,7 +319,7 @@ export default function SkillDetailPage() {
                             />
                         </div>
                     </DialogHeader>
-                    <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
+                    <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
 
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
                         <div className="font-semibold">{area?.name}</div>
