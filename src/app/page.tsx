@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -45,12 +46,15 @@ import {
   Link as LinkIcon,
   Clock,
   Briefcase,
+  Sparkles,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
+import { suggestSmartTasks } from '@/ai/flows/suggest-smart-tasks';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -79,7 +83,7 @@ const difficultyColors: Record<Difficulty, string> = {
 
 export default function QuestsPage() {
   const { toast } = useToast();
-  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails } = useQuestData();
+  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [addProjectState, setAddProjectState] = useState<{ open: boolean; areaId: string | null }>({ open: false, areaId: null });
@@ -87,6 +91,44 @@ export default function QuestsPage() {
   const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; taskId: string | null; }>({ open: false, areaId: null, projectId: null, taskId: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
+  const [suggestedTasks, setSuggestedTasks] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+
+  useEffect(() => {
+    async function fetchSuggestions() {
+      setLoadingSuggestions(true);
+      try {
+        const completedTasks = tasks.filter(t => t.completed);
+        const pastPerformance = completedTasks.length > 0 
+          ? `Completed ${completedTasks.length} tasks. Recently completed: ${completedTasks.slice(0, 5).map(t => t.title).join(', ')}`
+          : "No tasks completed yet.";
+        
+        const currentSkills = skills.map(s => `${s.name} (Lvl ${s.level})`).join(', ');
+        
+        const result = await suggestSmartTasks({
+          pastPerformance,
+          currentSkills,
+          userPreferences: 'Looking for a mix of tasks to improve all skills.'
+        });
+
+        // The AI returns a string, so we need to parse it. 
+        // This is a simple split, but a more robust markdown parser could be used.
+        const taskLines = result.suggestedTasks
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.startsWith('-') || line.startsWith('*'))
+          .map(line => line.substring(1).trim());
+
+        setSuggestedTasks(taskLines);
+      } catch (error) {
+        console.error("Failed to fetch smart tasks:", error);
+        // Silently fail for now, don't show an error to the user
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }
+    fetchSuggestions();
+  }, [tasks, skills]);
 
 
   const areaForm = useForm<z.infer<typeof areaSchema>>({
@@ -184,10 +226,10 @@ export default function QuestsPage() {
   }
 
   const { areaId, projectId, taskId } = taskDetailState;
-  const area = areas.find((a) => a.id === areaId);
-  const project = area?.projects.find((p) => p.id === projectId);
-  const task = project?.tasks.find((t) => t.id === taskId);
-  const skill = skills.find(s => s.id === task?.skillId);
+  const currentArea = areas.find((a) => a.id === areaId);
+  const currentProject = currentArea?.projects.find((p) => p.id === projectId);
+  const currentTask = currentProject?.tasks.find((t) => t.id === taskId);
+  const currentSkill = skills.find(s => s.id === currentTask?.skillId);
 
   const handleTaskDataChange = (field: 'description' | 'notes' | 'links', value: string) => {
     setEditableTaskData(prev => ({ ...prev, [field]: value }));
@@ -205,6 +247,37 @@ export default function QuestsPage() {
           <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
         </Avatar>
       </header>
+      
+      <section className="mb-8">
+        <h2 className="text-2xl font-headline font-semibold mb-4 flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-accent" />
+            Daily Missions
+        </h2>
+        <Card className="bg-card/80">
+            <CardContent className="p-6">
+                {loadingSuggestions ? (
+                    <div className="space-y-3">
+                        <Skeleton className="h-5 w-3/4" />
+                        <Skeleton className="h-5 w-1/2" />
+                        <Skeleton className="h-5 w-2/3" />
+                    </div>
+                ) : suggestedTasks.length > 0 ? (
+                    <ul className="space-y-3">
+                        {suggestedTasks.slice(0,3).map((task, index) => (
+                            <li key={index} className="flex items-center gap-3">
+                                <div className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center">
+                                    <Sparkles className="w-3 h-3 text-primary" />
+                                </div>
+                                <span className="text-sm font-medium">{task}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="text-muted-foreground text-sm text-center">No missions for today. Check back later!</p>
+                )}
+            </CardContent>
+        </Card>
+      </section>
 
       <section>
         <div className="flex justify-between items-center mb-4">
@@ -432,15 +505,15 @@ export default function QuestsPage() {
 
       <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
         <DialogContent className="sm:max-w-xl">
-          {task && areaId && projectId && (
+          {currentTask && areaId && projectId && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold font-headline pr-10">{task.title}</DialogTitle>
+                <DialogTitle className="text-2xl font-bold font-headline pr-10">{currentTask.title}</DialogTitle>
                 <div className="absolute top-6 right-12">
                    <Checkbox
-                        checked={task.completed}
+                        checked={currentTask.completed}
                         onCheckedChange={(checked) =>
-                            updateTaskCompletion(task.id, !!checked)
+                            updateTaskCompletion(currentTask.id, !!checked)
                         }
                         className="w-5 h-5"
                     />
@@ -449,29 +522,29 @@ export default function QuestsPage() {
               <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
                 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
-                <div className="font-semibold">{area?.name}</div>
+                <div className="font-semibold">{currentArea?.name}</div>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
-                <div className="font-semibold">{project?.name}</div>
+                <div className="font-semibold">{currentProject?.name}</div>
 
-                {skill && (
+                {currentSkill && (
                   <>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
-                    <div className="font-semibold">{skill.name}</div>
+                    <div className="font-semibold">{currentSkill.name}</div>
                   </>
                 )}
 
-                {task.difficulty && (
+                {currentTask.difficulty && (
                     <>
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
-                        <div><Badge variant="outline" className={difficultyColors[task.difficulty]}>{task.difficulty}</Badge></div>
+                        <div><Badge variant="outline" className={difficultyColors[currentTask.difficulty]}>{currentTask.difficulty}</Badge></div>
                     </>
                 )}
 
                 <>
                   <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Due Date</div>
                   <DateTimePicker
-                    date={task.dueDate ? new Date(task.dueDate) : undefined}
+                    date={currentTask.dueDate ? new Date(currentTask.dueDate) : undefined}
                     setDate={(date) => {
                       if (!taskId) return;
                       updateTaskDetails(taskId, { dueDate: date?.toISOString() });
@@ -480,13 +553,13 @@ export default function QuestsPage() {
                 </>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                <div className="font-semibold">{task.xp}</div>
+                <div className="font-semibold">{currentTask.xp}</div>
                 
-                {task.focusDuration && task.focusDuration > 0 && (
+                {currentTask.focusDuration && currentTask.focusDuration > 0 && (
                   <>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>
                     <div className="font-semibold">
-                      {`${Math.floor(task.focusDuration / 3600)}h ${Math.floor((task.focusDuration % 3600) / 60)}m`}
+                      {`${Math.floor(currentTask.focusDuration / 3600)}h ${Math.floor((currentTask.focusDuration % 3600) / 60)}m`}
                     </div>
                   </>
                 )}
