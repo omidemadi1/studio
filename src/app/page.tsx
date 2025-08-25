@@ -28,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogClose,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -70,6 +71,7 @@ import {
   Crosshair,
   Pencil,
   Trash2,
+  Check,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -81,6 +83,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CalendarView from '@/components/calendar-view';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -101,6 +105,11 @@ const taskSchema = z.object({
   projectId: z.string({ required_error: 'Please select a project.'}),
 });
 
+const skillSchema = z.object({
+  name: z.string().min(1, 'Skill name is required.'),
+  icon: z.string().min(1, 'An icon is required.'),
+});
+
 
 const difficultyColors: Record<Difficulty, string> = {
     Easy: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30',
@@ -114,7 +123,7 @@ type ViewMode = 'list' | 'calendar';
 export default function QuestsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks, deleteArea, updateArea } = useQuestData();
+  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks, deleteArea, updateArea, addSkill } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [editAreaState, setEditAreaState] = useState<{ open: boolean; area: Area | null }>({ open: false, area: null });
@@ -127,6 +136,8 @@ export default function QuestsPage() {
   const [suggestedTasks, setSuggestedTasks] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [addSkillOpen, setAddSkillOpen] = useState(false);
+
 
   useEffect(() => {
     async function fetchSuggestions() {
@@ -182,6 +193,11 @@ export default function QuestsPage() {
     },
   });
   
+  const skillForm = useForm<z.infer<typeof skillSchema>>({
+    resolver: zodResolver(skillSchema),
+    defaultValues: { name: '', icon: '' },
+  });
+  
   useEffect(() => {
     if (addTaskState.open && addTaskState.date) {
         taskForm.setValue('dueDate', addTaskState.date);
@@ -217,6 +233,12 @@ export default function QuestsPage() {
     projectForm.reset();
     setAddProjectState({ open: false, areaId: null });
   }
+
+  const onAddSkill = (data: z.infer<typeof skillSchema>) => {
+    addSkill(data.name, data.icon);
+    skillForm.reset();
+    setAddSkillOpen(false);
+  };
 
   async function onAddTask(data: z.infer<typeof taskSchema>) {
     const areaId = addTaskState.areaId || data.areaId;
@@ -647,7 +669,12 @@ export default function QuestsPage() {
                   name="skillId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Skill Category</FormLabel>
+                        <div className="flex items-center justify-between">
+                            <FormLabel>Skill Category</FormLabel>
+                            <Button variant="ghost" size="sm" type="button" onClick={() => setAddSkillOpen(true)}>
+                                <PlusCircle className="h-4 w-4 mr-1" /> Add
+                            </Button>
+                        </div>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -800,6 +827,84 @@ export default function QuestsPage() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={addSkillOpen} onOpenChange={setAddSkillOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create a New Skill</DialogTitle>
+            <DialogDescription>
+              Skills help you track progress in different areas of your life.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...skillForm}>
+            <form
+              onSubmit={skillForm.handleSubmit(onAddSkill)}
+              className="space-y-4 py-4"
+            >
+              <FormField
+                control={skillForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skill Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Programming" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={skillForm.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icon</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button variant="outline" className="w-full justify-start" type="button">
+                                    {field.value ? (
+                                        <>
+                                            {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
+                                            {field.value}
+                                        </>
+                                    ) : 'Select an icon'}
+                                </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2 max-w-[240px] max-h-[200px] overflow-y-auto">
+                            <div className="grid grid-cols-6 gap-1">
+                                {Object.keys(iconMap).map((iconName) => {
+                                    const IconComponent = iconMap[iconName];
+                                    return (
+                                        <Button
+                                            key={iconName}
+                                            variant="ghost"
+                                            size="icon"
+                                            type="button"
+                                            onClick={() => field.onChange(iconName)}
+                                            className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
+                                        >
+                                            <IconComponent className="h-5 w-5" />
+                                            {field.value === iconName && <Check className="absolute bottom-0 right-0 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                 <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
+                <Button type="submit">Create Skill</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
