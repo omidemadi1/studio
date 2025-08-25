@@ -149,9 +149,6 @@ export default function AreaDetailPage() {
             <h1 className="text-3xl font-headline font-bold">{area.name}</h1>
             </div>
         </div>
-        <Button onClick={() => setAddProjectOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Project
-        </Button>
       </header>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -190,7 +187,12 @@ export default function AreaDetailPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-headline font-semibold mb-4">Projects</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-headline font-semibold">Projects</h2>
+          <Button onClick={() => setAddProjectOpen(true)} size="sm">
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Project
+          </Button>
+        </div>
         <div className="space-y-4">
           {area.projects.map((project) => {
             const projectTasks = project.tasks;
