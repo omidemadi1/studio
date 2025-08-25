@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -7,8 +8,8 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Quests', icon: Swords },
-  { href: '/market', label: 'Market', icon: Store },
   { href: '/focus', label: 'Focus', icon: Crosshair },
+  { href: '/market', label: 'Market', icon: Store },
   { href: '/profile', label: 'Profile', icon: User },
 ];
 
