@@ -35,6 +35,7 @@ import {
   Columns,
   ListChecks,
   Crosshair,
+  Pencil,
 } from 'lucide-react';
 import type { Task, Difficulty, Project } from '@/lib/types';
 import { z } from 'zod';
@@ -70,7 +71,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -113,9 +113,11 @@ export default function AreaDetailPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { areaId } = useParams();
-  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject } = useQuestData();
+  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject } = useQuestData();
 
   const [addProjectOpen, setAddProjectOpen] = useState(false);
+  const [editProjectState, setEditProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
+  const [deleteProjectState, setDeleteProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; projectId: string | null }>({ open: false, projectId: null });
   const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; projectId: string | null; taskId: string | null; }>({ open: false, projectId: null, taskId: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -236,6 +238,13 @@ export default function AreaDetailPage() {
     setAddProjectOpen(false);
   }
 
+  function onEditProject(data: z.infer<typeof projectSchema>) {
+    if (!editProjectState.project) return;
+    updateProject(editProjectState.project.id, data.name);
+    setEditProjectState({ open: false, project: null });
+    projectForm.reset();
+  }
+
   async function onAddTask(data: z.infer<typeof taskSchema>) {
     const projectId = addTaskState.projectId || data.projectId;
     if (!area || !projectId) return;
@@ -313,8 +322,10 @@ export default function AreaDetailPage() {
     updateTaskDetails(taskId, { [field]: value });
   };
 
-  const handleDeleteProject = (id: string) => {
-    deleteProject(id, area.id)
+  const handleDeleteProject = () => {
+    if (!deleteProjectState.project) return;
+    deleteProject(deleteProjectState.project.id, area.id)
+    setDeleteProjectState({ open: false, project: null });
   };
 
   const handleFocusClick = () => {
@@ -521,26 +532,15 @@ export default function AreaDetailPage() {
                   </Card>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
-                  <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                          <ContextMenuItem onSelect={(e) => e.preventDefault()}>
-                              <Trash2 className='h-4 w-4 mr-2'/> Delete Project
-                          </ContextMenuItem>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the 
-                              <span className="font-bold"> {project.name}</span> project and all its tasks.
-                          </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteProject(project.id)}>Continue</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                  </AlertDialog>
+                    <ContextMenuItem onSelect={() => {
+                        projectForm.setValue('name', project.name);
+                        setEditProjectState({ open: true, project });
+                    }}>
+                        <Pencil className="h-4 w-4 mr-2" /> Edit
+                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => setDeleteProjectState({ open: true, project })}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete
+                    </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
               )
@@ -631,6 +631,54 @@ export default function AreaDetailPage() {
           </Form>
         </DialogContent>
     </Dialog>
+
+    <Dialog open={editProjectState.open} onOpenChange={(open) => setEditProjectState({ open, project: open ? editProjectState.project : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+            <DialogDescription>
+              Update the name of your project.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...projectForm}>
+            <form onSubmit={projectForm.handleSubmit(onEditProject)} className="space-y-4">
+              <FormField
+                control={projectForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Q3 Goals" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+    </Dialog>
+
+    <AlertDialog open={deleteProjectState.open} onOpenChange={(open) => setDeleteProjectState({ open, project: open ? deleteProjectState.project : null })}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the 
+                <span className="font-bold"> {deleteProjectState.project?.name}</span> project and all its tasks.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteProjectState({open: false, project: null})}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteProject}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
 
     <Dialog open={addTaskState.open} onOpenChange={(open) => setAddTaskState({ open, projectId: open ? addTaskState.projectId : null })}>
         <DialogContent>
@@ -859,5 +907,3 @@ export default function AreaDetailPage() {
     </>
   );
 }
-
-    

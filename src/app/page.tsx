@@ -29,10 +29,26 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { Task, Difficulty } from '@/lib/types';
+import type { Task, Difficulty, Area } from '@/lib/types';
 import { iconMap } from '@/lib/icon-map';
 import {
   Swords,
@@ -52,6 +68,8 @@ import {
   Sparkles,
   LayoutList,
   Crosshair,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -96,9 +114,11 @@ type ViewMode = 'list' | 'calendar';
 export default function QuestsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks } = useQuestData();
+  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks, deleteArea, updateArea } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
+  const [editAreaState, setEditAreaState] = useState<{ open: boolean; area: Area | null }>({ open: false, area: null });
+  const [deleteAreaState, setDeleteAreaState] = useState<{ open: boolean; area: Area | null }>({ open: false, area: null });
   const [addProjectState, setAddProjectState] = useState<{ open: boolean; areaId: string | null }>({ open: false, areaId: null });
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; date?: Date }>({ open: false, areaId: null, projectId: null });
   const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; taskId: string | null; }>({ open: false, areaId: null, projectId: null, taskId: null });
@@ -177,6 +197,19 @@ export default function QuestsPage() {
     areaForm.reset();
     setAddAreaOpen(false);
   }
+
+  function onEditArea(data: z.infer<typeof areaSchema>) {
+    if (!editAreaState.area) return;
+    updateArea(editAreaState.area.id, data.name);
+    setEditAreaState({ open: false, area: null });
+    areaForm.reset();
+  }
+
+  const handleDeleteArea = () => {
+    if (!deleteAreaState.area) return;
+    deleteArea(deleteAreaState.area.id);
+    setDeleteAreaState({ open: false, area: null });
+  };
 
   function onAddProject(data: z.infer<typeof projectSchema>) {
     if (!addProjectState.areaId) return;
@@ -331,65 +364,80 @@ export default function QuestsPage() {
             {areas.map((area) => {
               const AreaIcon = iconMap[area.icon] || Briefcase;
               return (
-              <AccordionItem key={area.id} value={area.id}>
-                <AccordionTrigger className="text-xl font-headline hover:no-underline">
-                  <Link href={`/areas/${area.id}`} className="flex items-center gap-3">
-                      <AreaIcon className="w-6 h-6 text-accent" />
-                      {area.name}
-                  </Link>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <Accordion type="multiple" defaultValue={area.projects.map(p => p.id)} className="w-full pl-4 border-l-2 border-primary/20">
-                    {area.projects.map((project) => (
-                      <AccordionItem key={project.id} value={project.id} className="border-b-0">
-                        <AccordionTrigger className="font-semibold hover:no-underline">
-                          {project.name}
-                        </AccordionTrigger>
-                        <AccordionContent className="pb-0">
-                          <ul className="space-y-3">
-                            {project.tasks.map((task: Task) => (
-                              <li
-                                key={task.id}
-                                className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
-                                onClick={() => handleTaskClick(area.id, project.id, task.id)}
-                              >
-                                <div onClick={(e) => e.stopPropagation()}>
-                                  <Checkbox
-                                    id={task.id}
-                                    checked={task.completed}
-                                    onCheckedChange={(checked) =>
-                                      updateTaskCompletion(task.id, !!checked)
-                                    }
-                                    className="w-5 h-5"
-                                  />
-                                </div>
-                                <span
-                                  className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
-                                >
-                                  {task.title}
-                                </span>
-                                <span className="text-xs font-bold text-primary">
-                                  +{task.xp} XP
-                                </span>
-                              </li>
-                            ))}
-                            <li className="flex justify-center mt-2">
-                                  <Button variant="ghost" size="sm" onClick={() => setAddTaskState({ open: true, areaId: area.id, projectId: project.id })}>
-                                      <PlusCircle className="h-4 w-4 mr-2" /> Add Task
-                                  </Button>
-                            </li>
-                          </ul>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                    <div className="flex justify-center mt-2">
-                          <Button variant="ghost" onClick={() => setAddProjectState({ open: true, areaId: area.id })}>
-                              <PlusCircle className="h-5 w-5 mr-2" /> Add Project
-                          </Button>
-                      </div>
-                  </Accordion>
-                </AccordionContent>
-              </AccordionItem>
+              <ContextMenu key={area.id}>
+                <ContextMenuTrigger>
+                    <AccordionItem value={area.id}>
+                    <AccordionTrigger className="text-xl font-headline hover:no-underline">
+                      <Link href={`/areas/${area.id}`} className="flex items-center gap-3">
+                          <AreaIcon className="w-6 h-6 text-accent" />
+                          {area.name}
+                      </Link>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <Accordion type="multiple" defaultValue={area.projects.map(p => p.id)} className="w-full pl-4 border-l-2 border-primary/20">
+                        {area.projects.map((project) => (
+                          <AccordionItem key={project.id} value={project.id} className="border-b-0">
+                            <AccordionTrigger className="font-semibold hover:no-underline">
+                              {project.name}
+                            </AccordionTrigger>
+                            <AccordionContent className="pb-0">
+                              <ul className="space-y-3">
+                                {project.tasks.map((task: Task) => (
+                                  <li
+                                    key={task.id}
+                                    className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                                    onClick={() => handleTaskClick(area.id, project.id, task.id)}
+                                  >
+                                    <div onClick={(e) => e.stopPropagation()}>
+                                      <Checkbox
+                                        id={task.id}
+                                        checked={task.completed}
+                                        onCheckedChange={(checked) =>
+                                          updateTaskCompletion(task.id, !!checked)
+                                        }
+                                        className="w-5 h-5"
+                                      />
+                                    </div>
+                                    <span
+                                      className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
+                                    >
+                                      {task.title}
+                                    </span>
+                                    <span className="text-xs font-bold text-primary">
+                                      +{task.xp} XP
+                                    </span>
+                                  </li>
+                                ))}
+                                <li className="flex justify-center mt-2">
+                                      <Button variant="ghost" size="sm" onClick={() => setAddTaskState({ open: true, areaId: area.id, projectId: project.id })}>
+                                          <PlusCircle className="h-4 w-4 mr-2" /> Add Task
+                                      </Button>
+                                </li>
+                              </ul>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                        <div className="flex justify-center mt-2">
+                              <Button variant="ghost" onClick={() => setAddProjectState({ open: true, areaId: area.id })}>
+                                  <PlusCircle className="h-5 w-5 mr-2" /> Add Project
+                              </Button>
+                          </div>
+                      </Accordion>
+                    </AccordionContent>
+                  </AccordionItem>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                    <ContextMenuItem onSelect={() => {
+                        areaForm.setValue('name', area.name);
+                        setEditAreaState({ open: true, area });
+                    }}>
+                        <Pencil className="h-4 w-4 mr-2" /> Edit Area
+                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => setDeleteAreaState({ open: true, area })}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete Area
+                    </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             )})}
           </Accordion>
         ) : (
@@ -428,6 +476,53 @@ export default function QuestsPage() {
         </DialogContent>
       </Dialog>
       
+      <Dialog open={editAreaState.open} onOpenChange={(open) => setEditAreaState({ open, area: open ? editAreaState.area : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Area</DialogTitle>
+            <DialogDescription>
+                Update the name of your area.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...areaForm}>
+            <form onSubmit={areaForm.handleSubmit(onEditArea)} className="space-y-4">
+              <FormField
+                control={areaForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Area Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Fitness" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+    <AlertDialog open={deleteAreaState.open} onOpenChange={(open) => setDeleteAreaState({ open, area: open ? deleteAreaState.area : null })}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the 
+                <span className="font-bold"> {deleteAreaState.area?.name}</span> area and all its projects and tasks.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteAreaState({open: false, area: null})}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteArea}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
       <Dialog open={addProjectState.open} onOpenChange={(open) => setAddProjectState({ open, areaId: open ? addProjectState.areaId : null })}>
         <DialogContent>
           <DialogHeader>

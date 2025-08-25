@@ -15,7 +15,10 @@ interface QuestContextType {
   updateTaskCompletion: (taskId: string, completed: boolean, focusDuration?: number) => void;
   updateTaskDetails: (taskId: string, details: Partial<Task>) => void;
   addArea: (name: string) => void;
+  updateArea: (id: string, name: string) => void;
+  deleteArea: (id: string) => void;
   addProject: (areaId: string, name: string) => void;
+  updateProject: (id: string, name: string) => void;
   addTask: (areaId: string, projectId: string, task: Task) => void;
   addSkill: (name: string, icon: string) => void;
   updateSkill: (id: string, name: string, icon: string) => void;
@@ -127,9 +130,27 @@ export const QuestProvider = ({
     router.refresh();
   };
 
+  const updateArea = async (id: string, name: string) => {
+    await QuestActions.updateArea(id, name);
+    toast({ title: 'Area Updated' });
+    router.refresh();
+  };
+
+  const deleteArea = async (id: string) => {
+    await QuestActions.deleteArea(id);
+    toast({ title: 'Area Deleted', variant: "destructive" });
+    router.refresh();
+  };
+
   const addProject = async (areaId: string, name: string) => {
     await QuestActions.addProject(areaId, name);
     toast({ title: 'Project Created', description: `New project "${name}" has been added.`});
+    router.refresh();
+  };
+
+  const updateProject = async (id: string, name: string) => {
+    await QuestActions.updateProject(id, name);
+    toast({ title: 'Project Updated' });
     router.refresh();
   };
   
@@ -174,7 +195,7 @@ export const QuestProvider = ({
 
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, addSkill, updateSkill, deleteSkill, deleteProject, updateUser, addXp, getTask, getAreaById, getTasksByAreaId };
+  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, updateArea, deleteArea, addProject, updateProject, addTask, addSkill, updateSkill, deleteSkill, deleteProject, updateUser, addXp, getTask, getAreaById, getTasksByAreaId };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };

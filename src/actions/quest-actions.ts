@@ -13,11 +13,30 @@ export async function addArea(name: string) {
   revalidatePath('/areas')
 }
 
+export async function updateArea(id: string, name: string) {
+  db.prepare('UPDATE areas SET name = ? WHERE id = ?').run(name, id);
+  revalidatePath('/');
+  revalidatePath(`/areas/${id}`);
+}
+
+export async function deleteArea(id: string) {
+    db.prepare('DELETE FROM areas WHERE id = ?').run(id);
+    revalidatePath('/');
+}
+
 export async function addProject(areaId: string, name: string) {
   const id = `proj-${Date.now()}`
   db.prepare('INSERT INTO projects (id, name, areaId) VALUES (?, ?, ?)').run(id, name, areaId)
   revalidatePath(`/areas/${areaId}`)
   revalidatePath('/')
+}
+
+export async function updateProject(id: string, name: string) {
+    db.prepare('UPDATE projects SET name = ? WHERE id = ?').run(name, id);
+    revalidatePath('/');
+    // We don't know the areaId here, so we can't revalidate the specific area page.
+    // A full revalidation might be needed, or the areaId needs to be passed.
+    // For now, revalidating the home page should be sufficient.
 }
 
 export async function addTask(areaId: string, projectId: string, task: Task) {
