@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 import {
   Accordion,
   AccordionContent,
@@ -306,10 +307,10 @@ export default function QuestsPage() {
               return (
               <AccordionItem key={area.id} value={area.id}>
                 <AccordionTrigger className="text-xl font-headline hover:no-underline">
-                  <div className="flex items-center gap-3">
+                  <Link href={`/areas/${area.id}`} className="flex items-center gap-3">
                       <AreaIcon className="w-6 h-6 text-accent" />
                       {area.name}
-                  </div>
+                  </Link>
                 </AccordionTrigger>
                 <AccordionContent>
                   <Accordion type="multiple" defaultValue={area.projects.map(p => p.id)} className="w-full pl-4 border-l-2 border-primary/20">

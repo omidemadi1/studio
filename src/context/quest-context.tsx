@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
@@ -20,6 +21,8 @@ interface QuestContextType {
   updateUser: (newUserData: Partial<User>) => void;
   addXp: (xp: number, message?: string) => void;
   getTask: (taskId: string) => { task: Task; areaId: string; projectId: string } | null;
+  getAreaById: (areaId: string) => Area | undefined;
+  getTasksByAreaId: (areaId: string) => Task[];
 }
 
 const QuestContext = createContext<QuestContextType | undefined>(undefined);
@@ -79,6 +82,16 @@ export const QuestProvider = ({
     }
     return null;
   }, [areas]);
+  
+  const getAreaById = useCallback((areaId: string) => {
+    return areas.find(a => a.id === areaId);
+  }, [areas]);
+
+  const getTasksByAreaId = useCallback((areaId: string) => {
+    const area = areas.find(a => a.id === areaId);
+    if (!area) return [];
+    return area.projects.flatMap(p => p.tasks);
+  }, [areas]);
 
   const updateTaskCompletion = useCallback(async (taskId: string, completed: boolean, focusDuration?: number) => {
     const taskData = getTask(taskId);
@@ -131,7 +144,7 @@ export const QuestProvider = ({
 
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, addSkill, updateUser, addXp, getTask };
+  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, addProject, addTask, addSkill, updateUser, addXp, getTask, getAreaById, getTasksByAreaId };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };
