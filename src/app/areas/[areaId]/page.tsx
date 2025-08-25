@@ -100,7 +100,7 @@ const difficultyColors: Record<Difficulty, string> = {
     'Very Hard': 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30',
 };
 
-type ProjectSortOption = 'name-asc' | 'name-desc' | 'progress-asc' | 'progress-desc' | 'date-asc' | 'date-desc';
+type SortOption = 'name-asc' | 'name-desc' | 'progress-asc' | 'progress-desc' | 'date-asc' | 'date-desc';
 type TaskFilterOption = 'all' | 'incomplete' | 'completed';
 type ViewMode = 'projects' | 'tasks';
 
@@ -115,7 +115,7 @@ export default function AreaDetailPage() {
   const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; projectId: string | null; taskId: string | null; }>({ open: false, projectId: null, taskId: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
-  const [sortOption, setSortOption] = useState<ProjectSortOption>('name-asc');
+  const [sortOption, setSortOption] = useState<SortOption>('name-asc');
   const [taskFilter, setTaskFilter] = useState<TaskFilterOption>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('projects');
 
@@ -136,12 +136,43 @@ export default function AreaDetailPage() {
     },
   });
 
-  const filteredAreaTasks = useMemo(() => {
-    return tasks.filter(task => {
-      if (taskFilter === 'all') return true;
-      return taskFilter === 'completed' ? task.completed : !task.completed;
+  const sortedAndFilteredTasks = useMemo(() => {
+    let filteredTasks = tasks.filter(task => {
+        if (taskFilter === 'all') return true;
+        return taskFilter === 'completed' ? task.completed : !task.completed;
     });
-  }, [tasks, taskFilter]);
+
+    const getTaskDate = (task: Task, direction: 'asc' | 'desc'): number => {
+        if (!task.dueDate) {
+            return direction === 'asc' ? Infinity : -Infinity;
+        }
+        return new Date(task.dueDate).getTime();
+    };
+
+    switch (sortOption) {
+        case 'name-asc':
+            filteredTasks.sort((a, b) => a.title.localeCompare(b.title));
+            break;
+        case 'name-desc':
+            filteredTasks.sort((a, b) => b.title.localeCompare(a.title));
+            break;
+        case 'progress-asc': // Sort by completion status: incomplete first
+            filteredTasks.sort((a, b) => (a.completed ? 1 : 0) - (b.completed ? 1 : 0));
+            break;
+        case 'progress-desc': // Sort by completion status: completed first
+            filteredTasks.sort((a, b) => (b.completed ? 1 : 0) - (a.completed ? 1 : 0));
+            break;
+        case 'date-asc':
+            filteredTasks.sort((a, b) => getTaskDate(a, 'asc') - getTaskDate(b, 'asc'));
+            break;
+        case 'date-desc':
+            filteredTasks.sort((a, b) => getTaskDate(b, 'desc') - getTaskDate(a, 'desc'));
+            break;
+    }
+    
+    return filteredTasks;
+  }, [tasks, taskFilter, sortOption]);
+
 
   const sortedAndFilteredProjects = useMemo(() => {
     if (!area) return [];
@@ -377,7 +408,7 @@ export default function AreaDetailPage() {
                         </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as ProjectSortOption)}>
+                            <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
                             <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
                             <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
                             <DropdownMenuRadioItem value="progress-desc">Progress (High-Low)</DropdownMenuRadioItem>
@@ -388,7 +419,7 @@ export default function AreaDetailPage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                      <TooltipContent>
-                        <p>Sort projects</p>
+                        <p>Sort {viewMode}</p>
                     </TooltipContent>
                 </Tooltip>
 
@@ -503,7 +534,7 @@ export default function AreaDetailPage() {
           </div>
         ) : (
             <div className="space-y-2">
-                {filteredAreaTasks.map((task: Task) => (
+                {sortedAndFilteredTasks.map((task: Task) => (
                     <Card
                         key={task.id}
                         className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -527,7 +558,7 @@ export default function AreaDetailPage() {
                         <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
                     </Card>
                 ))}
-                {filteredAreaTasks.length === 0 && (
+                {sortedAndFilteredTasks.length === 0 && (
                     <Card className="bg-card/80 border-2 border-dashed">
                         <CardContent className="p-10 text-center">
                             <p className="text-muted-foreground">
