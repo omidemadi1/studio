@@ -14,12 +14,21 @@ import {
   ArrowLeft,
   LayoutGrid,
   TrendingUp,
-  CheckCircle,
   Target,
   PlusCircle,
   Loader2,
+  Folder,
+  Command,
+  Tag,
+  Flame,
+  Calendar as CalendarIcon,
+  AlignLeft,
+  StickyNote,
+  Link as LinkIcon,
+  Clock,
+  ArrowUp,
 } from 'lucide-react';
-import type { Task } from '@/lib/types';
+import type { Task, Difficulty } from '@/lib/types';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,6 +47,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { useToast } from '@/hooks/use-toast';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const projectSchema = z.object({
   name: z.string().min(1, 'Project name is required.'),
@@ -50,14 +62,25 @@ const taskSchema = z.object({
   skillId: z.string().optional(),
 });
 
+const difficultyColors: Record<Difficulty, string> = {
+    Easy: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30',
+    Medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30',
+    Hard: 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30',
+    'Very Hard': 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30',
+};
+
+
 export default function AreaDetailPage() {
   const { toast } = useToast();
   const { areaId } = useParams();
-  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas } = useQuestData();
+  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails } = useQuestData();
 
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; projectId: string | null }>({ open: false, projectId: null });
+  const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; projectId: string | null; taskId: string | null; }>({ open: false, projectId: null, taskId: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
+
 
   const area = useMemo(() => getAreaById(areaId as string), [areaId, getAreaById]);
   const tasks = useMemo(() => getTasksByAreaId(areaId as string), [areaId, getTasksByAreaId]);
@@ -134,6 +157,34 @@ export default function AreaDetailPage() {
   const totalXp = tasks.reduce((sum, task) => sum + task.xp, 0);
   const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
+  function handleTaskClick(projectId: string, taskId: string) {
+    const project = area?.projects.find((p) => p.id === projectId);
+    const task = project?.tasks.find((t) => t.id === taskId);
+    if (task) {
+      setEditableTaskData({
+        description: task.description || '',
+        notes: task.notes || '',
+        links: task.links || '',
+      });
+    }
+    setTaskDetailState({
+      open: true,
+      projectId,
+      taskId,
+    });
+  }
+  
+  const { projectId, taskId } = taskDetailState;
+  const currentProject = area?.projects.find((p) => p.id === projectId);
+  const currentTask = currentProject?.tasks.find((t) => t.id === taskId);
+  const currentSkill = skills.find(s => s.id === currentTask?.skillId);
+
+  const handleTaskDataChange = (field: 'description' | 'notes' | 'links', value: string) => {
+    setEditableTaskData(prev => ({ ...prev, [field]: value }));
+    if (!taskId) return;
+    updateTaskDetails(taskId, { [field]: value });
+  };
+
   return (
     <>
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
@@ -209,18 +260,30 @@ export default function AreaDetailPage() {
                 </CardHeader>
                 <CardContent className="flex-1">
                   <ul className="space-y-2">
-                    {projectTasks.slice(0, 5).map((task: Task) => (
-                      <li key={task.id} className="flex items-center gap-3">
-                        <CheckCircle className={`h-4 w-4 ${task.completed ? 'text-green-500' : 'text-muted-foreground'}`} />
-                        <span className={`flex-1 text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
-                          {task.title}
-                        </span>
-                        <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
-                      </li>
+                    {projectTasks.map((task: Task) => (
+                        <li
+                            key={task.id}
+                            className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => handleTaskClick(project.id, task.id)}
+                        >
+                            <div onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                                id={`task-${task.id}`}
+                                checked={task.completed}
+                                onCheckedChange={(checked) =>
+                                    updateTaskCompletion(task.id, !!checked)
+                                }
+                                className="w-5 h-5"
+                            />
+                            </div>
+                            <span
+                            className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
+                            >
+                            {task.title}
+                            </span>
+                            <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
+                        </li>
                     ))}
-                    {projectTasks.length > 5 && (
-                        <li className="text-center text-sm text-muted-foreground pt-2">...and {projectTasks.length - 5} more.</li>
-                    )}
                      {projectTasks.length === 0 && (
                         <p className="text-sm text-muted-foreground text-center py-4">No tasks in this project yet.</p>
                      )}
@@ -363,6 +426,108 @@ export default function AreaDetailPage() {
           </Form>
         </DialogContent>
       </Dialog>
+    
+    <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-xl">
+          {currentTask && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold font-headline pr-10">{currentTask.title}</DialogTitle>
+                <div className="absolute top-6 right-12">
+                   <Checkbox
+                        checked={currentTask.completed}
+                        onCheckedChange={(checked) =>
+                            updateTaskCompletion(currentTask.id, !!checked)
+                        }
+                        className="w-5 h-5"
+                    />
+                </div>
+              </DialogHeader>
+              <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
+                
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
+                <div className="font-semibold">{area?.name}</div>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
+                <div className="font-semibold">{currentProject?.name}</div>
+
+                {currentSkill && (
+                  <>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
+                    <div className="font-semibold">{currentSkill.name}</div>
+                  </>
+                )}
+
+                {currentTask.difficulty && (
+                    <>
+                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
+                        <div><Badge variant="outline" className={cn(currentTask.difficulty ? difficultyColors[currentTask.difficulty] : '')}>{currentTask.difficulty}</Badge></div>
+                    </>
+                )}
+
+                <>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Due Date</div>
+                  <DateTimePicker
+                    date={currentTask.dueDate ? new Date(currentTask.dueDate) : undefined}
+                    setDate={(date) => {
+                      if (!taskId) return;
+                      updateTaskDetails(taskId, { dueDate: date?.toISOString() });
+                    }}
+                  />
+                </>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
+                <div className="font-semibold">{currentTask.xp}</div>
+                
+                {currentTask.focusDuration && currentTask.focusDuration > 0 && (
+                  <>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>
+                    <div className="font-semibold">
+                      {`${Math.floor(currentTask.focusDuration / 3600)}h ${Math.floor((currentTask.focusDuration % 3600) / 60)}m`}
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <div className="mt-6 space-y-2 text-sm">
+                <div>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
+                  <Textarea
+                    value={editableTaskData.description}
+                    onChange={(e) => handleTaskDataChange('description', e.target.value)}
+                    placeholder="Add a description..."
+                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    rows={3}
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
+                  <Textarea
+                    value={editableTaskData.notes}
+                    onChange={(e) => handleTaskDataChange('notes', e.target.value)}
+                    placeholder="Add notes..."
+                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
+                  <Textarea
+                    value={editableTaskData.links}
+                    onChange={(e) => handleTaskDataChange('links', e.target.value)}
+                    placeholder="Add links, one per line..."
+                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
+
