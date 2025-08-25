@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -233,7 +234,7 @@ export default function ProfilePage() {
             <span className="sr-only">Add Skill</span>
           </Button>
         </div>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {skills.map((skill) => {
             const SkillIcon = iconMap[skill.icon] || Lightbulb;
             return (
