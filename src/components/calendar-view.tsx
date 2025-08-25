@@ -46,6 +46,7 @@ import {
   Link as LinkIcon,
   Clock,
   ArrowUp,
+  PlusCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -54,6 +55,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 
 type CalendarViewMode = 'monthly' | 'weekly';
+
+interface CalendarViewProps {
+  onAddTaskClick: (date: Date) => void;
+}
 
 const difficultyColors: Record<Difficulty, string> = {
     Easy: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30',
@@ -124,14 +129,14 @@ const DayCellDroppable = ({ day, children }: {day: Date, children: React.ReactNo
         id: day.toISOString(),
     });
     return (
-        <div ref={setNodeRef} className={cn('h-full p-1 transition-colors', isOver && 'bg-primary/10 rounded-lg')}>
+        <div ref={setNodeRef} className={cn('h-full p-1 transition-colors relative group', isOver && 'bg-primary/10 rounded-lg')}>
             {children}
         </div>
     )
 }
 
 // Main Calendar View Component
-export default function CalendarView() {
+export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
   const { tasks, areas, skills, updateTaskCompletion, updateTaskDetails } = useQuestData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewMode>('monthly');
@@ -301,16 +306,26 @@ export default function CalendarView() {
                     )}
                     >
                         <DayCellDroppable day={day}>
-                            <div
-                                className={cn(
-                                'text-right text-xs mb-1 px-1',
-                                {
-                                    'text-muted-foreground': !isCurrentMonth && view === 'monthly',
-                                    'text-primary font-bold': isToday,
-                                }
-                                )}
-                            >
-                                {format(day, 'd')}
+                            <div className="flex justify-between items-center">
+                                <span
+                                    className={cn(
+                                    'text-right text-xs px-1',
+                                    {
+                                        'text-muted-foreground': !isCurrentMonth && view === 'monthly',
+                                        'text-primary font-bold': isToday,
+                                    }
+                                    )}
+                                >
+                                    {format(day, 'd')}
+                                </span>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => onAddTaskClick(day)}
+                                >
+                                    <PlusCircle className="h-4 w-4 text-muted-foreground" />
+                                </Button>
                             </div>
                             <div className="space-y-1">
                                 {tasksForDay.map(task => (

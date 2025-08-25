@@ -79,6 +79,8 @@ const taskSchema = z.object({
   links: z.string().optional(),
   dueDate: z.date().optional(),
   skillId: z.string().optional(),
+  areaId: z.string({ required_error: 'Please select an area.'}),
+  projectId: z.string({ required_error: 'Please select a project.'}),
 });
 
 
@@ -98,7 +100,7 @@ export default function QuestsPage() {
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [addProjectState, setAddProjectState] = useState<{ open: boolean; areaId: string | null }>({ open: false, areaId: null });
-  const [addTaskState, setAddTaskState] = useState<{ open: boolean; areaId: string | null; projectId: string | null }>({ open: false, areaId: null, projectId: null });
+  const [addTaskState, setAddTaskState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; date?: Date }>({ open: false, areaId: null, projectId: null });
   const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; taskId: string | null; }>({ open: false, areaId: null, projectId: null, taskId: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
@@ -159,6 +161,16 @@ export default function QuestsPage() {
       links: '',
     },
   });
+  
+  useEffect(() => {
+    if (addTaskState.open && addTaskState.date) {
+        taskForm.setValue('dueDate', addTaskState.date);
+    }
+  }, [addTaskState.open, addTaskState.date, taskForm]);
+
+  const selectedAreaIdForTask = taskForm.watch('areaId');
+  const availableProjects = areas.find(a => a.id === selectedAreaIdForTask)?.projects || [];
+
 
   function onAddArea(data: z.infer<typeof areaSchema>) {
     addArea(data.name);
@@ -174,12 +186,15 @@ export default function QuestsPage() {
   }
 
   async function onAddTask(data: z.infer<typeof taskSchema>) {
-    if (!addTaskState.areaId || !addTaskState.projectId) return;
+    const areaId = addTaskState.areaId || data.areaId;
+    const projectId = addTaskState.projectId || data.projectId;
+
+    if (!areaId || !projectId) return;
 
     setIsCreatingTask(true);
     try {
-        const area = areas.find(a => a.id === addTaskState.areaId);
-        const project = area?.projects.find(p => p.id === addTaskState.projectId);
+        const area = areas.find(a => a.id === areaId);
+        const project = area?.projects.find(p => p.id === projectId);
         const projectName = project ? project.name : '';
 
         const result = await suggestXpValue({ title: data.title, projectContext: projectName });
@@ -196,10 +211,10 @@ export default function QuestsPage() {
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
             dueDate: data.dueDate?.toISOString(),
             skillId: data.skillId,
-            projectId: addTaskState.projectId,
+            projectId: projectId,
         };
         
-        addTask(addTaskState.areaId, addTaskState.projectId, newTask);
+        addTask(areaId, projectId, newTask);
         
         taskForm.reset();
         setAddTaskState({ open: false, areaId: null, projectId: null });
@@ -378,7 +393,7 @@ export default function QuestsPage() {
             )})}
           </Accordion>
         ) : (
-          <CalendarView />
+          <CalendarView onAddTaskClick={(date) => setAddTaskState({ open: true, areaId: null, projectId: null, date })}/>
         )}
       </section>
 
@@ -468,6 +483,55 @@ export default function QuestsPage() {
                 )}
               />
               
+              {!addTaskState.projectId && (
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                    control={taskForm.control}
+                    name="areaId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Area</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select an area" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {areas.map(area => (
+                                <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={taskForm.control}
+                    name="projectId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Project</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedAreaIdForTask}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a project" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {availableProjects.map(project => (
+                                <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+              )}
+
               <FormField
                 control={taskForm.control}
                 name="description"
