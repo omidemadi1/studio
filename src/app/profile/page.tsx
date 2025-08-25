@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Settings, Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet } from 'lucide-react';
+import { Settings, Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
 import {
@@ -33,13 +33,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuestData } from '@/context/quest-context';
 import { iconMap } from '@/lib/icon-map';
@@ -337,29 +331,39 @@ export default function ProfilePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Icon</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an icon" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.keys(iconMap).map((iconName) => {
-                          const IconComponent = iconMap[iconName];
-                          return (
-                            <SelectItem key={iconName} value={iconName}>
-                              <div className="flex items-center gap-2">
-                                <IconComponent className="h-4 w-4" />
-                                <span>{iconName}</span>
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button variant="outline" className="w-full justify-start">
+                                    {field.value ? (
+                                        <>
+                                            {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
+                                            {field.value}
+                                        </>
+                                    ) : 'Select an icon'}
+                                </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2">
+                            <div className="grid grid-cols-6 gap-2">
+                                {Object.keys(iconMap).map((iconName) => {
+                                    const IconComponent = iconMap[iconName];
+                                    return (
+                                        <Button
+                                            key={iconName}
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => field.onChange(iconName)}
+                                            className={cn("relative", field.value === iconName && "bg-accent")}
+                                        >
+                                            <IconComponent className="h-5 w-5" />
+                                            {field.value === iconName && <Check className="absolute bottom-1 right-1 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -374,5 +378,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
