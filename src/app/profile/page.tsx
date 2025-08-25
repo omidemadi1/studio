@@ -2,9 +2,7 @@
 
 'use client';
 
-import React, 'use client';
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
