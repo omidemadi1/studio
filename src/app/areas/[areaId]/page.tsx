@@ -378,9 +378,9 @@ export default function AreaDetailPage() {
             const completedProjectTasks = projectTasks.filter(t => t.completed).length;
             const projectCompletion = projectTasks.length > 0 ? (completedProjectTasks / projectTasks.length) * 100 : 0;
             return (
-            <ContextMenu>
+            <ContextMenu key={project.id}>
               <ContextMenuTrigger>
-                <Card key={project.id} className="bg-card/80 overflow-hidden flex flex-col">
+                <Card className="bg-card/80 overflow-hidden flex flex-col">
                     <CardHeader>
                     <CardTitle className="text-xl font-bold font-headline">{project.name}</CardTitle>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -686,5 +686,3 @@ export default function AreaDetailPage() {
     </>
   );
 }
-
-    
