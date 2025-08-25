@@ -52,7 +52,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 
-type CalendarView = 'monthly' | 'weekly';
+type CalendarViewMode = 'monthly' | 'weekly';
 
 const difficultyColors: Record<Difficulty, string> = {
     Easy: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30',
@@ -123,12 +123,23 @@ const DraggableTaskWrapper = ({ task, onUpdate, onClick }: { task: Task, onUpdat
     );
 };
 
+// Day Cell Droppable
+const DayCellDroppable = ({ day, children }: {day: Date, children: React.ReactNode}) => {
+    const { isOver, setNodeRef } = useDroppable({
+        id: day.toISOString(),
+    });
+    return (
+        <div ref={setNodeRef} className={cn('h-full p-1 transition-colors', isOver && 'bg-primary/10 rounded-lg')}>
+            {children}
+        </div>
+    )
+}
 
-// Main Calendar Page Component
-export default function CalendarPage() {
+// Main Calendar View Component
+export default function CalendarView() {
   const { tasks, areas, skills, updateTaskCompletion, updateTaskDetails } = useQuestData();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<CalendarView>('monthly');
+  const [view, setView] = useState<CalendarViewMode>('monthly');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
 
@@ -240,93 +251,82 @@ export default function CalendarPage() {
   
   const weekHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const DayCellDroppable = ({ day, children }: {day: Date, children: React.ReactNode}) => {
-    const { isOver, setNodeRef } = useDroppable({
-        id: day.toISOString(),
-    });
-    return (
-        <div ref={setNodeRef} className={cn('h-full p-1 transition-colors', isOver && 'bg-primary/10 rounded-lg')}>
-            {children}
-        </div>
-    )
-  }
-
   return (
     <>
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="container mx-auto p-4 sm:p-6 flex flex-col">
-        <header className="flex items-center justify-between mb-4 flex-shrink-0">
-            <h1 className="text-2xl font-headline font-bold">
-            {format(currentDate, view === 'monthly' ? 'MMMM yyyy' : 'MMMM')}
-            </h1>
-            <div className="flex items-center gap-2">
-            <Tabs value={view} onValueChange={(v) => setView(v as CalendarView)}>
-                <TabsList>
-                <TabsTrigger value="monthly">Month</TabsTrigger>
-                <TabsTrigger value="weekly">Week</TabsTrigger>
-                </TabsList>
-            </Tabs>
-            <div className="flex items-center gap-1 rounded-md border p-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrev}>
-                <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" className="h-8 px-3" onClick={handleToday}>
-                Today
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNext}>
-                <ChevronRight className="h-4 w-4" />
-                </Button>
-            </div>
-            </div>
-        </header>
-        
-        <div className="grid grid-cols-7 flex-shrink-0">
-            {weekHeaders.map(dayHeader => (
-                <div key={dayHeader} className="text-center text-xs font-bold text-muted-foreground p-2 border-b">
-                    {dayHeader}
+        <div className="flex flex-col">
+            <header className="flex items-center justify-between mb-4 flex-shrink-0">
+                <h2 className="text-xl font-headline font-bold">
+                {format(currentDate, view === 'monthly' ? 'MMMM yyyy' : 'MMMM')}
+                </h2>
+                <div className="flex items-center gap-2">
+                <Tabs value={view} onValueChange={(v) => setView(v as CalendarViewMode)}>
+                    <TabsList>
+                    <TabsTrigger value="monthly">Month</TabsTrigger>
+                    <TabsTrigger value="weekly">Week</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+                <div className="flex items-center gap-1 rounded-md border p-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrev}>
+                    <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" className="h-8 px-3" onClick={handleToday}>
+                    Today
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNext}>
+                    <ChevronRight className="h-4 w-4" />
+                    </Button>
                 </div>
-            ))}
-        </div>
-
-        <div className="grid grid-cols-7">
-            {daysToRender.map((day, index) => {
-            const isCurrentMonth = isSameMonth(day, currentDate);
-            const isToday = isSameDay(day, new Date());
-            const tasksForDay = getTasksForDay(day);
-
-            return (
-                <div
-                key={index}
-                className={cn(
-                    'border-t border-r flex flex-col min-h-[120px]',
-                    {
-                    'bg-muted/10': !isCurrentMonth && view === 'monthly',
-                    'border-l': getDay(day) === 0,
-                    }
-                )}
-                >
-                    <DayCellDroppable day={day}>
-                        <div
-                            className={cn(
-                            'text-right text-xs mb-1 px-1',
-                            {
-                                'text-muted-foreground': !isCurrentMonth && view === 'monthly',
-                                'text-primary font-bold': isToday,
-                            }
-                            )}
-                        >
-                            {format(day, 'd')}
-                        </div>
-                        <div className="space-y-1">
-                            {tasksForDay.map(task => (
-                                <DraggableTaskWrapper key={task.id} task={task} onUpdate={updateTaskCompletion} onClick={() => handleTaskClick(task)} />
-                            ))}
-                        </div>
-                    </DayCellDroppable>
                 </div>
-            );
-            })}
-        </div>
+            </header>
+            
+            <div className="grid grid-cols-7 flex-shrink-0">
+                {weekHeaders.map(dayHeader => (
+                    <div key={dayHeader} className="text-center text-xs font-bold text-muted-foreground p-2 border-b">
+                        {dayHeader}
+                    </div>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-7">
+                {daysToRender.map((day, index) => {
+                const isCurrentMonth = isSameMonth(day, currentDate);
+                const isToday = isSameDay(day, new Date());
+                const tasksForDay = getTasksForDay(day);
+
+                return (
+                    <div
+                    key={index}
+                    className={cn(
+                        'border-t border-r flex flex-col min-h-[120px]',
+                        {
+                        'bg-muted/10': !isCurrentMonth && view === 'monthly',
+                        'border-l': getDay(day) === 0,
+                        }
+                    )}
+                    >
+                        <DayCellDroppable day={day}>
+                            <div
+                                className={cn(
+                                'text-right text-xs mb-1 px-1',
+                                {
+                                    'text-muted-foreground': !isCurrentMonth && view === 'monthly',
+                                    'text-primary font-bold': isToday,
+                                }
+                                )}
+                            >
+                                {format(day, 'd')}
+                            </div>
+                            <div className="space-y-1">
+                                {tasksForDay.map(task => (
+                                    <DraggableTaskWrapper key={task.id} task={task} onUpdate={updateTaskCompletion} onClick={() => handleTaskClick(task)} />
+                                ))}
+                            </div>
+                        </DayCellDroppable>
+                    </div>
+                );
+                })}
+            </div>
         </div>
     </DndContext>
     <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>

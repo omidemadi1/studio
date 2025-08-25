@@ -47,6 +47,7 @@ import {
   Clock,
   Briefcase,
   Sparkles,
+  LayoutList,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -55,6 +56,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { suggestSmartTasks } from '@/ai/flows/suggest-smart-tasks';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CalendarView from '@/components/calendar-view';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -81,6 +84,8 @@ const difficultyColors: Record<Difficulty, string> = {
     'Very Hard': 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30',
 };
 
+type ViewMode = 'list' | 'calendar';
+
 export default function QuestsPage() {
   const { toast } = useToast();
   const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks } = useQuestData();
@@ -93,6 +98,7 @@ export default function QuestsPage() {
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
   const [suggestedTasks, setSuggestedTasks] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   useEffect(() => {
     async function fetchSuggestions() {
@@ -111,8 +117,6 @@ export default function QuestsPage() {
           userPreferences: 'Looking for a mix of tasks to improve all skills.'
         });
 
-        // The AI returns a string, so we need to parse it. 
-        // This is a simple split, but a more robust markdown parser could be used.
         const taskLines = result.suggestedTasks
           .split('\n')
           .map(line => line.trim())
@@ -122,7 +126,6 @@ export default function QuestsPage() {
         setSuggestedTasks(taskLines);
       } catch (error) {
         console.error("Failed to fetch smart tasks:", error);
-        // Silently fail for now, don't show an error to the user
       } finally {
         setLoadingSuggestions(false);
       }
@@ -282,76 +285,89 @@ export default function QuestsPage() {
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline font-semibold">Your Quests</h2>
-            <Button variant="ghost" size="icon" onClick={() => setAddAreaOpen(true)}>
-                <PlusCircle className="h-6 w-6 text-primary" />
-                <span className="sr-only">Add Area</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                  <TabsList>
+                      <TabsTrigger value="list"><LayoutList className="h-4 w-4" /></TabsTrigger>
+                      <TabsTrigger value="calendar"><CalendarIcon className="h-4 w-4" /></TabsTrigger>
+                  </TabsList>
+              </Tabs>
+              <Button variant="ghost" size="icon" onClick={() => setAddAreaOpen(true)}>
+                  <PlusCircle className="h-6 w-6 text-primary" />
+                  <span className="sr-only">Add Area</span>
+              </Button>
+            </div>
         </div>
-        <Accordion type="multiple" defaultValue={areas.map(a => a.id)} className="w-full">
-          {areas.map((area) => {
-            const AreaIcon = iconMap[area.icon] || Briefcase;
-            return (
-            <AccordionItem key={area.id} value={area.id}>
-              <AccordionTrigger className="text-xl font-headline hover:no-underline">
-                <div className="flex items-center gap-3">
-                    <AreaIcon className="w-6 h-6 text-accent" />
-                    {area.name}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <Accordion type="multiple" defaultValue={area.projects.map(p => p.id)} className="w-full pl-4 border-l-2 border-primary/20">
-                  {area.projects.map((project) => (
-                    <AccordionItem key={project.id} value={project.id} className="border-b-0">
-                      <AccordionTrigger className="font-semibold hover:no-underline">
-                        {project.name}
-                      </AccordionTrigger>
-                      <AccordionContent className="pb-0">
-                        <ul className="space-y-3">
-                          {project.tasks.map((task: Task) => (
-                            <li
-                              key={task.id}
-                              className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
-                              onClick={() => handleTaskClick(area.id, project.id, task.id)}
-                            >
-                              <div onClick={(e) => e.stopPropagation()}>
-                                <Checkbox
-                                  id={task.id}
-                                  checked={task.completed}
-                                  onCheckedChange={(checked) =>
-                                    updateTaskCompletion(task.id, !!checked)
-                                  }
-                                  className="w-5 h-5"
-                                />
-                              </div>
-                              <span
-                                className="flex-1 text-sm font-medium leading-none"
+
+        {viewMode === 'list' ? (
+          <Accordion type="multiple" defaultValue={areas.map(a => a.id)} className="w-full">
+            {areas.map((area) => {
+              const AreaIcon = iconMap[area.icon] || Briefcase;
+              return (
+              <AccordionItem key={area.id} value={area.id}>
+                <AccordionTrigger className="text-xl font-headline hover:no-underline">
+                  <div className="flex items-center gap-3">
+                      <AreaIcon className="w-6 h-6 text-accent" />
+                      {area.name}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <Accordion type="multiple" defaultValue={area.projects.map(p => p.id)} className="w-full pl-4 border-l-2 border-primary/20">
+                    {area.projects.map((project) => (
+                      <AccordionItem key={project.id} value={project.id} className="border-b-0">
+                        <AccordionTrigger className="font-semibold hover:no-underline">
+                          {project.name}
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-0">
+                          <ul className="space-y-3">
+                            {project.tasks.map((task: Task) => (
+                              <li
+                                key={task.id}
+                                className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                                onClick={() => handleTaskClick(area.id, project.id, task.id)}
                               >
-                                {task.title}
-                              </span>
-                              <span className="text-xs font-bold text-primary">
-                                +{task.xp} XP
-                              </span>
+                                <div onClick={(e) => e.stopPropagation()}>
+                                  <Checkbox
+                                    id={task.id}
+                                    checked={task.completed}
+                                    onCheckedChange={(checked) =>
+                                      updateTaskCompletion(task.id, !!checked)
+                                    }
+                                    className="w-5 h-5"
+                                  />
+                                </div>
+                                <span
+                                  className="flex-1 text-sm font-medium leading-none"
+                                >
+                                  {task.title}
+                                </span>
+                                <span className="text-xs font-bold text-primary">
+                                  +{task.xp} XP
+                                </span>
+                              </li>
+                            ))}
+                            <li className="flex justify-center mt-2">
+                                  <Button variant="ghost" size="sm" onClick={() => setAddTaskState({ open: true, areaId: area.id, projectId: project.id })}>
+                                      <PlusCircle className="h-4 w-4 mr-2" /> Add Task
+                                  </Button>
                             </li>
-                          ))}
-                           <li className="flex justify-center mt-2">
-                                <Button variant="ghost" size="sm" onClick={() => setAddTaskState({ open: true, areaId: area.id, projectId: project.id })}>
-                                    <PlusCircle className="h-4 w-4 mr-2" /> Add Task
-                                </Button>
-                           </li>
-                        </ul>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                   <div className="flex justify-center mt-2">
-                        <Button variant="ghost" onClick={() => setAddProjectState({ open: true, areaId: area.id })}>
-                            <PlusCircle className="h-5 w-5 mr-2" /> Add Project
-                        </Button>
-                    </div>
-                </Accordion>
-              </AccordionContent>
-            </AccordionItem>
-          )})}
-        </Accordion>
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                    <div className="flex justify-center mt-2">
+                          <Button variant="ghost" onClick={() => setAddProjectState({ open: true, areaId: area.id })}>
+                              <PlusCircle className="h-5 w-5 mr-2" /> Add Project
+                          </Button>
+                      </div>
+                  </Accordion>
+                </AccordionContent>
+              </AccordionItem>
+            )})}
+          </Accordion>
+        ) : (
+          <CalendarView />
+        )}
       </section>
 
       <Dialog open={addAreaOpen} onOpenChange={setAddAreaOpen}>
