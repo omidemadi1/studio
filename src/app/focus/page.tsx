@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,14 +11,18 @@ import { Play, Pause, Hourglass, StopCircle } from 'lucide-react';
 
 export default function FocusPage() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+
   const {
     tasks: allTasks,
     addXp,
     getTask,
     updateTaskCompletion,
   } = useQuestData();
+  
+  const paramTaskId = searchParams.get('taskId');
 
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(paramTaskId);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isActive, setIsActive] = useState(false);
 
@@ -25,6 +30,16 @@ export default function FocusPage() {
     () => allTasks.filter((task) => !task.completed),
     [allTasks]
   );
+  
+  // When the param changes, update the selected task
+  useEffect(() => {
+    setSelectedTaskId(paramTaskId);
+    // Reset timer if the task changes while active
+    if (isActive) {
+        setIsActive(false);
+        setTimeElapsed(0);
+    }
+  }, [paramTaskId, isActive]);
 
   // Stopwatch logic
   useEffect(() => {

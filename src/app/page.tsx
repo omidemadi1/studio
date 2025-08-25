@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Accordion,
   AccordionContent,
@@ -49,6 +50,7 @@ import {
   Briefcase,
   Sparkles,
   LayoutList,
+  Crosshair,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -88,6 +90,7 @@ const difficultyColors: Record<Difficulty, string> = {
 type ViewMode = 'list' | 'calendar';
 
 export default function QuestsPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks } = useQuestData();
 
@@ -239,6 +242,12 @@ export default function QuestsPage() {
     setEditableTaskData(prev => ({ ...prev, [field]: value }));
     if (!taskId) return;
     updateTaskDetails(taskId, { [field]: value });
+  };
+  
+  const handleFocusClick = () => {
+    if (!taskId) return;
+    setTaskDetailState(prev => ({ ...prev, open: false }));
+    router.push(`/focus?taskId=${taskId}`);
   };
 
 
@@ -536,7 +545,7 @@ export default function QuestsPage() {
                     />
                 </div>
               </DialogHeader>
-              <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
+              <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
                 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
                 <div className="font-semibold">{currentArea?.name}</div>
@@ -616,6 +625,12 @@ export default function QuestsPage() {
                   />
                 </div>
               </div>
+               <DialogFooter className="mt-4">
+                <Button variant="outline" onClick={handleFocusClick}>
+                  <Crosshair className="mr-2 h-4 w-4" />
+                  Focus on Task
+                </Button>
+              </DialogFooter>
             </>
           )}
         </DialogContent>

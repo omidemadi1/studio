@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -15,7 +16,7 @@ import type { Task, Difficulty } from '@/lib/types';
 import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
     Command, Tag, Flame, Calendar as CalendarIcon, AlignLeft,
-    StickyNote, Link as LinkIcon, Clock, ArrowUp
+    StickyNote, Link as LinkIcon, Clock, ArrowUp, Crosshair,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -123,6 +124,12 @@ export default function SkillDetailPage() {
         }
         return { area: null, project: null };
     }, [currentTask, areas]);
+
+    const handleFocusClick = () => {
+        if (!taskId) return;
+        setTaskDetailState(prev => ({ ...prev, open: false }));
+        router.push(`/focus?taskId=${taskId}`);
+    };
 
     return (
         <>
@@ -294,7 +301,7 @@ export default function SkillDetailPage() {
                             />
                         </div>
                     </DialogHeader>
-                    <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
+                    <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
 
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
                         <div className="font-semibold">{area?.name}</div>
@@ -370,6 +377,12 @@ export default function SkillDetailPage() {
                         />
                         </div>
                     </div>
+                    <DialogFooter className="mt-4">
+                        <Button variant="outline" onClick={handleFocusClick}>
+                        <Crosshair className="mr-2 h-4 w-4" />
+                        Focus on Task
+                        </Button>
+                    </DialogFooter>
                     </>
                 )}
                 </DialogContent>
