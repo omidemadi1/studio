@@ -393,15 +393,17 @@ export default function QuestsPage() {
                                     onCheckedChange={(checked) => updateWeeklyMissionCompletion(mission.id, !!checked)}
                                     className="w-5 h-5 mt-0.5"
                                 />
-                                <div className="flex-1">
-                                    <label
-                                      htmlFor={`mission-${mission.id}`}
-                                      className={cn("font-medium leading-none", mission.completed && "line-through text-muted-foreground")}
-                                    >
-                                      {mission.title}
-                                    </label>
+                                <div className="flex-1 grid gap-1">
+                                    <div className="flex justify-between items-start">
+                                      <label
+                                        htmlFor={`mission-${mission.id}`}
+                                        className={cn("font-medium leading-none pr-4", mission.completed && "line-through text-muted-foreground")}
+                                      >
+                                        {mission.title}
+                                      </label>
+                                      <div className="text-xs font-bold text-primary whitespace-nowrap">+{mission.xp} XP & {mission.tokens} Tokens</div>
+                                    </div>
                                     <p className="text-xs text-muted-foreground">{mission.description}</p>
-                                    <div className="text-xs font-bold text-primary mt-1">+{mission.xp} XP & {mission.tokens} Tokens</div>
                                 </div>
                             </li>
                         ))}
@@ -1079,3 +1081,4 @@ export default function QuestsPage() {
     </div>
   );
 }
+
