@@ -124,6 +124,14 @@ const initializeDb = () => {
         dbInstance.exec('ALTER TABLE tasks ADD COLUMN reminder INTEGER');
     }
 
+    // Add 'skillId' column to 'tasks' table if it doesn't exist (for migration)
+    try {
+        dbInstance.prepare('SELECT skillId FROM tasks LIMIT 1').get();
+    } catch (e) {
+        console.log("Migrating tasks table: adding 'skillId' column.");
+        dbInstance.exec('ALTER TABLE tasks ADD COLUMN skillId TEXT');
+    }
+
 
     // Seed initial data only if users table is empty
     const userCount = dbInstance.prepare('SELECT count(*) as count FROM users').get() as { count: number };
