@@ -371,56 +371,52 @@ export default function QuestsPage() {
             <Sparkles className="w-6 h-6 text-accent" />
             Weekly Missions
         </h2>
-        <Card className="bg-card/80">
-            <CardHeader>
-                <CardTitle className="text-lg">This Week's Challenges</CardTitle>
-                <CardDescription>Complete these quests by Sunday for bonus rewards!</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {loadingSuggestions ? (
-                    <div className="space-y-3">
-                        <Skeleton className="h-5 w-3/4" />
-                        <Skeleton className="h-5 w-1/2" />
-                        <Skeleton className="h-5 w-2/3" />
-                    </div>
-                ) : weeklyMissions.length > 0 ? (
-                     <ul className="space-y-3">
-                        {missionsToShow.map((mission: WeeklyMission) => (
-                            <li key={mission.id} className="flex items-start gap-3">
-                                <Checkbox
-                                    id={`mission-${mission.id}`}
-                                    checked={mission.completed}
-                                    onCheckedChange={(checked) => updateWeeklyMissionCompletion(mission.id, !!checked)}
-                                    className="w-5 h-5 mt-0.5"
-                                />
-                                <div className="flex-1 grid gap-1">
-                                    <div className="flex justify-between items-start">
-                                      <label
-                                        htmlFor={`mission-${mission.id}`}
-                                        className={cn("font-medium leading-none pr-4", mission.completed && "line-through text-muted-foreground")}
-                                      >
-                                        {mission.title}
-                                      </label>
-                                      <div className="text-xs font-bold text-primary whitespace-nowrap">+{mission.xp} XP & {mission.tokens} Tokens</div>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">{mission.description}</p>
+        {loadingSuggestions ? (
+            <div className="space-y-3">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+            </div>
+        ) : weeklyMissions.length > 0 ? (
+            <div className="space-y-3">
+                {missionsToShow.map((mission: WeeklyMission) => (
+                    <Card key={mission.id} className="bg-card/80">
+                        <CardContent className="p-4 flex items-start gap-4">
+                            <Checkbox
+                                id={`mission-${mission.id}`}
+                                checked={mission.completed}
+                                onCheckedChange={(checked) => updateWeeklyMissionCompletion(mission.id, !!checked)}
+                                className="w-5 h-5 mt-1"
+                            />
+                            <div className="flex-1 grid gap-1">
+                                <div className="flex justify-between items-start">
+                                <label
+                                    htmlFor={`mission-${mission.id}`}
+                                    className={cn("font-medium leading-none pr-4", mission.completed && "line-through text-muted-foreground")}
+                                >
+                                    {mission.title}
+                                </label>
+                                <div className="text-xs font-bold text-primary whitespace-nowrap">+{mission.xp} XP & {mission.tokens} Tokens</div>
                                 </div>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-muted-foreground text-sm text-center">No missions for this week. Check back later!</p>
+                                <p className="text-xs text-muted-foreground">{mission.description}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+                {weeklyMissions.length > 3 && (
+                  <Button variant="ghost" className="w-full" onClick={() => setShowAllMissions(!showAllMissions)}>
+                      {showAllMissions ? 'Show Less' : 'Show All Missions'}
+                      <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", showAllMissions && "rotate-180")} />
+                  </Button>
                 )}
-            </CardContent>
-            {weeklyMissions.length > 3 && (
-                <CardFooter className="pt-4 border-t border-border">
-                    <Button variant="ghost" className="w-full" onClick={() => setShowAllMissions(!showAllMissions)}>
-                        {showAllMissions ? 'Show Less' : 'Show More'}
-                        <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", showAllMissions && "rotate-180")} />
-                    </Button>
-                </CardFooter>
-            )}
-        </Card>
+            </div>
+        ) : (
+             <Card className="bg-card/80">
+                <CardContent className="p-6 text-center">
+                    <p className="text-muted-foreground text-sm">No missions for this week. Check back later!</p>
+                </CardContent>
+             </Card>
+        )}
       </section>
 
       <section>
