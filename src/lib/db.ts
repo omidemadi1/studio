@@ -26,7 +26,7 @@ const initializeDb = () => {
     // Modular schema definition
     const schema = {
         users: `
-            CREATE TABLE users (
+            CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
                 level INTEGER NOT NULL,
@@ -37,7 +37,7 @@ const initializeDb = () => {
             );
         `,
         skills: `
-            CREATE TABLE skills (
+            CREATE TABLE IF NOT EXISTS skills (
                 id TEXT PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
                 level INTEGER NOT NULL,
@@ -47,14 +47,14 @@ const initializeDb = () => {
             );
         `,
         areas: `
-            CREATE TABLE areas (
+            CREATE TABLE IF NOT EXISTS areas (
                 id TEXT PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
                 icon TEXT NOT NULL
             );
         `,
         projects: `
-            CREATE TABLE projects (
+            CREATE TABLE IF NOT EXISTS projects (
                 id TEXT PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
                 areaId TEXT NOT NULL,
@@ -62,12 +62,12 @@ const initializeDb = () => {
             );
         `,
         tasks: `
-            CREATE TABLE tasks (
+            CREATE TABLE IF NOT EXISTS tasks (
                 id TEXT PRIMARY KEY NOT NULL,
                 title TEXT NOT NULL,
                 completed BOOLEAN NOT NULL DEFAULT 0,
                 xp INTEGER NOT NULL,
-                tokens INTEGER NOT NULL,
+                tokens INTEGER NOT NULL DEFAULT 0,
                 description TEXT,
                 notes TEXT,
                 links TEXT,
@@ -81,7 +81,7 @@ const initializeDb = () => {
             );
         `,
         market_items: `
-            CREATE TABLE market_items (
+            CREATE TABLE IF NOT EXISTS market_items (
                 id TEXT PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
                 price INTEGER NOT NULL,
@@ -90,7 +90,7 @@ const initializeDb = () => {
             );
         `,
         weekly_missions: `
-            CREATE TABLE weekly_missions (
+            CREATE TABLE IF NOT EXISTS weekly_missions (
                 id TEXT PRIMARY KEY NOT NULL,
                 title TEXT NOT NULL,
                 description TEXT,
@@ -102,15 +102,9 @@ const initializeDb = () => {
         `,
     };
 
-    const tableCheckStmt = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?");
-
     // Create tables if they don't exist
-    for (const [tableName, creationSql] of Object.entries(schema)) {
-        const tableExists = tableCheckStmt.get(tableName);
-        if (!tableExists) {
-            dbInstance.exec(creationSql);
-            console.log(`Created table: ${tableName}`);
-        }
+    for (const tableName of Object.keys(schema)) {
+      dbInstance.exec(schema[tableName as keyof typeof schema]);
     }
     
     // Add 'tokens' column to 'tasks' table if it doesn't exist (for migration)
@@ -145,16 +139,16 @@ export function initDb() {
 }
 
 export function resetDbFile() {
-    if (global.db) {
-        global.db.close();
-        global.db = undefined;
+    if (db) {
+        db.close();
     }
     if (fs.existsSync(dbFile)) {
         fs.unlinkSync(dbFile);
     }
     console.log("Database file deleted.");
-    db = initializeDb();
-    global.db = db;
+    const newDb = initializeDb();
+    db = newDb;
+    global.db = newDb;
 }
 
 
