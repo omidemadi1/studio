@@ -325,7 +325,7 @@ export default function SkillDetailPage() {
                             />
                         </div>
                     </DialogHeader>
-                    <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
+                    <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
 
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
                         <div className="font-semibold">{area?.name}</div>

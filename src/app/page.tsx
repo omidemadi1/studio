@@ -864,7 +864,7 @@ export default function QuestsPage() {
                   name="dueDate"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Due Date & Time</FormLabel>
+                      <FormLabel>Date</FormLabel>
                       <FormControl>
                         <DateTimePicker date={field.value} setDate={field.onChange} />
                       </FormControl>
