@@ -23,105 +23,103 @@ const initializeDb = () => {
     dbInstance.pragma('journal_mode = WAL');
     console.log('Database connection established.');
 
-    // Check if tables exist
-    const tableCheck = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'users'").get();
-    
-    if (tableCheck) {
-        // Run migrations if needed for existing databases
-        const weeklyMissionsCheck = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'weekly_missions'").get();
-        if (!weeklyMissionsCheck) {
-            dbInstance.exec(`
-                CREATE TABLE weekly_missions (
-                    id TEXT PRIMARY KEY NOT NULL,
-                    title TEXT NOT NULL,
-                    description TEXT,
-                    xp INTEGER NOT NULL,
-                    tokens INTEGER NOT NULL,
-                    completed BOOLEAN NOT NULL DEFAULT 0,
-                    weekIdentifier TEXT NOT NULL
-                );
-            `);
-            console.log("Created weekly_missions table.");
+    // Modular schema definition
+    const schema = {
+        users: `
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL,
+                level INTEGER NOT NULL,
+                xp INTEGER NOT NULL,
+                nextLevelXp INTEGER NOT NULL,
+                tokens INTEGER NOT NULL,
+                avatarUrl TEXT
+            );
+        `,
+        skills: `
+            CREATE TABLE skills (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL,
+                level INTEGER NOT NULL,
+                points INTEGER NOT NULL,
+                maxPoints INTEGER NOT NULL,
+                icon TEXT NOT NULL
+            );
+        `,
+        areas: `
+            CREATE TABLE areas (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL,
+                icon TEXT NOT NULL
+            );
+        `,
+        projects: `
+            CREATE TABLE projects (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL,
+                areaId TEXT NOT NULL,
+                FOREIGN KEY (areaId) REFERENCES areas (id) ON DELETE CASCADE
+            );
+        `,
+        tasks: `
+            CREATE TABLE tasks (
+                id TEXT PRIMARY KEY NOT NULL,
+                title TEXT NOT NULL,
+                completed BOOLEAN NOT NULL DEFAULT 0,
+                xp INTEGER NOT NULL,
+                description TEXT,
+                notes TEXT,
+                links TEXT,
+                difficulty TEXT,
+                dueDate TEXT,
+                skillId TEXT,
+                focusDuration INTEGER DEFAULT 0,
+                projectId TEXT NOT NULL,
+                FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE,
+                FOREIGN KEY (skillId) REFERENCES skills (id) ON DELETE SET NULL
+            );
+        `,
+        market_items: `
+            CREATE TABLE market_items (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL,
+                price INTEGER NOT NULL,
+                imageUrl TEXT NOT NULL,
+                description TEXT NOT NULL
+            );
+        `,
+        weekly_missions: `
+            CREATE TABLE weekly_missions (
+                id TEXT PRIMARY KEY NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                xp INTEGER NOT NULL,
+                tokens INTEGER NOT NULL,
+                completed BOOLEAN NOT NULL DEFAULT 0,
+                weekIdentifier TEXT NOT NULL
+            );
+        `,
+    };
+
+    const tableCheckStmt = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?");
+
+    // Create tables if they don't exist
+    for (const [tableName, creationSql] of Object.entries(schema)) {
+        const tableExists = tableCheckStmt.get(tableName);
+        if (!tableExists) {
+            dbInstance.exec(creationSql);
+            console.log(`Created table: ${tableName}`);
         }
-        return dbInstance; // DB already initialized
     }
 
-    console.log("Initializing database schema and seeding data...");
+    // Seed initial data only if users table is empty
+    const userCount = dbInstance.prepare('SELECT count(*) as count FROM users').get() as { count: number };
+    if (userCount.count === 0) {
+        console.log("Seeding initial data...");
+        const insertUser = dbInstance.prepare('INSERT INTO users (id, name, level, xp, nextLevelXp, tokens, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        insertUser.run(1, 'New Adventurer', 1, 0, 100, 0, 'https://placehold.co/100x100.png');
+    }
 
-    dbInstance.exec(`
-        CREATE TABLE users (
-            id INTEGER PRIMARY KEY NOT NULL,
-            name TEXT NOT NULL,
-            level INTEGER NOT NULL,
-            xp INTEGER NOT NULL,
-            nextLevelXp INTEGER NOT NULL,
-            tokens INTEGER NOT NULL,
-            avatarUrl TEXT
-        );
-
-        CREATE TABLE skills (
-            id TEXT PRIMARY KEY NOT NULL,
-            name TEXT NOT NULL,
-            level INTEGER NOT NULL,
-            points INTEGER NOT NULL,
-            maxPoints INTEGER NOT NULL,
-            icon TEXT NOT NULL
-        );
-
-        CREATE TABLE areas (
-            id TEXT PRIMARY KEY NOT NULL,
-            name TEXT NOT NULL,
-            icon TEXT NOT NULL
-        );
-
-        CREATE TABLE projects (
-            id TEXT PRIMARY KEY NOT NULL,
-            name TEXT NOT NULL,
-            areaId TEXT NOT NULL,
-            FOREIGN KEY (areaId) REFERENCES areas (id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE tasks (
-            id TEXT PRIMARY KEY NOT NULL,
-            title TEXT NOT NULL,
-            completed BOOLEAN NOT NULL DEFAULT 0,
-            xp INTEGER NOT NULL,
-            description TEXT,
-            notes TEXT,
-            links TEXT,
-            difficulty TEXT,
-            dueDate TEXT,
-            skillId TEXT,
-            focusDuration INTEGER DEFAULT 0,
-            projectId TEXT NOT NULL,
-            FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE,
-            FOREIGN KEY (skillId) REFERENCES skills (id)
-        );
-
-        CREATE TABLE market_items (
-            id TEXT PRIMARY KEY NOT NULL,
-            name TEXT NOT NULL,
-            price INTEGER NOT NULL,
-            imageUrl TEXT NOT NULL,
-            description TEXT NOT NULL
-        );
-        
-        CREATE TABLE weekly_missions (
-            id TEXT PRIMARY KEY NOT NULL,
-            title TEXT NOT NULL,
-            description TEXT,
-            xp INTEGER NOT NULL,
-            tokens INTEGER NOT NULL,
-            completed BOOLEAN NOT NULL DEFAULT 0,
-            weekIdentifier TEXT NOT NULL
-        );
-    `);
-
-    // Seed data
-    const insertUser = dbInstance.prepare('INSERT INTO users (id, name, level, xp, nextLevelXp, tokens, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    insertUser.run(1, 'New Adventurer', 1, 0, 100, 0, 'https://placehold.co/100x100.png');
-
-    console.log("Database initialized successfully.");
     return dbInstance;
 }
 
