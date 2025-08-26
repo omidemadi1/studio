@@ -372,41 +372,46 @@ export default function QuestsPage() {
             Weekly Missions
         </h2>
         {loadingSuggestions ? (
-            <div className="space-y-3">
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
+            <div className="grid md:grid-cols-3 gap-4">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
             </div>
         ) : weeklyMissions.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid md:grid-cols-3 gap-4">
                 {missionsToShow.map((mission: WeeklyMission) => (
-                    <Card key={mission.id} className="bg-card/80">
-                        <CardContent className="p-4 flex items-start gap-4">
-                            <Checkbox
-                                id={`mission-${mission.id}`}
-                                checked={mission.completed}
-                                onCheckedChange={(checked) => updateWeeklyMissionCompletion(mission.id, !!checked)}
-                                className="w-5 h-5 mt-1"
-                            />
-                            <div className="flex-1 grid gap-1">
-                                <div className="flex justify-between items-start">
-                                <label
-                                    htmlFor={`mission-${mission.id}`}
-                                    className={cn("font-medium leading-none pr-4", mission.completed && "line-through text-muted-foreground")}
-                                >
-                                    {mission.title}
-                                </label>
-                                <div className="text-xs font-bold text-primary whitespace-nowrap">+{mission.xp} XP & {mission.tokens} Tokens</div>
+                    <Card key={mission.id} className="bg-card/80 flex flex-col">
+                        <CardContent className="p-4 flex-1">
+                            <div className="flex items-start gap-3">
+                                <Checkbox
+                                    id={`mission-${mission.id}`}
+                                    checked={mission.completed}
+                                    onCheckedChange={(checked) => updateWeeklyMissionCompletion(mission.id, !!checked)}
+                                    className="w-5 h-5 mt-1 flex-shrink-0"
+                                />
+                                <div className="flex-1 grid gap-1">
+                                    <div className="flex justify-between items-start gap-2">
+                                        <label
+                                            htmlFor={`mission-${mission.id}`}
+                                            className={cn("font-medium leading-tight", mission.completed && "line-through text-muted-foreground")}
+                                        >
+                                            {mission.title}
+                                        </label>
+                                        <div className="text-xs font-bold text-primary whitespace-nowrap text-right">
+                                            <div>+{mission.xp} XP</div>
+                                            <div>& {mission.tokens} Tokens</div>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">{mission.description}</p>
                                 </div>
-                                <p className="text-xs text-muted-foreground">{mission.description}</p>
                             </div>
                         </CardContent>
                     </Card>
                 ))}
-                {weeklyMissions.length > 3 && (
-                  <Button variant="ghost" className="w-full" onClick={() => setShowAllMissions(!showAllMissions)}>
-                      {showAllMissions ? 'Show Less' : 'Show All Missions'}
-                      <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", showAllMissions && "rotate-180")} />
+                {weeklyMissions.length > 3 && !showAllMissions && (
+                  <Button variant="ghost" className="w-full md:col-span-3" onClick={() => setShowAllMissions(true)}>
+                      Show All Missions
+                      <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 )}
             </div>
@@ -1077,4 +1082,3 @@ export default function QuestsPage() {
     </div>
   );
 }
-
