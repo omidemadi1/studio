@@ -74,6 +74,8 @@ import {
   Check,
   Copy,
   ChevronDown,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -87,6 +89,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 
 
 const areaSchema = z.object({
@@ -163,7 +172,6 @@ export default function QuestsPage() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [addSkillOpen, setAddSkillOpen] = useState(false);
-  const [showAllMissions, setShowAllMissions] = useState(false);
 
 
   useEffect(() => {
@@ -353,9 +361,6 @@ export default function QuestsPage() {
     router.push(`/focus?taskId=${taskId}`);
   };
 
-  const missionsToShow = showAllMissions ? weeklyMissions : weeklyMissions.slice(0, 3);
-
-
   return (
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
       <header className="flex items-center justify-between mb-6">
@@ -367,10 +372,6 @@ export default function QuestsPage() {
       </header>
       
       <section className="mb-8">
-        <h2 className="text-2xl font-headline font-semibold mb-4 flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-accent" />
-            Weekly Missions
-        </h2>
         {loadingSuggestions ? (
             <div className="grid md:grid-cols-3 gap-4">
                 <Skeleton className="h-24 w-full" />
@@ -378,43 +379,59 @@ export default function QuestsPage() {
                 <Skeleton className="h-24 w-full" />
             </div>
         ) : weeklyMissions.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-4">
-                {missionsToShow.map((mission: WeeklyMission) => (
-                    <Card key={mission.id} className="bg-card/80 flex flex-col">
-                        <CardContent className="p-4 flex-1">
-                            <div className="flex items-start gap-3">
-                                <Checkbox
-                                    id={`mission-${mission.id}`}
-                                    checked={mission.completed}
-                                    onCheckedChange={(checked) => updateWeeklyMissionCompletion(mission.id, !!checked)}
-                                    className="w-5 h-5 mt-1 flex-shrink-0"
-                                />
-                                <div className="flex-1 grid gap-1">
-                                    <div className="flex justify-between items-start gap-2">
-                                        <label
-                                            htmlFor={`mission-${mission.id}`}
-                                            className={cn("font-medium leading-tight", mission.completed && "line-through text-muted-foreground")}
-                                        >
-                                            {mission.title}
-                                        </label>
-                                        <div className="text-xs font-bold text-primary whitespace-nowrap text-right">
-                                            <div>+{mission.xp} XP</div>
-                                            <div>& {mission.tokens} Tokens</div>
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-headline font-semibold flex items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-accent" />
+                    Weekly Missions
+                </h2>
+                <div className='flex gap-2 items-center'>
+                    <CarouselPrevious className="static translate-y-0" />
+                    <CarouselNext className="static translate-y-0" />
+                </div>
+              </div>
+              <CarouselContent>
+                {weeklyMissions.map((mission: WeeklyMission) => (
+                    <CarouselItem key={mission.id} className="md:basis-1/2 lg:basis-1/3">
+                      <div className="p-1">
+                        <Card className="bg-card/80 flex flex-col h-full">
+                            <CardContent className="p-4 flex-1">
+                                <div className="flex items-start gap-3">
+                                    <Checkbox
+                                        id={`mission-${mission.id}`}
+                                        checked={mission.completed}
+                                        onCheckedChange={(checked) => updateWeeklyMissionCompletion(mission.id, !!checked)}
+                                        className="w-5 h-5 mt-1 flex-shrink-0"
+                                    />
+                                    <div className="flex-1 grid gap-1">
+                                        <div className="flex justify-between items-start gap-2">
+                                            <label
+                                                htmlFor={`mission-${mission.id}`}
+                                                className={cn("font-medium leading-tight", mission.completed && "line-through text-muted-foreground")}
+                                            >
+                                                {mission.title}
+                                            </label>
+                                            <div className="text-xs font-bold text-primary whitespace-nowrap text-right">
+                                                <div>+{mission.xp} XP</div>
+                                                <div>& {mission.tokens} Tokens</div>
+                                            </div>
                                         </div>
+                                        <p className="text-xs text-muted-foreground mt-1">{mission.description}</p>
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1">{mission.description}</p>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                      </div>
+                    </CarouselItem>
                 ))}
-                {weeklyMissions.length > 3 && !showAllMissions && (
-                  <Button variant="ghost" className="w-full md:col-span-3" onClick={() => setShowAllMissions(true)}>
-                      Show All Missions
-                      <ChevronDown className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
-            </div>
+              </CarouselContent>
+            </Carousel>
         ) : (
              <Card className="bg-card/80">
                 <CardContent className="p-6 text-center">
