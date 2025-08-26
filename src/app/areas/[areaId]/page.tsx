@@ -90,6 +90,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { GemIcon } from '@/components/icons/gem-icon';
 
 
 const projectSchema = z.object({
@@ -280,12 +281,14 @@ export default function AreaDetailPage() {
 
         const result = await suggestXpValue({ title: data.title, projectContext: projectName });
         const xp = result.xp;
+        const tokens = result.tokens;
 
         const newTask: Task = {
             id: `task-${Date.now()}`,
             title: data.title,
             completed: false,
             xp: xp,
+            tokens: tokens,
             description: data.description || '',
             notes: '',
             links: '',
@@ -906,6 +909,9 @@ export default function AreaDetailPage() {
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
                 <div className="font-semibold">{currentTask.xp}</div>
                 
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
+                <div className="font-semibold">{currentTask.tokens}</div>
+
                 {currentTask.focusDuration && currentTask.focusDuration > 0 && (
                   <>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>

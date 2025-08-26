@@ -48,6 +48,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { GemIcon } from '@/components/icons/gem-icon';
 
 
 const skillSchema = z.object({
@@ -355,6 +356,9 @@ export default function SkillDetailPage() {
 
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
                         <div className="font-semibold">{currentTask.xp}</div>
+
+                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
+                        <div className="font-semibold">{currentTask.tokens}</div>
                         
                         {currentTask.focusDuration && currentTask.focusDuration > 0 && (
                         <>

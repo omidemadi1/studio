@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -57,6 +58,8 @@ import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRouter } from 'next/navigation';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { GemIcon } from '@/components/icons/gem-icon';
+import { Input } from './ui/input';
 
 type CalendarViewMode = 'monthly' | 'weekly';
 
@@ -422,6 +425,9 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
                 <div className="font-semibold">{selectedTask.xp}</div>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
+                <div className="font-semibold">{selectedTask.tokens}</div>
                 
                 {selectedTask.focusDuration && selectedTask.focusDuration > 0 && (
                   <>

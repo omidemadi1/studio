@@ -96,6 +96,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
+import { GemIcon } from '@/components/icons/gem-icon';
 
 
 const areaSchema = z.object({
@@ -954,6 +955,9 @@ export default function QuestsPage() {
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
                 <div className="font-semibold">{currentTask.xp}</div>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
+                <div className="font-semibold">{currentTask.tokens}</div>
                 
                 {currentTask.focusDuration && currentTask.focusDuration > 0 && (
                   <>
