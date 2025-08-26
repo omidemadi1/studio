@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -76,6 +75,7 @@ import {
   ChevronDown,
   ArrowLeft,
   ArrowRight,
+  Bell,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -113,6 +113,7 @@ const taskSchema = z.object({
   notes: z.string().optional(),
   links: z.string().optional(),
   dueDate: z.date().optional(),
+  reminder: z.number().optional(),
   skillId: z.string().optional(),
   areaId: z.string({ required_error: 'Please select an area.'}),
   projectId: z.string({ required_error: 'Please select a project.'}),
@@ -298,6 +299,7 @@ export default function QuestsPage() {
             links: data.links || '',
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
             dueDate: data.dueDate?.toISOString(),
+            reminder: data.reminder,
             skillId: data.skillId,
             projectId: projectId,
         };
@@ -328,6 +330,7 @@ export default function QuestsPage() {
         description: task.description || '',
         notes: task.notes || '',
         links: task.links || '',
+        reminder: task.reminder,
       });
     }
     setTaskDetailState({
@@ -350,7 +353,7 @@ export default function QuestsPage() {
   const currentTask = currentProject?.tasks.find((t) => t.id === taskId);
   const currentSkill = skills.find(s => s.id === currentTask?.skillId);
 
-  const handleTaskDataChange = (field: keyof Task, value: string) => {
+  const handleTaskDataChange = (field: keyof Task, value: string | number | undefined) => {
     setEditableTaskData(prev => ({ ...prev, [field]: value }));
     if (!taskId) return;
     updateTaskDetails(taskId, { [field]: value });
@@ -866,7 +869,12 @@ export default function QuestsPage() {
                     <FormItem className="flex flex-col">
                       <FormLabel>Date</FormLabel>
                       <FormControl>
-                        <DateTimePicker date={field.value} setDate={field.onChange} />
+                        <DateTimePicker 
+                            date={field.value} 
+                            setDate={field.onChange}
+                            reminder={taskForm.watch('reminder')}
+                            setReminder={(rem) => taskForm.setValue('reminder', rem)}
+                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -894,7 +902,7 @@ export default function QuestsPage() {
                     <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
                  </VisuallyHidden>
                 <Input
-                  value={editableTaskData.title}
+                  value={editableTaskData.title || ''}
                   onChange={(e) => handleTaskDataChange('title', e.target.value)}
                   className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
@@ -950,6 +958,8 @@ export default function QuestsPage() {
                       if (!taskId) return;
                       updateTaskDetails(taskId, { dueDate: date?.toISOString() });
                     }}
+                    reminder={editableTaskData.reminder}
+                    setReminder={(rem) => handleTaskDataChange('reminder', rem)}
                   />
                 </>
 

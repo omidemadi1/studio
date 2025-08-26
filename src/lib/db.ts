@@ -73,6 +73,7 @@ const initializeDb = () => {
                 links TEXT,
                 difficulty TEXT,
                 dueDate TEXT,
+                reminder INTEGER,
                 skillId TEXT,
                 focusDuration INTEGER DEFAULT 0,
                 projectId TEXT NOT NULL,
@@ -113,6 +114,14 @@ const initializeDb = () => {
     } catch (e) {
         console.log("Migrating tasks table: adding 'tokens' column.");
         dbInstance.exec('ALTER TABLE tasks ADD COLUMN tokens INTEGER NOT NULL DEFAULT 0');
+    }
+
+    // Add 'reminder' column to 'tasks' table if it doesn't exist (for migration)
+    try {
+        dbInstance.prepare('SELECT reminder FROM tasks LIMIT 1').get();
+    } catch (e) {
+        console.log("Migrating tasks table: adding 'reminder' column.");
+        dbInstance.exec('ALTER TABLE tasks ADD COLUMN reminder INTEGER');
     }
 
 

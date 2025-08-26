@@ -17,6 +17,7 @@ import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
     Command, Tag, Flame, Calendar as CalendarIcon, AlignLeft,
     StickyNote, Link as LinkIcon, Clock, ArrowUp, Crosshair,
+    Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -107,12 +108,13 @@ export default function SkillDetailPage() {
             description: task.description || '',
             notes: task.notes || '',
             links: task.links || '',
+            reminder: task.reminder,
           });
         }
         setTaskDetailState({ open: true, taskId });
     };
 
-    const handleTaskDataChange = (field: keyof Task, value: string) => {
+    const handleTaskDataChange = (field: keyof Task, value: string | number | undefined) => {
         if (!taskDetailState.taskId) return;
         setEditableTaskData(prev => ({ ...prev, [field]: value }));
         updateTaskDetails(taskDetailState.taskId, { [field]: value });
@@ -299,7 +301,7 @@ export default function SkillDetailPage() {
                             <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
                         </VisuallyHidden>
                         <Input
-                            value={editableTaskData.title}
+                            value={editableTaskData.title || ''}
                             onChange={(e) => handleTaskDataChange('title', e.target.value)}
                             className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
@@ -351,6 +353,8 @@ export default function SkillDetailPage() {
                             if (!taskId) return;
                             updateTaskDetails(taskId, { dueDate: date?.toISOString() });
                             }}
+                            reminder={editableTaskData.reminder}
+                            setReminder={(rem) => handleTaskDataChange('reminder', rem)}
                         />
                         </>
 

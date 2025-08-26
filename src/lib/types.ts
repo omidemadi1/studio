@@ -30,6 +30,7 @@ export interface Task {
   links?: string;
   difficulty?: Difficulty;
   dueDate?: string;
+  reminder?: number; // minutes before due date
   skillId?: string;
   focusDuration?: number;
   projectId: string;

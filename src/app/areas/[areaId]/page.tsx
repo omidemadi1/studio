@@ -38,6 +38,7 @@ import {
   Pencil,
   Check,
   Copy,
+  Bell,
 } from 'lucide-react';
 import type { Task, Difficulty, Project } from '@/lib/types';
 import { z } from 'zod';
@@ -102,6 +103,7 @@ const taskSchema = z.object({
   projectId: z.string({ required_error: 'Please select a project.'}),
   description: z.string().optional(),
   dueDate: z.date().optional(),
+  reminder: z.number().optional(),
   skillId: z.string().optional(),
 });
 
@@ -294,6 +296,7 @@ export default function AreaDetailPage() {
             links: '',
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
             dueDate: data.dueDate?.toISOString(),
+            reminder: data.reminder,
             skillId: data.skillId,
             projectId: projectId,
         };
@@ -330,6 +333,7 @@ export default function AreaDetailPage() {
         description: task.description || '',
         notes: task.notes || '',
         links: task.links || '',
+        reminder: task.reminder
       });
     }
     setTaskDetailState({
@@ -344,7 +348,7 @@ export default function AreaDetailPage() {
   const currentTask = currentProject?.tasks.find((t) => t.id === taskId);
   const currentSkill = skills.find(s => s.id === currentTask?.skillId);
 
-  const handleTaskDataChange = (field: keyof Task, value: string) => {
+  const handleTaskDataChange = (field: keyof Task, value: string | number | undefined) => {
     setEditableTaskData(prev => ({ ...prev, [field]: value }));
     if (!taskId) return;
     updateTaskDetails(taskId, { [field]: value });
@@ -819,7 +823,12 @@ export default function AreaDetailPage() {
                       <FormItem className="flex flex-col">
                         <FormLabel>Date</FormLabel>
                         <FormControl>
-                          <DateTimePicker date={field.value} setDate={field.onChange} />
+                           <DateTimePicker 
+                                date={field.value} 
+                                setDate={field.onChange}
+                                reminder={taskForm.watch('reminder')}
+                                setReminder={(rem) => taskForm.setValue('reminder', rem)}
+                            />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -847,7 +856,7 @@ export default function AreaDetailPage() {
                       <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
                    </VisuallyHidden>
                    <Input
-                      value={editableTaskData.title}
+                      value={editableTaskData.title || ''}
                       onChange={(e) => handleTaskDataChange('title', e.target.value)}
                       className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
@@ -903,6 +912,8 @@ export default function AreaDetailPage() {
                         if (!taskId) return;
                         updateTaskDetails(taskId, { dueDate: date?.toISOString() });
                       }}
+                      reminder={editableTaskData.reminder}
+                      setReminder={(rem) => handleTaskDataChange('reminder', rem)}
                     />
                   </>
 
