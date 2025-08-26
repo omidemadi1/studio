@@ -41,6 +41,7 @@ import {
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
+    DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import {
   Form,
@@ -76,7 +77,7 @@ const defaultAvatars = [
 ];
 
 export default function ProfilePage() {
-  const { user, skills, updateUser, addSkill, resetDatabase, updateSkill, deleteSkill } = useQuestData();
+  const { user, skills, updateUser, addSkill, resetDatabase, updateSkill, deleteSkill, tasks } = useQuestData();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [deleteDataOpen, setDeleteDataOpen] = useState(false);
   const [name, setName] = useState(user.name);
@@ -89,6 +90,9 @@ export default function ProfilePage() {
     resolver: zodResolver(skillSchema),
     defaultValues: { name: '', icon: '' },
   });
+  
+  const notifications = tasks.filter(task => task.reminder !== undefined && task.dueDate);
+
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -138,10 +142,32 @@ export default function ProfilePage() {
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-headline font-bold">Profile & Skills</h1>
         <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-                <Bell className="h-6 w-6" />
-                <span className="sr-only">Notifications</span>
-            </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <Bell className="h-6 w-6" />
+                        <span className="sr-only">Notifications</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                    <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {notifications.length > 0 ? (
+                        notifications.map(task => (
+                            <DropdownMenuItem key={task.id}>
+                                <div className="flex flex-col">
+                                    <span className="font-medium">{task.title}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                        Reminder for {new Date(task.dueDate!).toLocaleString()}
+                                    </span>
+                                </div>
+                            </DropdownMenuItem>
+                        ))
+                    ) : (
+                        <DropdownMenuItem disabled>You have not any notification</DropdownMenuItem>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
