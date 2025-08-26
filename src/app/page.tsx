@@ -484,7 +484,7 @@ export default function QuestsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent className="pb-0">
                                   <ul className="space-y-3">
-                                    {project.tasks.map((task: Task) => (
+                                    {project.tasks.filter(task => !task.completed).map((task: Task) => (
                                       <ContextMenu key={task.id}>
                                         <ContextMenuTrigger>
                                           <li
