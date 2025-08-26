@@ -1,5 +1,4 @@
 
-
 'use client';
 import React from 'react';
 import { useState } from 'react';
@@ -68,12 +67,14 @@ const skillSchema = z.object({
 });
 
 const defaultAvatars = [
-    'https://placehold.co/100x100.png?text=Elf+Ranger',
-    'https://placehold.co/100x100.png?text=Dwarf+Knight',
-    'https://placehold.co/100x100.png?text=Human+Sorcerer',
-    'https://placehold.co/100x100.png?text=Orc+Barbarian',
-    'https://placehold.co/100x100.png?text=Gnome+Artificer',
-    'https://placehold.co/100x100.png?text=Undead+Warlock',
+    'https://framerusercontent.com/images/0a40Jc4LzD3wKq3gBvBfQ1xV4.png',
+    'https://framerusercontent.com/images/lC6U7M3LpY7Yc03XGk6f7D2gY.png',
+    'https://framerusercontent.com/images/g2mYQ4n5F5B5C4M2L7f2E0xV4.png',
+    'https://framerusercontent.com/images/e3Q4R7P2F2D1G0H3I6j5K4L3.png',
+    'https://framerusercontent.com/images/h5J6K7L8M9n0O1P2Q3R4S5T6.png',
+    'https://framerusercontent.com/images/i7J8K9L0M1n2O3P4Q5R6S7T8.png',
+    'https://framerusercontent.com/images/j9K0L1M2N3o4P5Q6R7S8T9U0.png',
+    'https://framerusercontent.com/images/k1L2M3N4O5p6Q7R8S9T0U1V2.png',
 ];
 
 export default function ProfilePage() {
