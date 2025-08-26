@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -73,6 +73,7 @@ import {
   Trash2,
   Check,
   Copy,
+  ChevronDown,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -162,6 +163,7 @@ export default function QuestsPage() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [addSkillOpen, setAddSkillOpen] = useState(false);
+  const [showAllMissions, setShowAllMissions] = useState(false);
 
 
   useEffect(() => {
@@ -351,6 +353,8 @@ export default function QuestsPage() {
     router.push(`/focus?taskId=${taskId}`);
   };
 
+  const missionsToShow = showAllMissions ? weeklyMissions : weeklyMissions.slice(0, 3);
+
 
   return (
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
@@ -381,7 +385,7 @@ export default function QuestsPage() {
                     </div>
                 ) : weeklyMissions.length > 0 ? (
                      <ul className="space-y-3">
-                        {weeklyMissions.map((mission: WeeklyMission) => (
+                        {missionsToShow.map((mission: WeeklyMission) => (
                             <li key={mission.id} className="flex items-start gap-3">
                                 <Checkbox
                                     id={`mission-${mission.id}`}
@@ -406,6 +410,14 @@ export default function QuestsPage() {
                     <p className="text-muted-foreground text-sm text-center">No missions for this week. Check back later!</p>
                 )}
             </CardContent>
+            {weeklyMissions.length > 3 && (
+                <CardFooter className="pt-4 border-t border-border">
+                    <Button variant="ghost" className="w-full" onClick={() => setShowAllMissions(!showAllMissions)}>
+                        {showAllMissions ? 'Show Less' : 'Show More'}
+                        <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", showAllMissions && "rotate-180")} />
+                    </Button>
+                </CardFooter>
+            )}
         </Card>
       </section>
 
