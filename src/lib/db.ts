@@ -26,24 +26,23 @@ const initializeDb = () => {
     // Check if tables exist
     const tableCheck = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'users'").get();
     
-    // Run migrations if needed
-    const weeklyMissionsCheck = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'weekly_missions'").get();
-    if (!weeklyMissionsCheck) {
-        dbInstance.exec(`
-            CREATE TABLE weekly_missions (
-                id TEXT PRIMARY KEY NOT NULL,
-                title TEXT NOT NULL,
-                description TEXT,
-                xp INTEGER NOT NULL,
-                tokens INTEGER NOT NULL,
-                completed BOOLEAN NOT NULL DEFAULT 0,
-                weekIdentifier TEXT NOT NULL
-            );
-        `);
-         console.log("Created weekly_missions table.");
-    }
-
     if (tableCheck) {
+        // Run migrations if needed for existing databases
+        const weeklyMissionsCheck = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = 'weekly_missions'").get();
+        if (!weeklyMissionsCheck) {
+            dbInstance.exec(`
+                CREATE TABLE weekly_missions (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    xp INTEGER NOT NULL,
+                    tokens INTEGER NOT NULL,
+                    completed BOOLEAN NOT NULL DEFAULT 0,
+                    weekIdentifier TEXT NOT NULL
+                );
+            `);
+            console.log("Created weekly_missions table.");
+        }
         return dbInstance; // DB already initialized
     }
 
@@ -105,6 +104,16 @@ const initializeDb = () => {
             price INTEGER NOT NULL,
             imageUrl TEXT NOT NULL,
             description TEXT NOT NULL
+        );
+        
+        CREATE TABLE weekly_missions (
+            id TEXT PRIMARY KEY NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            xp INTEGER NOT NULL,
+            tokens INTEGER NOT NULL,
+            completed BOOLEAN NOT NULL DEFAULT 0,
+            weekIdentifier TEXT NOT NULL
         );
     `);
 
