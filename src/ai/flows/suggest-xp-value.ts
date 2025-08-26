@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview An AI agent to suggest a fair XP value for a task.
+ * @fileOverview An AI agent to suggest a fair XP and token value for a task.
  *
- * - suggestXpValue - A function that suggests an XP value for a given task.
+ * - suggestXpValue - A function that suggests XP and token values for a given task.
  * - SuggestXpValueInput - The input type for the suggestXpValue function.
  * - SuggestXpValueOutput - The return type for the suggestXpValue function.
  */
@@ -25,6 +25,9 @@ const SuggestXpValueOutputSchema = z.object({
   xp: z
     .number()
     .describe('The suggested numerical XP value for the task, between 10 and 150.'),
+  tokens: z
+    .number()
+    .describe('The suggested numerical token value for the task, roughly 10% of the XP value.'),
 });
 export type SuggestXpValueOutput = z.infer<typeof SuggestXpValueOutputSchema>;
 
@@ -38,9 +41,9 @@ const prompt = ai.definePrompt({
   name: 'suggestXpValuePrompt',
   input: {schema: SuggestXpValueInputSchema},
   output: {schema: SuggestXpValueOutputSchema},
-  prompt: `You are a game balance designer for a productivity RPG app. Your job is to assign an experience point (XP) value to a user-submitted task. Analyze the task title and its project context to determine a fair XP value based on its likely complexity, time commitment, and effort.
+  prompt: `You are a game balance designer for a productivity RPG app. Your job is to assign an experience point (XP) value and a token (in-game currency) value to a user-submitted task. Analyze the task title and its project context to determine a fair XP value based on its likely complexity, time commitment, and effort. The token value should be roughly 10% of the XP value.
 
-Use the following scale:
+Use the following scale for XP:
 - 10-20 XP: Very simple, quick tasks (e.g., "Reply to one email", "Drink a glass of water").
 - 25-50 XP: Standard, single-step tasks (e.g., "Go for a 30-minute walk", "Read one chapter of a book").
 - 55-80 XP: Moderately complex tasks requiring more focus (e.g., "Write a blog post draft", "Complete a coding exercise").
@@ -51,7 +54,7 @@ Task Title: {{{title}}}
 Project Context: {{{projectContext}}}
 {{/if}}
 
-Based on this, determine a fair XP value and provide your response in the requested format.`,
+Based on this, determine a fair XP and token value, and provide your response in the requested format.`,
 });
 
 const suggestXpValueFlow = ai.defineFlow(

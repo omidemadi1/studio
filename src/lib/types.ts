@@ -24,6 +24,7 @@ export interface Task {
   title: string;
   completed: boolean;
   xp: number;
+  tokens: number;
   description?: string;
   notes?: string;
   links?: string;

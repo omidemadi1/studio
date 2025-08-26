@@ -274,12 +274,14 @@ export default function QuestsPage() {
 
         const result = await suggestXpValue({ title: data.title, projectContext: projectName });
         const xp = result.xp;
+        const tokens = result.tokens;
 
         const newTask: Task = {
             id: `task-${Date.now()}`,
             title: data.title,
             completed: false,
             xp: xp,
+            tokens: tokens,
             description: data.description || '',
             notes: data.notes || '',
             links: data.links || '',

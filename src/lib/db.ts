@@ -67,6 +67,7 @@ const initializeDb = () => {
                 title TEXT NOT NULL,
                 completed BOOLEAN NOT NULL DEFAULT 0,
                 xp INTEGER NOT NULL,
+                tokens INTEGER NOT NULL,
                 description TEXT,
                 notes TEXT,
                 links TEXT,
@@ -111,6 +112,15 @@ const initializeDb = () => {
             console.log(`Created table: ${tableName}`);
         }
     }
+    
+    // Add 'tokens' column to 'tasks' table if it doesn't exist (for migration)
+    try {
+        dbInstance.prepare('SELECT tokens FROM tasks LIMIT 1').get();
+    } catch (e) {
+        console.log("Migrating tasks table: adding 'tokens' column.");
+        dbInstance.exec('ALTER TABLE tasks ADD COLUMN tokens INTEGER NOT NULL DEFAULT 0');
+    }
+
 
     // Seed initial data only if users table is empty
     const userCount = dbInstance.prepare('SELECT count(*) as count FROM users').get() as { count: number };

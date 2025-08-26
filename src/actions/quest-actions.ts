@@ -42,8 +42,8 @@ export async function updateProject(id: string, name: string) {
 }
 
 export async function addTask(areaId: string, projectId: string, task: Task) {
-    db.prepare('INSERT INTO tasks (id, title, completed, xp, description, notes, links, difficulty, dueDate, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.description, task.notes, task.links, task.difficulty, task.dueDate, task.skillId, task.focusDuration || 0, projectId);
+    db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.notes, task.links, task.difficulty, task.dueDate, task.skillId, task.focusDuration || 0, projectId);
     revalidatePath(`/areas/${areaId}`);
     revalidatePath(`/skills/${task.skillId}`);
     revalidatePath('/');
@@ -74,15 +74,17 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
             db.prepare('UPDATE tasks SET completed = ? WHERE id = ?').run(completed ? 1 : 0, taskId);
         }
 
-        const task = db.prepare('SELECT xp, skillId FROM tasks WHERE id = ?').get(taskId) as Task;
+        const task = db.prepare('SELECT xp, tokens, skillId FROM tasks WHERE id = ?').get(taskId) as Task;
         if (task) {
             const xpChange = completed ? task.xp : -task.xp;
+            const tokenChange = completed ? task.tokens : -task.tokens;
             skillIdToRevalidate = task.skillId;
             
             // Update user XP and level
             const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
             if (user) {
                 const newXp = user.xp + xpChange;
+                const newTokens = user.tokens + tokenChange;
                 let newLevel = user.level;
                 let newNextLevelXp = user.nextLevelXp;
                 if (completed && newXp >= user.nextLevelXp) {
@@ -92,7 +94,7 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
                     newLevel = user.level -1;
                     newNextLevelXp = user.nextLevelXp / 2;
                 }
-                db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp);
+                db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ?, tokens = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp, newTokens);
             }
 
             // Update skill points and level
@@ -236,8 +238,8 @@ export async function resetDatabase() {
 const duplicateTaskTransaction = db.transaction((task: Task, newProjectId: string) => {
     const newTaskId = `task-${Date.now()}`;
     const newTask = { ...task, id: newTaskId, projectId: newProjectId, title: `${task.title} (copy)` };
-    db.prepare('INSERT INTO tasks (id, title, completed, xp, description, notes, links, difficulty, dueDate, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.description, newTask.notes, newTask.links, newTask.difficulty, newTask.dueDate, newTask.skillId, newTask.focusDuration || 0, newProjectId);
+    db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.tokens, newTask.description, newTask.notes, newTask.links, newTask.difficulty, newTask.dueDate, newTask.skillId, newTask.focusDuration || 0, newProjectId);
 });
 
 const duplicateProjectTransaction = db.transaction((project: Project, newAreaId: string) => {
