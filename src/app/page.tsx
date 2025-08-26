@@ -400,8 +400,8 @@ export default function QuestsPage() {
                 {weeklyMissions.map((mission: WeeklyMission) => (
                     <CarouselItem key={mission.id} className="md:basis-1/2 lg:basis-1/3">
                       <div className="p-1">
-                        <Card className="bg-card/80 flex flex-col h-full">
-                            <CardContent className="p-4 flex-1">
+                        <Card className="bg-card/80 flex flex-col h-[130px]">
+                            <CardContent className="p-4 flex-1 flex flex-col justify-between">
                                 <div className="flex items-start gap-3">
                                     <Checkbox
                                         id={`mission-${mission.id}`}
@@ -422,9 +422,9 @@ export default function QuestsPage() {
                                                 <div>& {mission.tokens} Tokens</div>
                                             </div>
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-1">{mission.description}</p>
                                     </div>
                                 </div>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{mission.description}</p>
                             </CardContent>
                         </Card>
                       </div>
