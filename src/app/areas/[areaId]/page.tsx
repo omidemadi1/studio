@@ -364,602 +364,602 @@ export default function AreaDetailPage() {
 
   return (
     <>
-    <div className="container mx-auto max-w-4xl p-4 sm:p-6">
-      <header className="mb-6 flex items-center justify-between gap-4">
-        <div className='flex items-center gap-4'>
-            <Button variant="ghost" size="icon" asChild>
-            <Link href="/">
-                <ArrowLeft />
-            </Link>
-            </Button>
-            <div className="flex items-center gap-3">
-            <AreaIcon className="w-8 h-8 text-accent" />
-            <h1 className="text-3xl font-headline font-bold">{area.name}</h1>
+      <div className="container mx-auto max-w-4xl p-4 sm:p-6">
+        <header className="mb-6 flex items-center justify-between gap-4">
+          <div className='flex items-center gap-4'>
+              <Button variant="ghost" size="icon" asChild>
+              <Link href="/">
+                  <ArrowLeft />
+              </Link>
+              </Button>
+              <div className="flex items-center gap-3">
+              <AreaIcon className="w-8 h-8 text-accent" />
+              <h1 className="text-3xl font-headline font-bold">{area.name}</h1>
+              </div>
+          </div>
+        </header>
+
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-card/80">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completion</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completionPercentage}%</div>
+              <p className="text-xs text-muted-foreground">
+                {completedTasks} of {totalTasks} quests done
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card/80">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total XP Gained</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalXp.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">From all quests in this area</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card/80">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Projects</CardTitle>
+              <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{area.projects.length}</div>
+              <p className="text-xs text-muted-foreground">Active projects in this area</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card/80">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tasks</CardTitle>
+              <ListChecks className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalTasks}</div>
+              <p className="text-xs text-muted-foreground">Total quests in this area</p>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-headline font-semibold capitalize">{viewMode}</h2>
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                <TabsList className="bg-transparent p-0 h-auto">
+                  <TabsTrigger value="projects" className="p-1.5 hover:bg-muted rounded-md data-[state=active]:bg-muted"><Columns className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="tasks" className="p-1.5 hover:bg-muted rounded-md data-[state=active]:bg-muted"><LayoutList className="h-4 w-4" /></TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-        </div>
-      </header>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                  <Tooltip>
+                      <DropdownMenu>
+                          <TooltipTrigger asChild>
+                              <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                      <Filter className="h-4 w-4" />
+                                  </Button>
+                              </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <DropdownMenuContent>
+                              <DropdownMenuRadioGroup value={taskFilter} onValueChange={(v) => setTaskFilter(v as TaskFilterOption)}>
+                              <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="incomplete">Incomplete</DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="completed">Completed</DropdownMenuRadioItem>
+                              </DropdownMenuRadioGroup>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                      <TooltipContent>
+                          <p>Filter tasks</p>
+                      </TooltipContent>
+                  </Tooltip>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-card/80">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completion</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completionPercentage}%</div>
-            <p className="text-xs text-muted-foreground">
-              {completedTasks} of {totalTasks} quests done
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/80">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total XP Gained</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalXp.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">From all quests in this area</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/80">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Projects</CardTitle>
-            <LayoutGrid className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{area.projects.length}</div>
-            <p className="text-xs text-muted-foreground">Active projects in this area</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/80">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tasks</CardTitle>
-            <ListChecks className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalTasks}</div>
-            <p className="text-xs text-muted-foreground">Total quests in this area</p>
-          </CardContent>
-        </Card>
-      </section>
+                  <Tooltip>
+                      <DropdownMenu>
+                          <TooltipTrigger asChild>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                  <ArrowUpDown className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <DropdownMenuContent>
+                              <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+                              <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="progress-desc">Progress (High-Low)</DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="progress-asc">Progress (Low-High)</DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="date-asc">Due Date (Soonest)</DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="date-desc">Due Date (Latest)</DropdownMenuRadioItem>
+                              </DropdownMenuRadioGroup>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                       <TooltipContent>
+                          <p>Sort {viewMode}</p>
+                      </TooltipContent>
+                  </Tooltip>
 
-      <section>
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-headline font-semibold capitalize">{viewMode}</h2>
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-              <TabsList className="bg-transparent p-0 h-auto">
-                <TabsTrigger value="projects" className="p-1.5 hover:bg-muted rounded-md data-[state=active]:bg-muted"><Columns className="h-4 w-4" /></TabsTrigger>
-                <TabsTrigger value="tasks" className="p-1.5 hover:bg-muted rounded-md data-[state=active]:bg-muted"><LayoutList className="h-4 w-4" /></TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-          <div className="flex items-center gap-2">
-            <TooltipProvider>
-                <Tooltip>
-                    <DropdownMenu>
-                        <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                    <Filter className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuRadioGroup value={taskFilter} onValueChange={(v) => setTaskFilter(v as TaskFilterOption)}>
-                            <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="incomplete">Incomplete</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="completed">Completed</DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <TooltipContent>
-                        <p>Filter tasks</p>
-                    </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                    <DropdownMenu>
-                        <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <ArrowUpDown className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
-                            <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="progress-desc">Progress (High-Low)</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="progress-asc">Progress (Low-High)</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="date-asc">Due Date (Soonest)</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="date-desc">Due Date (Latest)</DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                     <TooltipContent>
-                        <p>Sort {viewMode}</p>
-                    </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                         <Button onClick={() => setAddProjectOpen(true)} size="icon" variant="ghost">
-                            <PlusCircle className="h-4 w-4" />
-                        </Button>
-                    </TooltipTrigger>
-                     <TooltipContent>
-                        <p>Add project</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-
-          </div>
-        </div>
-        {viewMode === 'projects' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {sortedAndFilteredProjects.map((project) => {
-              const projectTasks = project.tasks;
-              const filteredTasks = projectTasks.filter(task => {
-                  if (taskFilter === 'all') return true;
-                  return taskFilter === 'completed' ? task.completed : !task.completed;
-              });
-              const completedProjectTasks = projectTasks.filter(t => t.completed).length;
-              const projectCompletion = projectTasks.length > 0 ? (completedProjectTasks / projectTasks.length) * 100 : 0;
-              return (
-              <ContextMenu key={project.id}>
-                <ContextMenuTrigger>
-                  <Card className="bg-card/80 overflow-hidden flex flex-col">
-                      <CardHeader>
-                      <CardTitle className="text-xl font-bold font-headline">{project.name}</CardTitle>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{completedProjectTasks} / {projectTasks.length} Done</span>
-                          <Progress value={projectCompletion} className="w-24 h-2" />
-                      </div>
-                      </CardHeader>
-                      <CardContent className="flex-1">
-                      <ul className="space-y-2">
-                          {filteredTasks.map((task: Task) => (
-                              <li
-                                  key={task.id}
-                                  className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
-                                  onClick={() => handleTaskClick(project.id, task.id)}
-                              >
-                                  <div onClick={(e) => e.stopPropagation()}>
-                                  <Checkbox
-                                      id={`task-${task.id}`}
-                                      checked={task.completed}
-                                      onCheckedChange={(checked) =>
-                                          updateTaskCompletion(task.id, !!checked)
-                                      }
-                                      className="w-5 h-5"
-                                  />
-                                  </div>
-                                  <span
-                                  className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
-                                  >
-                                  {task.title}
-                                  </span>
-                                  <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
-                              </li>
-                          ))}
-                          {filteredTasks.length === 0 && (
-                              <p className="text-sm text-muted-foreground text-center py-4">
-                                  {taskFilter === 'all' ? 'No tasks in this project yet.' : `No ${taskFilter} tasks.`}
-                              </p>
-                          )}
-                      </ul>
-                      </CardContent>
-                      <CardFooter className='bg-muted/30 p-2 justify-center'>
-                          <Button variant="ghost" size="sm" onClick={() => setAddTaskState({open: true, projectId: project.id})}>
-                              <PlusCircle className='h-4 w-4 mr-2'/> Add Task
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                           <Button onClick={() => setAddProjectOpen(true)} size="icon" variant="ghost">
+                              <PlusCircle className="h-4 w-4" />
                           </Button>
-                      </CardFooter>
-                  </Card>
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                    <ContextMenuItem onSelect={() => {
-                        projectForm.setValue('name', project.name);
-                        setEditProjectState({ open: true, project });
-                    }}>
-                        <Pencil className="h-4 w-4 mr-2" /> Edit
-                    </ContextMenuItem>
-                    <ContextMenuItem onSelect={() => duplicateProject(project.id)}>
-                        <Copy className="h-4 w-4 mr-2" /> Duplicate
-                    </ContextMenuItem>
-                    <ContextMenuItem onSelect={() => setDeleteProjectState({ open: true, project })}>
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete
-                    </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-              )
-            })}
-            {area.projects.length === 0 && (
-                <Card className="bg-card/80 border-2 border-dashed md:col-span-2">
-                  <CardContent className="p-10 text-center">
-                      <p className="text-muted-foreground mb-4">No projects here yet. Ready to start a new quest line?</p>
-                      <Button variant="outline" onClick={() => setAddProjectOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
-                  </CardContent>
-                </Card>
-            )}
-          </div>
-        ) : (
-            <div className="space-y-2">
-                <Card 
-                    className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer border-2 border-dashed"
-                    onClick={() => setAddTaskState({open: true, projectId: null})}
-                >
-                    <PlusCircle className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium text-muted-foreground">Add new Task</span>
-                </Card>
-                {sortedAndFilteredTasks.map((task: Task) => (
-                    <Card
-                        key={task.id}
-                        className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => handleTaskClick(task.projectId, task.id)}
-                    >
-                        <div onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                            id={`task-list-${task.id}`}
-                            checked={task.completed}
-                            onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
-                            className="w-5 h-5"
-                        />
-                        </div>
-                        <span className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}>
-                        {task.title}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                            {area.projects.find(p => p.id === task.projectId)?.name}
-                        </span>
-                        <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
-                        <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
-                    </Card>
-                ))}
-                {sortedAndFilteredTasks.length === 0 && (
-                    <Card className="bg-card/80 border-2 border-dashed">
-                        <CardContent className="p-10 text-center">
-                            <p className="text-muted-foreground">
-                                {taskFilter === 'all' ? 'No tasks in this area yet.' : `No ${taskFilter} tasks found.`}
-                            </p>
-                        </CardContent>
-                    </Card>
-                )}
+                      </TooltipTrigger>
+                       <TooltipContent>
+                          <p>Add project</p>
+                      </TooltipContent>
+                  </Tooltip>
+              </TooltipProvider>
+
             </div>
-        )}
-      </section>
-    </div>
-
-    <Dialog open={addProjectOpen} onOpenChange={setAddProjectOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a New Project</DialogTitle>
-            <DialogDescription>
-              Projects live inside Areas and group related tasks.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...projectForm}>
-            <form onSubmit={projectForm.handleSubmit(onAddProject)} className="space-y-4">
-              <FormField
-                control={projectForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Q3 Goals" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="submit">Create Project</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-    </Dialog>
-
-    <Dialog open={editProjectState.open} onOpenChange={(open) => setEditProjectState({ open, project: open ? editProjectState.project : null })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
-            <DialogDescription>
-              Update the name of your project.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...projectForm}>
-            <form onSubmit={projectForm.handleSubmit(onEditProject)} className="space-y-4">
-              <FormField
-                control={projectForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Q3 Goals" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="submit">Save Changes</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-    </Dialog>
-
-    <AlertDialog open={deleteProjectState.open} onOpenChange={(open) => setDeleteProjectState({ open, project: open ? deleteProjectState.project : null })}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the 
-                <span className="font-bold"> {deleteProjectState.project?.name}</span> project and all its tasks.
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteProjectState({open: false, project: null})}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteProject}>Continue</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-
-
-    <Dialog open={addTaskState.open} onOpenChange={(open) => setAddTaskState({ open, projectId: open ? addTaskState.projectId : null })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a New Task</DialogTitle>
-            <DialogDescription>
-              Add a new quest to your project. The AI will assign a fair XP value.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...taskForm}>
-            <form onSubmit={taskForm.handleSubmit(onAddTask)} className="space-y-4">
-               <FormField
-                control={taskForm.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Task Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Run 5km" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {!addTaskState.projectId && (
-                <FormField
-                    control={taskForm.control}
-                    name="projectId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Project</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a project" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {area.projects.map(project => (
-                                        <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+          </div>
+          {viewMode === 'projects' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sortedAndFilteredProjects.map((project) => {
+                const projectTasks = project.tasks;
+                const filteredTasks = projectTasks.filter(task => {
+                    if (taskFilter === 'all') return true;
+                    return taskFilter === 'completed' ? task.completed : !task.completed;
+                });
+                const completedProjectTasks = projectTasks.filter(t => t.completed).length;
+                const projectCompletion = projectTasks.length > 0 ? (completedProjectTasks / projectTasks.length) * 100 : 0;
+                return (
+                <ContextMenu key={project.id}>
+                  <ContextMenuTrigger>
+                    <Card className="bg-card/80 overflow-hidden flex flex-col">
+                        <CardHeader>
+                        <CardTitle className="text-xl font-bold font-headline">{project.name}</CardTitle>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>{completedProjectTasks} / {projectTasks.length} Done</span>
+                            <Progress value={projectCompletion} className="w-24 h-2" />
+                        </div>
+                        </CardHeader>
+                        <CardContent className="flex-1">
+                        <ul className="space-y-2">
+                            {filteredTasks.map((task: Task) => (
+                                <li
+                                    key={task.id}
+                                    className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                                    onClick={() => handleTaskClick(project.id, task.id)}
+                                >
+                                    <div onClick={(e) => e.stopPropagation()}>
+                                    <Checkbox
+                                        id={`task-${task.id}`}
+                                        checked={task.completed}
+                                        onCheckedChange={(checked) =>
+                                            updateTaskCompletion(task.id, !!checked)
+                                        }
+                                        className="w-5 h-5"
+                                    />
+                                    </div>
+                                    <span
+                                    className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
+                                    >
+                                    {task.title}
+                                    </span>
+                                    <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
+                                </li>
+                            ))}
+                            {filteredTasks.length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                    {taskFilter === 'all' ? 'No tasks in this project yet.' : `No ${taskFilter} tasks.`}
+                                </p>
+                            )}
+                        </ul>
+                        </CardContent>
+                        <CardFooter className='bg-muted/30 p-2 justify-center'>
+                            <Button variant="ghost" size="sm" onClick={() => setAddTaskState({open: true, projectId: project.id})}>
+                                <PlusCircle className='h-4 w-4 mr-2'/> Add Task
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                      <ContextMenuItem onSelect={() => {
+                          projectForm.setValue('name', project.name);
+                          setEditProjectState({ open: true, project });
+                      }}>
+                          <Pencil className="h-4 w-4 mr-2" /> Edit
+                      </ContextMenuItem>
+                      <ContextMenuItem onSelect={() => duplicateProject(project.id)}>
+                          <Copy className="h-4 w-4 mr-2" /> Duplicate
+                      </ContextMenuItem>
+                      <ContextMenuItem onSelect={() => setDeleteProjectState({ open: true, project })}>
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete
+                      </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
+                )
+              })}
+              {area.projects.length === 0 && (
+                  <Card className="bg-card/80 border-2 border-dashed md:col-span-2">
+                    <CardContent className="p-10 text-center">
+                        <p className="text-muted-foreground mb-4">No projects here yet. Ready to start a new quest line?</p>
+                        <Button variant="outline" onClick={() => setAddProjectOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
+                    </CardContent>
+                  </Card>
               )}
-              
-              <FormField
-                control={taskForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Add a description..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            </div>
+          ) : (
+              <div className="space-y-2">
+                  <Card 
+                      className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer border-2 border-dashed"
+                      onClick={() => setAddTaskState({open: true, projectId: null})}
+                  >
+                      <PlusCircle className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium text-muted-foreground">Add new Task</span>
+                  </Card>
+                  {sortedAndFilteredTasks.map((task: Task) => (
+                      <Card
+                          key={task.id}
+                          className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => handleTaskClick(task.projectId, task.id)}
+                      >
+                          <div onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                              id={`task-list-${task.id}`}
+                              checked={task.completed}
+                              onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
+                              className="w-5 h-5"
+                          />
+                          </div>
+                          <span className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}>
+                          {task.title}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                              {area.projects.find(p => p.id === task.projectId)?.name}
+                          </span>
+                          <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
+                          <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
+                      </Card>
+                  ))}
+                  {sortedAndFilteredTasks.length === 0 && (
+                      <Card className="bg-card/80 border-2 border-dashed">
+                          <CardContent className="p-10 text-center">
+                              <p className="text-muted-foreground">
+                                  {taskFilter === 'all' ? 'No tasks in this area yet.' : `No ${taskFilter} tasks found.`}
+                              </p>
+                          </CardContent>
+                      </Card>
+                  )}
+              </div>
+          )}
+        </section>
+      </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                 <FormField
-                  control={taskForm.control}
-                  name="skillId"
+      <Dialog open={addProjectOpen} onOpenChange={setAddProjectOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create a New Project</DialogTitle>
+              <DialogDescription>
+                Projects live inside Areas and group related tasks.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...projectForm}>
+              <form onSubmit={projectForm.handleSubmit(onAddProject)} className="space-y-4">
+                <FormField
+                  control={projectForm.control}
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Skill Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a skill" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {skills.map(skill => (
-                            <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
-                          ))}
-                           <Separator />
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start opacity-70"
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    setAddTaskState(prev => ({...prev, open: false}));
-                                    setAddSkillOpen(true);
-                                }}
-                            >
-                                <PlusCircle className="h-4 w-4 mr-2" /> Add new skill...
-                            </Button>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={taskForm.control}
-                  name="dueDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
+                      <FormLabel>Project Name</FormLabel>
                       <FormControl>
-                        <DateTimePicker date={field.value} setDate={field.onChange} />
+                        <Input placeholder="e.g., Q3 Goals" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <DialogFooter>
-                <Button type="submit" disabled={isCreatingTask}>
-                    {isCreatingTask ? <Loader2 className="animate-spin" /> : "Create Task" }
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
+                <DialogFooter>
+                  <Button type="submit">Create Project</Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
       </Dialog>
-    
-    <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
-        <DialogContent className="sm:max-w-xl">
-          {currentTask && (
-            <>
-              <DialogHeader className="flex flex-row items-start justify-between gap-4">
-                 <VisuallyHidden>
-                    <DialogTitle>{editableTaskData.title}</DialogTitle>
-                    <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
-                 </VisuallyHidden>
-                 <Input
-                    value={editableTaskData.title}
-                    onChange={(e) => handleTaskDataChange('title', e.target.value)}
-                    className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+
+      <Dialog open={editProjectState.open} onOpenChange={(open) => setEditProjectState({ open, project: open ? editProjectState.project : null })}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Project</DialogTitle>
+              <DialogDescription>
+                Update the name of your project.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...projectForm}>
+              <form onSubmit={projectForm.handleSubmit(onEditProject)} className="space-y-4">
+                <FormField
+                  control={projectForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Q3 Goals" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button type="submit">Save Changes</Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteProjectState.open} onOpenChange={(open) => setDeleteProjectState({ open, project: open ? deleteProjectState.project : null })}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the 
+                  <span className="font-bold"> {deleteProjectState.project?.name}</span> project and all its tasks.
+              </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeleteProjectState({open: false, project: null})}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteProject}>Continue</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
+
+      <Dialog open={addTaskState.open} onOpenChange={(open) => setAddTaskState({ open, projectId: open ? addTaskState.projectId : null })}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create a New Task</DialogTitle>
+              <DialogDescription>
+                Add a new quest to your project. The AI will assign a fair XP value.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...taskForm}>
+              <form onSubmit={taskForm.handleSubmit(onAddTask)} className="space-y-4">
+                 <FormField
+                  control={taskForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Task Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Run 5km" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {!addTaskState.projectId && (
+                  <FormField
+                      control={taskForm.control}
+                      name="projectId"
+                      render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Project</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                      <SelectTrigger>
+                                          <SelectValue placeholder="Select a project" />
+                                      </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                      {area.projects.map(project => (
+                                          <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                                      ))}
+                                  </SelectContent>
+                              </Select>
+                              <FormMessage />
+                          </FormItem>
+                      )}
                   />
-                <div className='flex items-center gap-2 flex-shrink-0'>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
-                            <Crosshair className="h-5 w-5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Focus on this task</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                   <Checkbox
-                        checked={currentTask.completed}
-                        onCheckedChange={(checked) =>
-                            updateTaskCompletion(currentTask.id, !!checked)
-                        }
-                        className="w-5 h-5"
+                )}
+                
+                <FormField
+                  control={taskForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Add a description..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                   <FormField
+                    control={taskForm.control}
+                    name="skillId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Skill Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a skill" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {skills.map(skill => (
+                              <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
+                            ))}
+                             <Separator />
+                              <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full justify-start opacity-70"
+                                  type="button"
+                                  onClick={(e) => {
+                                      e.preventDefault();
+                                      setAddTaskState(prev => ({...prev, open: false}));
+                                      setAddSkillOpen(true);
+                                  }}
+                              >
+                                  <PlusCircle className="h-4 w-4 mr-2" /> Add new skill...
+                              </Button>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={taskForm.control}
+                    name="dueDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Date</FormLabel>
+                        <FormControl>
+                          <DateTimePicker date={field.value} setDate={field.onChange} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <DialogFooter>
+                  <Button type="submit" disabled={isCreatingTask}>
+                      {isCreatingTask ? <Loader2 className="animate-spin" /> : "Create Task" }
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      
+      <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
+          <DialogContent className="sm:max-w-xl">
+            {currentTask && (
+              <>
+                <DialogHeader className="flex flex-row items-start justify-between gap-4">
+                   <VisuallyHidden>
+                      <DialogTitle>{editableTaskData.title}</DialogTitle>
+                      <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
+                   </VisuallyHidden>
+                   <Input
+                      value={editableTaskData.title}
+                      onChange={(e) => handleTaskDataChange('title', e.target.value)}
+                      className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
-                </div>
-              </DialogHeader>
-              <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
-                
-                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
-                <div className="font-semibold">{area?.name}</div>
+                  <div className='flex items-center gap-2 flex-shrink-0'>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
+                              <Crosshair className="h-5 w-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Focus on this task</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                     <Checkbox
+                          checked={currentTask.completed}
+                          onCheckedChange={(checked) =>
+                              updateTaskCompletion(currentTask.id, !!checked)
+                          }
+                          className="w-5 h-5"
+                      />
+                  </div>
+                </DialogHeader>
+                <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
+                  
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
+                  <div className="font-semibold">{area?.name}</div>
 
-                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
-                <div className="font-semibold">{currentProject?.name}</div>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
+                  <div className="font-semibold">{currentProject?.name}</div>
 
-                {currentSkill && (
-                  <>
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
-                    <div className="font-semibold">{currentSkill.name}</div>
-                  </>
-                )}
-
-                {currentTask.difficulty && (
+                  {currentSkill && (
                     <>
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
-                        <div><Badge variant="outline" className={cn(currentTask.difficulty ? difficultyColors[currentTask.difficulty] : '')}>{currentTask.difficulty}</Badge></div>
+                      <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
+                      <div className="font-semibold">{currentSkill.name}</div>
                     </>
-                )}
+                  )}
 
-                <>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Due Date</div>
-                  <DateTimePicker
-                    date={currentTask.dueDate ? new Date(currentTask.dueDate) : undefined}
-                    setDate={(date) => {
-                      if (!taskId) return;
-                      updateTaskDetails(taskId, { dueDate: date?.toISOString() });
-                    }}
-                  />
-                </>
+                  {currentTask.difficulty && (
+                      <>
+                          <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
+                          <div><Badge variant="outline" className={cn(currentTask.difficulty ? difficultyColors[currentTask.difficulty] : '')}>{currentTask.difficulty}</Badge></div>
+                      </>
+                  )}
 
-                <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                <div className="font-semibold">{currentTask.xp}</div>
-                
-                <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
-                <div className="font-semibold">{currentTask.tokens}</div>
-
-                {currentTask.focusDuration && currentTask.focusDuration > 0 && (
                   <>
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>
-                    <div className="font-semibold">
-                      {`${Math.floor(currentTask.focusDuration / 3600)}h ${Math.floor((currentTask.focusDuration % 3600) / 60)}m`}
-                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Due Date</div>
+                    <DateTimePicker
+                      date={currentTask.dueDate ? new Date(currentTask.dueDate) : undefined}
+                      setDate={(date) => {
+                        if (!taskId) return;
+                        updateTaskDetails(taskId, { dueDate: date?.toISOString() });
+                      }}
+                    />
                   </>
-                )}
-              </div>
-              
-              <div className="mt-6 space-y-2 text-sm">
-                <div>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
-                  <Textarea
-                    value={editableTaskData.description}
-                    onChange={(e) => handleTaskDataChange('description', e.target.value)}
-                    placeholder="Add a description..."
-                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    rows={3}
-                  />
+
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
+                  <div className="font-semibold">{currentTask.xp}</div>
+                  
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
+                  <div className="font-semibold">{currentTask.tokens}</div>
+
+                  {currentTask.focusDuration && currentTask.focusDuration > 0 && (
+                    <>
+                      <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>
+                      <div className="font-semibold">
+                        {`${Math.floor(currentTask.focusDuration / 3600)}h ${Math.floor((currentTask.focusDuration % 3600) / 60)}m`}
+                      </div>
+                    </>
+                  )}
                 </div>
                 
-                <div>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
-                  <Textarea
-                    value={editableTaskData.notes}
-                    onChange={(e) => handleTaskDataChange('notes', e.target.value)}
-                    placeholder="Add notes..."
-                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    rows={3}
-                  />
-                </div>
+                <div className="mt-6 space-y-2 text-sm">
+                  <div>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
+                    <Textarea
+                      value={editableTaskData.description}
+                      onChange={(e) => handleTaskDataChange('description', e.target.value)}
+                      placeholder="Add a description..."
+                      className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
+                    <Textarea
+                      value={editableTaskData.notes}
+                      onChange={(e) => handleTaskDataChange('notes', e.target.value)}
+                      placeholder="Add notes..."
+                      className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                      rows={3}
+                    />
+                  </div>
 
-                <div>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
-                  <Textarea
-                    value={editableTaskData.links}
-                    onChange={(e) => handleTaskDataChange('links', e.target.value)}
-                    placeholder="Add links, one per line..."
-                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    rows={3}
-                  />
+                  <div>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
+                    <Textarea
+                      value={editableTaskData.links}
+                      onChange={(e) => handleTaskDataChange('links', e.target.value)}
+                      placeholder="Add links, one per line..."
+                      className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                      rows={3}
+                    />
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       <Dialog open={addSkillOpen} onOpenChange={setAddSkillOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1038,9 +1038,6 @@ export default function AreaDetailPage() {
           </Form>
         </DialogContent>
       </Dialog>
-    </div>
-  </>
+    </>
   );
 }
-
-    
