@@ -123,7 +123,7 @@ const initializeDb = () => {
         console.log("Migrating tasks table: adding 'reminder' column.");
         dbInstance.exec('ALTER TABLE tasks ADD COLUMN reminder INTEGER');
     }
-
+    
     // Add 'skillId' column to 'tasks' table if it doesn't exist (for migration)
     try {
         dbInstance.prepare('SELECT skillId FROM tasks LIMIT 1').get();
@@ -164,6 +164,7 @@ export function resetDbFile() {
     }
     console.log("Database file deleted.");
     const newDb = initializeDb();
+    // Assign the new instance to both the module-scoped variable and the global variable.
     db = newDb;
     global.db = newDb;
 }
