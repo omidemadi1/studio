@@ -2,8 +2,10 @@
 'use server'
 
 import { db, resetDbFile } from '@/lib/db'
-import type { Task, User, Skill, Project, Area } from '@/lib/types'
+import type { Task, User, Skill, Project, Area, WeeklyMission } from '@/lib/types'
 import { revalidatePath } from 'next/cache'
+import { getWeek } from 'date-fns';
+import { suggestWeeklyMissions } from '@/ai/flows/suggest-weekly-missions';
 
 export async function addArea(name: string) {
   const id = `area-${Date.now()}`
@@ -203,12 +205,13 @@ export async function deleteProject(id: string, areaId: string) {
 }
 
 
-export async function addXp(xp: number) {
+export async function addXp(xp: number, tokens?: number) {
     const transaction = db.transaction(() => {
         const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
         if (!user) return;
 
         const newXp = user.xp + xp;
+        const newTokens = user.tokens + (tokens || 0);
         let newLevel = user.level;
         let newNextLevelXp = user.nextLevelXp;
 
@@ -217,7 +220,7 @@ export async function addXp(xp: number) {
             newNextLevelXp = user.nextLevelXp * 2;
         }
         
-        db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp);
+        db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ?, tokens = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp, newTokens);
     });
 
     transaction();
@@ -281,4 +284,75 @@ export async function duplicateArea(areaId: string) {
 
     transaction();
     revalidatePath('/');
+}
+
+// Weekly Missions
+export async function maybeGenerateWeeklyMissions(): Promise<WeeklyMission[]> {
+    const year = new Date().getFullYear();
+    const week = getWeek(new Date());
+    const weekIdentifier = `${year}-${week}`;
+
+    const existingMissions = db.prepare('SELECT * FROM weekly_missions WHERE weekIdentifier = ?').all(weekIdentifier) as WeeklyMission[];
+
+    if (existingMissions.length > 0) {
+        return existingMissions;
+    }
+
+    const skills = db.prepare('SELECT * FROM skills').all() as Skill[];
+    const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
+    
+    const result = await suggestWeeklyMissions({
+        currentSkills: skills.map(s => `${s.name} (Lvl ${s.level})`).join(', '),
+        userLevel: user.level,
+    });
+    
+    const insert = db.prepare('INSERT INTO weekly_missions (id, title, description, xp, tokens, completed, weekIdentifier) VALUES (?, ?, ?, ?, ?, ?, ?)');
+
+    const transaction = db.transaction((missions: any[]) => {
+        for (const mission of missions) {
+            insert.run(`mission-${weekIdentifier}-${Math.random()}`, mission.title, mission.description, mission.xp, mission.tokens, 0, weekIdentifier);
+        }
+    });
+
+    try {
+        transaction(result.missions);
+        revalidatePath('/');
+        return db.prepare('SELECT * FROM weekly_missions WHERE weekIdentifier = ?').all(weekIdentifier) as WeeklyMission[];
+    } catch(e) {
+        console.error("Failed to generate weekly missions:", e);
+        return [];
+    }
+}
+
+export async function updateWeeklyMissionCompletion(missionId: string, completed: boolean) {
+    const transaction = db.transaction(() => {
+        db.prepare('UPDATE weekly_missions SET completed = ? WHERE id = ?').run(completed ? 1 : 0, missionId);
+        
+        if (completed) {
+            const mission = db.prepare('SELECT * FROM weekly_missions WHERE id = ?').get(missionId) as WeeklyMission;
+            if (mission) {
+                const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
+                
+                const newXp = user.xp + mission.xp;
+                const newTokens = user.tokens + mission.tokens;
+                let newLevel = user.level;
+                let newNextLevelXp = user.nextLevelXp;
+
+                if (newXp >= user.nextLevelXp) {
+                    newLevel = user.level + 1;
+                    newNextLevelXp = user.nextLevelXp * 2;
+                }
+                
+                db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ?, tokens = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp, newTokens);
+                
+                return { xp: mission.xp, tokens: mission.tokens, leveledUp: newLevel > user.level };
+            }
+        }
+        return null;
+    });
+
+    const result = transaction();
+    revalidatePath('/');
+    revalidatePath('/profile');
+    return result;
 }

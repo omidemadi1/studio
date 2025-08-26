@@ -23,10 +23,8 @@ const SuggestSmartTasksInputSchema = z.object({
 export type SuggestSmartTasksInput = z.infer<typeof SuggestSmartTasksInputSchema>;
 
 const SuggestSmartTasksOutputSchema = z.object({
-  suggestedTasks: z
-    .string()
-    .describe(
-      'A list of suggested tasks based on the past performance and current skills of the user.'
+  suggestedTasks: z.array(z.string()).describe(
+      'A list of 3-5 suggested task titles based on the past performance and current skills of the user.'
     ),
 });
 export type SuggestSmartTasksOutput = z.infer<typeof SuggestSmartTasksOutputSchema>;
@@ -41,9 +39,10 @@ const prompt = ai.definePrompt({
   name: 'suggestSmartTasksPrompt',
   input: {schema: SuggestSmartTasksInputSchema},
   output: {schema: SuggestSmartTasksOutputSchema},
-  prompt: `You are an AI assistant that suggests tasks to users based on their past performance and current skills.
+  prompt: `You are an AI assistant that suggests a few tasks to a user based on their past performance and current skills.
 
-  Given the following information about the user, suggest a list of tasks that the user should focus on to improve their overall productivity.
+  Given the following information about the user, suggest a list of 3-5 tasks that the user should focus on to improve their overall productivity.
+  The tasks should be actionable and clear.
 
   Past Performance: {{{pastPerformance}}}
   Current Skills: {{{currentSkills}}}

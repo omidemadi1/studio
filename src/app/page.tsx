@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -49,7 +49,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { Task, Difficulty, Area, Project } from '@/lib/types';
+import type { Task, Difficulty, Area, Project, WeeklyMission } from '@/lib/types';
 import { iconMap } from '@/lib/icon-map';
 import {
   Swords,
@@ -79,7 +79,6 @@ import { useQuestData } from '@/context/quest-context';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
-import { suggestSmartTasks } from '@/ai/flows/suggest-smart-tasks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CalendarView from '@/components/calendar-view';
@@ -126,7 +125,28 @@ type ViewMode = 'list' | 'calendar';
 export default function QuestsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { areas, user, skills, updateTaskCompletion, addTask, addArea, addProject, updateTaskDetails, tasks, deleteArea, updateArea, addSkill, deleteTask, deleteProject, updateProject, duplicateArea, duplicateProject, duplicateTask } = useQuestData();
+  const { 
+    areas, 
+    user, 
+    skills, 
+    updateTaskCompletion, 
+    addTask, 
+    addArea, 
+    addProject, 
+    updateTaskDetails, 
+    deleteArea, 
+    updateArea, 
+    addSkill, 
+    deleteTask, 
+    deleteProject, 
+    updateProject, 
+    duplicateArea, 
+    duplicateProject, 
+    duplicateTask,
+    weeklyMissions,
+    updateWeeklyMissionCompletion,
+    maybeGenerateWeeklyMissions,
+  } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
   const [editAreaState, setEditAreaState] = useState<{ open: boolean; area: Area | null }>({ open: false, area: null });
@@ -139,44 +159,19 @@ export default function QuestsPage() {
   const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
-  const [suggestedTasks, setSuggestedTasks] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [addSkillOpen, setAddSkillOpen] = useState(false);
 
 
   useEffect(() => {
-    async function fetchSuggestions() {
+    async function fetchMissions() {
       setLoadingSuggestions(true);
-      try {
-        const completedTasks = tasks.filter(t => t.completed);
-        const pastPerformance = completedTasks.length > 0 
-          ? `Completed ${completedTasks.length} tasks. Recently completed: ${completedTasks.slice(0, 5).map(t => t.title).join(', ')}`
-          : "No tasks completed yet.";
-        
-        const currentSkills = skills.map(s => `${s.name} (Lvl ${s.level})`).join(', ');
-        
-        const result = await suggestSmartTasks({
-          pastPerformance,
-          currentSkills,
-          userPreferences: 'Looking for a mix of tasks to improve all skills.'
-        });
-
-        const taskLines = result.suggestedTasks
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line.startsWith('-') || line.startsWith('*'))
-          .map(line => line.substring(1).trim());
-
-        setSuggestedTasks(taskLines);
-      } catch (error) {
-        console.error("Failed to fetch smart tasks:", error);
-      } finally {
-        setLoadingSuggestions(false);
-      }
+      await maybeGenerateWeeklyMissions();
+      setLoadingSuggestions(false);
     }
-    fetchSuggestions();
-  }, [tasks, skills]);
+    fetchMissions();
+  }, []);
 
 
   const areaForm = useForm<z.infer<typeof areaSchema>>({
@@ -368,29 +363,45 @@ export default function QuestsPage() {
       <section className="mb-8">
         <h2 className="text-2xl font-headline font-semibold mb-4 flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-accent" />
-            Daily Missions
+            Weekly Missions
         </h2>
         <Card className="bg-card/80">
-            <CardContent className="p-6">
+            <CardHeader>
+                <CardTitle className="text-lg">This Week's Challenges</CardTitle>
+                <CardDescription>Complete these quests by Sunday for bonus rewards!</CardDescription>
+            </CardHeader>
+            <CardContent>
                 {loadingSuggestions ? (
                     <div className="space-y-3">
                         <Skeleton className="h-5 w-3/4" />
                         <Skeleton className="h-5 w-1/2" />
                         <Skeleton className="h-5 w-2/3" />
                     </div>
-                ) : suggestedTasks.length > 0 ? (
-                    <ul className="space-y-3">
-                        {suggestedTasks.slice(0,3).map((task, index) => (
-                            <li key={index} className="flex items-center gap-3">
-                                <div className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center">
-                                    <Sparkles className="w-3 h-3 text-primary" />
+                ) : weeklyMissions.length > 0 ? (
+                     <ul className="space-y-3">
+                        {weeklyMissions.map((mission: WeeklyMission) => (
+                            <li key={mission.id} className="flex items-start gap-3">
+                                <Checkbox
+                                    id={`mission-${mission.id}`}
+                                    checked={mission.completed}
+                                    onCheckedChange={(checked) => updateWeeklyMissionCompletion(mission.id, !!checked)}
+                                    className="w-5 h-5 mt-0.5"
+                                />
+                                <div className="flex-1">
+                                    <label
+                                      htmlFor={`mission-${mission.id}`}
+                                      className={cn("font-medium leading-none", mission.completed && "line-through text-muted-foreground")}
+                                    >
+                                      {mission.title}
+                                    </label>
+                                    <p className="text-xs text-muted-foreground">{mission.description}</p>
+                                    <div className="text-xs font-bold text-primary mt-1">+{mission.xp} XP & {mission.tokens} Tokens</div>
                                 </div>
-                                <span className="text-sm font-medium">{task}</span>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p className="text-muted-foreground text-sm text-center">No missions for today. Check back later!</p>
+                    <p className="text-muted-foreground text-sm text-center">No missions for this week. Check back later!</p>
                 )}
             </CardContent>
         </Card>
@@ -1054,5 +1065,3 @@ export default function QuestsPage() {
     </div>
   );
 }
-
-    

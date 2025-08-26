@@ -55,3 +55,13 @@ export interface MarketItem {
   imageUrl: string;
   description: string;
 }
+
+export interface WeeklyMission {
+  id: string;
+  title: string;
+  description?: string;
+  xp: number;
+  tokens: number;
+  completed: boolean;
+  weekIdentifier: string;
+}

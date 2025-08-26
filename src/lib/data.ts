@@ -1,6 +1,7 @@
 import 'server-only';
 import { db } from './db';
-import type { User, Area, Project, Task, Skill, MarketItem } from './types';
+import type { User, Area, Project, Task, Skill, MarketItem, WeeklyMission } from './types';
+import { getWeek } from 'date-fns';
 
 function withErrorHandling<T>(fn: () => T, fallback: T): T {
     try {
@@ -53,5 +54,15 @@ export function getAreas(): Area[] {
 export function getMarketItems(): MarketItem[] {
     return withErrorHandling(() => {
         return db.prepare('SELECT * FROM market_items').all() as MarketItem[];
+    }, []);
+}
+
+export function getWeeklyMissions(): WeeklyMission[] {
+    const year = new Date().getFullYear();
+    const week = getWeek(new Date());
+    const weekIdentifier = `${year}-${week}`;
+
+    return withErrorHandling(() => {
+        return db.prepare('SELECT * FROM weekly_missions WHERE weekIdentifier = ?').all(weekIdentifier) as WeeklyMission[];
     }, []);
 }

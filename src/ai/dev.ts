@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/suggest-smart-tasks.ts';
 import '@/ai/flows/suggest-xp-value.ts';
+import '@/ai/flows/suggest-weekly-missions.ts';

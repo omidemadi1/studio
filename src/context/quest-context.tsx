@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
-import type { Area, Task, Project, User, Skill } from '@/lib/types';
+import type { Area, Task, Project, User, Skill, WeeklyMission } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import * as QuestActions from '@/actions/quest-actions';
@@ -12,6 +12,9 @@ interface QuestContextType {
   user: User;
   skills: Skill[];
   tasks: Task[];
+  weeklyMissions: WeeklyMission[];
+  maybeGenerateWeeklyMissions: () => Promise<void>;
+  updateWeeklyMissionCompletion: (missionId: string, completed: boolean) => void;
   updateTaskCompletion: (taskId: string, completed: boolean, focusDuration?: number) => void;
   updateTaskDetails: (taskId: string, details: Partial<Task>) => void;
   addArea: (name: string) => void;
@@ -43,15 +46,18 @@ export const QuestProvider = ({
     initialAreas,
     initialUser,
     initialSkills,
+    initialWeeklyMissions
 }: { 
     children: ReactNode,
     initialAreas: Area[],
     initialUser: User,
     initialSkills: Skill[],
+    initialWeeklyMissions: WeeklyMission[]
 }) => {
   const [areas, setAreas] = useState<Area[]>(initialAreas);
   const [user, setUser] = useState<User>(initialUser);
   const [skills, setSkills] = useState<Skill[]>(initialSkills);
+  const [weeklyMissions, setWeeklyMissions] = useState<WeeklyMission[]>(initialWeeklyMissions);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -66,6 +72,10 @@ export const QuestProvider = ({
   useEffect(() => {
     setSkills(initialSkills);
   }, [initialSkills]);
+
+  useEffect(() => {
+    setWeeklyMissions(initialWeeklyMissions);
+  }, [initialWeeklyMissions]);
 
   const addXp = useCallback(async (xp: number, message?: string) => {
     const oldUser = user;
@@ -228,9 +238,62 @@ export const QuestProvider = ({
     router.refresh();
   }
 
+  const maybeGenerateWeeklyMissions = useCallback(async () => {
+    const newMissions = await QuestActions.maybeGenerateWeeklyMissions();
+    setWeeklyMissions(newMissions);
+  }, []);
+
+  const updateWeeklyMissionCompletion = useCallback(async (missionId: string, completed: boolean) => {
+      const result = await QuestActions.updateWeeklyMissionCompletion(missionId, completed);
+      if (result) {
+          toast({
+              title: "Mission Complete!",
+              description: `You earned ${result.xp} XP and ${result.tokens} tokens!`
+          });
+          if (result.leveledUp) {
+              toast({
+                  title: "Level Up!",
+                  description: `Congratulations, you've reached a new level!`
+              });
+          }
+      }
+      router.refresh();
+  }, [toast, router]);
+
+
   const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
   
-  const value = { areas, user, skills, tasks: allTasks, updateTaskCompletion, updateTaskDetails, addArea, updateArea, deleteArea, addProject, updateProject, deleteProject, addTask, deleteTask, addSkill, updateSkill, deleteSkill, updateUser, addXp, getTask, getAreaById, getTasksByAreaId, resetDatabase, duplicateArea, duplicateProject, duplicateTask };
+  const value = { 
+    areas, 
+    user, 
+    skills, 
+    tasks: allTasks, 
+    weeklyMissions,
+    maybeGenerateWeeklyMissions,
+    updateWeeklyMissionCompletion,
+    updateTaskCompletion, 
+    updateTaskDetails, 
+    addArea, 
+    updateArea, 
+    deleteArea, 
+    addProject, 
+    updateProject, 
+    deleteProject, 
+    addTask, 
+    deleteTask, 
+    addSkill, 
+    updateSkill, 
+    deleteSkill, 
+    updateUser, 
+    addXp, 
+    getTask, 
+    getAreaById, 
+    getTasksByAreaId, 
+    resetDatabase, 
+    duplicateArea, 
+    duplicateProject, 
+    duplicateTask 
+  };
 
   return <QuestContext.Provider value={value}>{children}</QuestContext.Provider>;
 };
