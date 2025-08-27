@@ -419,9 +419,13 @@ export default function ProfilePage() {
                               />
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
-                              <SkillIcon className="h-8 w-8 text-accent" />
-                              <p className="font-headline font-semibold mt-2 text-sm">{skill.name}</p>
-                              <p className="text-xs font-bold mt-1 bg-primary/80 text-primary-foreground rounded-full px-2 py-0.5">Lvl {skill.level}</p>
+                              <div className="relative mb-2">
+                                  <SkillIcon className="h-8 w-8 text-accent" />
+                                  <div className="absolute -top-1 -right-2 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold border-2 border-card">
+                                      {skill.level}
+                                  </div>
+                              </div>
+                              <p className="font-headline font-semibold mt-1 text-sm">{skill.name}</p>
                               <p className="text-xs text-muted-foreground mt-1">{skill.points} / {skill.maxPoints} XP</p>
                           </div>
                       </Link>
@@ -633,5 +637,7 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
 
     
