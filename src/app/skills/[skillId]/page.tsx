@@ -17,13 +17,13 @@ import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
     Command, Tag, Flame, Calendar as CalendarIcon, AlignLeft,
     StickyNote, Link as LinkIcon, Clock, ArrowUp, Crosshair,
-    Bell, PlusCircle, GitBranch,
+    PlusCircle, GitBranch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
-    DialogHeader, DialogTitle, DialogTrigger, DialogClose,
+    DialogHeader, DialogTitle, DialogClose,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -74,22 +74,6 @@ const findSkillRecursive = (skills: Skill[], skillId: string): Skill | undefined
         }
     }
     return undefined;
-};
-
-// Helper to flatten skills for the select dropdown
-const getFlattenedSkills = (skills: Skill[]): Skill[] => {
-    const flattened: Skill[] = [];
-    const traverse = (skill: Skill) => {
-        // A skill is selectable if it has no sub-skills
-        if (!skill.subSkills || skill.subSkills.length === 0) {
-            flattened.push(skill);
-        }
-        if (skill.subSkills) {
-            skill.subSkills.forEach(traverse);
-        }
-    };
-    skills.forEach(traverse);
-    return flattened;
 };
 
 export default function SkillDetailPage() {
@@ -199,7 +183,7 @@ export default function SkillDetailPage() {
 
     return (
         <>
-            <div className="container mx-auto max-w-4xl p-4 sm:p-6">
+            <div className="container mx-auto max-w-6xl p-4 sm:p-6">
                 <header className="mb-6 flex items-center justify-between gap-4">
                     <div className='flex items-center gap-4'>
                         <Button variant="ghost" size="icon" asChild>
@@ -243,8 +227,8 @@ export default function SkillDetailPage() {
                     </div>
                 </header>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-1">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-1 space-y-6">
                         <Card className="bg-card/80 p-6 flex flex-col items-center text-center">
                             <div className="relative w-40 h-40">
                                 <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -281,86 +265,89 @@ export default function SkillDetailPage() {
                                 </div>
                             </div>
                             <h2 className="text-xl font-headline font-semibold mt-4">{skill.name}</h2>
-                             <p className="text-sm text-muted-foreground mt-1">{skill.points} / {skill.maxPoints} XP to next level</p>
+                            <p className="text-sm text-muted-foreground mt-1">{skill.points} / {skill.maxPoints} XP to next level</p>
                         </Card>
-                    </div>
-                    <div className="md:col-span-2">
+                        
                         {skill.subSkills && skill.subSkills.length > 0 && (
-                            <Card className="bg-card/80 mb-6">
+                            <Card className="bg-card/80">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <GitBranch className="h-5 w-5 text-primary" />
                                         Skill Tree
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    <ul className="space-y-4">
-                                        {skill.subSkills.map(subSkill => {
-                                            const SubSkillIcon = iconMap[subSkill.icon] || Lightbulb;
-                                            return (
-                                                <li key={subSkill.id}>
-                                                    <Link href={`/skills/${subSkill.id}`} className="block p-4 rounded-lg bg-background hover:bg-muted/50 transition-colors">
-                                                        <div className="flex items-center gap-4">
-                                                            <SubSkillIcon className="w-8 h-8 text-accent" />
-                                                            <div className="flex-1">
-                                                                <div className="flex justify-between items-center">
-                                                                    <p className="font-semibold font-headline">{subSkill.name}</p>
-                                                                    <p className="text-xs font-bold bg-primary text-primary-foreground rounded-full px-2 py-0.5">Lvl {subSkill.level}</p>
-                                                                </div>
-                                                                <div className="mt-2">
-                                                                    <Progress value={(subSkill.points / subSkill.maxPoints) * 100} className="h-2" />
-                                                                    <p className="text-xs text-muted-foreground mt-1 text-right">{subSkill.points} / {subSkill.maxPoints} XP</p>
-                                                                </div>
-                                                            </div>
+                                <CardContent className="space-y-2">
+                                    {skill.subSkills.map(subSkill => {
+                                        const SubSkillIcon = iconMap[subSkill.icon] || Lightbulb;
+                                        return (
+                                            <Link href={`/skills/${subSkill.id}`} key={subSkill.id} className="block p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <SubSkillIcon className="w-6 h-6 text-accent flex-shrink-0" />
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <p className="font-semibold font-headline">{subSkill.name}</p>
+                                                            <p className="text-xs font-bold bg-primary text-primary-foreground rounded-full px-1.5 py-0.5">Lvl {subSkill.level}</p>
                                                         </div>
-                                                    </Link>
-                                                </li>
-                                            )
-                                        })}
-                                    </ul>
+                                                        <Progress value={(subSkill.points / subSkill.maxPoints) * 100} className="h-1 mt-1" />
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        )
+                                    })}
                                 </CardContent>
+                                <CardFooter>
+                                    <Button variant="outline" className="w-full" onClick={() => setAddSkillOpen(true)}>
+                                        <PlusCircle className="h-4 w-4 mr-2" /> Add Sub-skill
+                                    </Button>
+                                </CardFooter>
                             </Card>
+                        )}
+                         {(!skill.subSkills || skill.subSkills.length === 0) && (
+                             <Button variant="outline" className="w-full" onClick={() => setAddSkillOpen(true)}>
+                                <PlusCircle className="h-4 w-4 mr-2" /> Add Sub-skill
+                            </Button>
                          )}
-                         <Button variant="outline" className="w-full" onClick={() => setAddSkillOpen(true)}>
-                            <PlusCircle className="h-4 w-4 mr-2" /> Add Sub-skill
-                        </Button>
                     </div>
-                </div>
 
-                <section className="mt-6">
-                    <h2 className="text-2xl font-headline font-semibold mb-4">Related Quests</h2>
-                    {relatedTasks.length > 0 ? (
-                        <div className="space-y-3">
-                        {relatedTasks.map((task: Task) => (
-                            <Card
-                                key={task.id}
-                                className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer"
-                                onClick={() => handleTaskClick(task.id)}
-                            >
-                                <div onClick={(e) => e.stopPropagation()}>
-                                <Checkbox
-                                    id={`task-${task.id}`}
-                                    checked={task.completed}
-                                    onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
-                                    className="w-5 h-5"
-                                />
-                                </div>
-                                <span className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}>
-                                {task.title}
-                                </span>
-                                <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
-                                <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
-                            </Card>
-                        ))}
-                        </div>
-                    ) : (
-                        <Card className="bg-card/80 border-2 border-dashed">
-                            <CardContent className="p-10 text-center">
-                                <p className="text-muted-foreground">No quests are currently assigned to this skill or its sub-skills.</p>
+                    <div className="lg:col-span-2">
+                        <Card className="bg-card/80 h-full">
+                            <CardHeader>
+                                <CardTitle>Related Quests</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {relatedTasks.length > 0 ? (
+                                    <div className="space-y-3">
+                                    {relatedTasks.map((task: Task) => (
+                                        <Card
+                                            key={task.id}
+                                            className="flex items-center gap-3 p-3 bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                                            onClick={() => handleTaskClick(task.id)}
+                                        >
+                                            <div onClick={(e) => e.stopPropagation()}>
+                                            <Checkbox
+                                                id={`task-${task.id}`}
+                                                checked={task.completed}
+                                                onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
+                                                className="w-5 h-5"
+                                            />
+                                            </div>
+                                            <span className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}>
+                                            {task.title}
+                                            </span>
+                                            <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
+                                            <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
+                                        </Card>
+                                    ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center p-10 border-2 border-dashed rounded-lg">
+                                        <p className="text-muted-foreground">No quests are currently assigned to this skill or its sub-skills.</p>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
-                    )}
-                </section>
+                    </div>
+                </div>
             </div>
 
             <Dialog open={editSkillOpen} onOpenChange={setEditSkillOpen}>
@@ -395,7 +382,7 @@ export default function SkillDetailPage() {
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <FormControl>
-                                                <Button variant="outline" className="w-full justify-start">
+                                                <Button variant="outline" className="w-full justify-start" type="button">
                                                     {field.value ? (
                                                         <>
                                                             {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
