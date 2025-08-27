@@ -76,6 +76,21 @@ const findSkillRecursive = (skills: Skill[], skillId: string): Skill | undefined
     return undefined;
 };
 
+// Helper to flatten skills for the select dropdown
+const getFlattenedSkills = (skills: Skill[]): Skill[] => {
+    const flattened: Skill[] = [];
+    const traverse = (skill: Skill) => {
+        // A skill is selectable if it has no sub-skills
+        if (!skill.subSkills || skill.subSkills.length === 0) {
+            flattened.push(skill);
+        }
+        if (skill.subSkills) {
+            skill.subSkills.forEach(traverse);
+        }
+    };
+    skills.forEach(traverse);
+    return flattened;
+};
 
 export default function SkillDetailPage() {
     const { skillId } = useParams();
@@ -139,10 +154,10 @@ export default function SkillDetailPage() {
         const task = relatedTasks.find(t => t.id === taskId);
         if (task) {
           setEditableTaskData({
-            title: task.title,
-            description: task.description || '',
-            notes: task.notes || '',
-            links: task.links || '',
+            title: task.title ?? '',
+            description: task.description ?? '',
+            notes: task.notes ?? '',
+            links: task.links ?? '',
             reminder: task.reminder,
           });
         }
@@ -176,6 +191,8 @@ export default function SkillDetailPage() {
         setTaskDetailState(prev => ({ ...prev, open: false }));
         router.push(`/focus?taskId=${taskId}`);
     };
+    
+    const backHref = skill.parentId ? `/skills/${skill.parentId}` : '/profile';
 
     return (
         <>
@@ -183,7 +200,7 @@ export default function SkillDetailPage() {
                 <header className="mb-6 flex items-center justify-between gap-4">
                     <div className='flex items-center gap-4'>
                         <Button variant="ghost" size="icon" asChild>
-                            <Link href="/profile">
+                            <Link href={backHref}>
                                 <ArrowLeft />
                             </Link>
                         </Button>
@@ -483,7 +500,7 @@ export default function SkillDetailPage() {
                         <Input
                             value={editableTaskData.title || ''}
                             onChange={(e) => handleTaskDataChange('title', e.target.value)}
-                            className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            className="text-xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                         <div className='flex items-center gap-2 flex-shrink-0'>
                           <TooltipProvider>
