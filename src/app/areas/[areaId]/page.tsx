@@ -392,9 +392,6 @@ export default function AreaDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{completionPercentage}%</div>
-              <p className="text-xs text-muted-foreground">
-                {completedTasks} of {totalTasks} quests done
-              </p>
             </CardContent>
           </Card>
           <Card className="bg-card/80">
@@ -404,7 +401,6 @@ export default function AreaDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalXp.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">From all quests in this area</p>
             </CardContent>
           </Card>
           <Card className="bg-card/80">
@@ -414,7 +410,6 @@ export default function AreaDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{area.projects.length}</div>
-              <p className="text-xs text-muted-foreground">Active projects in this area</p>
             </CardContent>
           </Card>
           <Card className="bg-card/80">
@@ -424,7 +419,6 @@ export default function AreaDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalTasks}</div>
-              <p className="text-xs text-muted-foreground">Total quests in this area</p>
             </CardContent>
           </Card>
            <Card className="bg-card/80">
@@ -434,7 +428,6 @@ export default function AreaDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalTokens.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">From all quests in this area</p>
             </CardContent>
           </Card>
         </section>
@@ -858,7 +851,7 @@ export default function AreaDetailPage() {
         </Dialog>
       
       <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
-          <DialogContent className="sm:max-w-xl">
+          <DialogContent className="sm:max-w-[400px]">
             {currentTask && (
               <>
                 <DialogHeader className="flex flex-row items-start justify-between gap-4">
@@ -952,7 +945,7 @@ export default function AreaDetailPage() {
                       onChange={(e) => handleTaskDataChange('description', e.target.value)}
                       placeholder="Add a description..."
                       className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                      rows={3}
+                      rows={2}
                     />
                   </div>
                   
@@ -963,7 +956,7 @@ export default function AreaDetailPage() {
                       onChange={(e) => handleTaskDataChange('notes', e.target.value)}
                       placeholder="Add notes..."
                       className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                      rows={3}
+                      rows={2}
                     />
                   </div>
 
@@ -974,7 +967,7 @@ export default function AreaDetailPage() {
                       onChange={(e) => handleTaskDataChange('links', e.target.value)}
                       placeholder="Add links, one per line..."
                       className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                      rows={3}
+                      rows={2}
                     />
                   </div>
                 </div>
