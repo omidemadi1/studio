@@ -3,7 +3,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useParams, useRouter, notFound, Link } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
+import Link from 'next/link';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -139,9 +140,9 @@ export default function SkillDetailPage() {
         if (task) {
           setEditableTaskData({
             title: task.title,
-            description: task.description,
-            notes: task.notes,
-            links: task.links,
+            description: task.description || '',
+            notes: task.notes || '',
+            links: task.links || '',
             reminder: task.reminder,
           });
         }
