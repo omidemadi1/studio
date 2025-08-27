@@ -391,14 +391,14 @@ export default function ProfilePage() {
             return (
               <ContextMenu key={skill.id}>
                 <ContextMenuTrigger>
-                  <Card className="bg-card/80 overflow-hidden h-full">
+                  <Card className="bg-card/80 overflow-hidden h-full flex items-center justify-center">
                     <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                      <Link href={`/skills/${skill.id}`} className="relative w-28 h-28">
+                      <Link href={`/skills/${skill.id}`} className="relative w-40 h-40">
                           <svg className="w-full h-full" viewBox="0 0 100 100">
                               <circle
                                   className="text-muted/20"
                                   stroke="currentColor"
-                                  strokeWidth="10"
+                                  strokeWidth="8"
                                   cx="50"
                                   cy="50"
                                   r="45"
@@ -407,7 +407,7 @@ export default function ProfilePage() {
                               <circle
                                   className="text-primary"
                                   stroke="currentColor"
-                                  strokeWidth="10"
+                                  strokeWidth="8"
                                   strokeLinecap="round"
                                   cx="50"
                                   cy="50"
@@ -418,14 +418,12 @@ export default function ProfilePage() {
                                   transform="rotate(-90 50 50)"
                               />
                           </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
                               <SkillIcon className="h-8 w-8 text-accent" />
-                              <span className="text-xs font-bold mt-1">Lvl {skill.level}</span>
+                              <p className="font-headline font-semibold mt-2 text-sm">{skill.name}</p>
+                              <p className="text-xs font-bold mt-1 bg-primary/80 text-primary-foreground rounded-full px-2 py-0.5">Lvl {skill.level}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{skill.points} / {skill.maxPoints} XP</p>
                           </div>
-                      </Link>
-                      <Link href={`/skills/${skill.id}`} className="mt-3 text-center">
-                        <p className="font-headline font-semibold">{skill.name}</p>
-                        <p className="text-xs text-muted-foreground">{skill.points} / {skill.maxPoints} XP</p>
                       </Link>
                     </CardContent>
                   </Card>
