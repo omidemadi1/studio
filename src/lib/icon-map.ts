@@ -1,4 +1,4 @@
-import { Briefcase, Heart, Dumbbell, Wallet, BookOpen, Lightbulb, type LucideIcon, BrainCircuit, Target, PencilRuler, LineChart, Code, Palette, Music, Clapperboard, Gamepad2, Plane, Utensils, MessageCircle, Users } from 'lucide-react';
+import { Briefcase, Heart, Dumbbell, Wallet, BookOpen, Lightbulb, type LucideIcon, BrainCircuit, Target, PencilRuler, LineChart, Code, Palette, Music, Clapperboard, Gamepad2, Plane, Utensils, MessageCircle, Users, GitBranch } from 'lucide-react';
 
 export const iconMap: { [key: string]: LucideIcon } = {
   Briefcase,
@@ -20,4 +20,5 @@ export const iconMap: { [key: string]: LucideIcon } = {
   Utensils,
   MessageCircle,
   Users,
+  GitBranch,
 };

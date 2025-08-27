@@ -17,7 +17,7 @@ import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
     Command, Tag, Flame, Calendar as CalendarIcon, AlignLeft,
     StickyNote, Link as LinkIcon, Clock, ArrowUp, Crosshair,
-    Bell, PlusCircle,
+    Bell, PlusCircle, GitBranch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -130,6 +130,9 @@ export default function SkillDetailPage() {
     }
 
     const SkillIcon = iconMap[skill.icon] || Lightbulb;
+    const progress = (skill.points / skill.maxPoints) * 100;
+    const circumference = 2 * Math.PI * 45;
+    const strokeDashoffset = circumference - (progress / 100) * circumference;
 
     const onUpdateSkill = (data: z.infer<typeof skillSchema>) => {
         updateSkill(skill.id, data.name, data.icon);
@@ -240,90 +243,92 @@ export default function SkillDetailPage() {
                     </div>
                 </header>
                 
-                <Card className="bg-card/80 mb-6">
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <span className="font-headline font-semibold">
-                              Level {skill.level}
-                            </span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {skill.points} / {skill.maxPoints} XP
-                          </span>
-                        </div>
-                        <Progress
-                          value={(skill.points / skill.maxPoints) * 100}
-                          className="h-2"
-                        />
-                    </CardContent>
-                </Card>
-
-                {skill.subSkills && skill.subSkills.length > 0 && (
-                    <section className="mb-6">
-                        <h2 className="text-2xl font-headline font-semibold mb-4">Sub-Skills</h2>
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {skill.subSkills.map((subSkill) => {
-                                const SubSkillIcon = iconMap[subSkill.icon] || Lightbulb;
-                                const progress = (subSkill.points / subSkill.maxPoints) * 100;
-                                const circumference = 2 * Math.PI * 45; // 2 * pi * radius
-                                const strokeDashoffset = circumference - (progress / 100) * circumference;
-                                return (
-                                    <Card key={subSkill.id} className="bg-card/80 overflow-hidden h-full flex items-center justify-center">
-                                      <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                                        <Link href={`/skills/${subSkill.id}`} className="relative w-40 h-40">
-                                            <svg className="w-full h-full" viewBox="0 0 100 100">
-                                                <circle
-                                                    className="text-muted/20"
-                                                    stroke="currentColor"
-                                                    strokeWidth="8"
-                                                    cx="50"
-                                                    cy="50"
-                                                    r="45"
-                                                    fill="transparent"
-                                                />
-                                                <circle
-                                                    className="text-primary"
-                                                    stroke="currentColor"
-                                                    strokeWidth="8"
-                                                    strokeLinecap="round"
-                                                    cx="50"
-                                                    cy="50"
-                                                    r="45"
-                                                    fill="transparent"
-                                                    strokeDasharray={circumference}
-                                                    strokeDashoffset={strokeDashoffset}
-                                                    transform="rotate(-90 50 50)"
-                                                />
-                                            </svg>
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
-                                                <div className="relative mb-2">
-                                                    <SubSkillIcon className="h-8 w-8 text-accent" />
-                                                    <div className="absolute -top-1 -right-2 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold border-2 border-card">
-                                                        {subSkill.level}
-                                                    </div>
-                                                </div>
-                                                <p className="font-headline font-semibold mt-1 text-sm">{subSkill.name}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">{subSkill.points} / {subSkill.maxPoints} XP</p>
-                                            </div>
-                                        </Link>
-                                      </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    </section>
-                )}
-
-
-                <section>
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-headline font-semibold">Related Quests</h2>
-                        <Button variant="outline" size="sm" onClick={() => setAddSkillOpen(true)}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-1">
+                        <Card className="bg-card/80 p-6 flex flex-col items-center text-center">
+                            <div className="relative w-40 h-40">
+                                <svg className="w-full h-full" viewBox="0 0 100 100">
+                                    <circle
+                                        className="text-muted/20"
+                                        stroke="currentColor"
+                                        strokeWidth="8"
+                                        cx="50"
+                                        cy="50"
+                                        r="45"
+                                        fill="transparent"
+                                    />
+                                    <circle
+                                        className="text-primary"
+                                        stroke="currentColor"
+                                        strokeWidth="8"
+                                        strokeLinecap="round"
+                                        cx="50"
+                                        cy="50"
+                                        r="45"
+                                        fill="transparent"
+                                        strokeDasharray={circumference}
+                                        strokeDashoffset={strokeDashoffset}
+                                        transform="rotate(-90 50 50)"
+                                    />
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+                                    <div className="relative mb-2">
+                                        <SkillIcon className="h-10 w-10 text-accent" />
+                                        <div className="absolute -top-1 -right-2 bg-primary text-primary-foreground rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold border-2 border-card">
+                                            {skill.level}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <h2 className="text-xl font-headline font-semibold mt-4">{skill.name}</h2>
+                             <p className="text-sm text-muted-foreground mt-1">{skill.points} / {skill.maxPoints} XP to next level</p>
+                        </Card>
+                    </div>
+                    <div className="md:col-span-2">
+                        {skill.subSkills && skill.subSkills.length > 0 && (
+                            <Card className="bg-card/80 mb-6">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <GitBranch className="h-5 w-5 text-primary" />
+                                        Skill Tree
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-4">
+                                        {skill.subSkills.map(subSkill => {
+                                            const SubSkillIcon = iconMap[subSkill.icon] || Lightbulb;
+                                            return (
+                                                <li key={subSkill.id}>
+                                                    <Link href={`/skills/${subSkill.id}`} className="block p-4 rounded-lg bg-background hover:bg-muted/50 transition-colors">
+                                                        <div className="flex items-center gap-4">
+                                                            <SubSkillIcon className="w-8 h-8 text-accent" />
+                                                            <div className="flex-1">
+                                                                <div className="flex justify-between items-center">
+                                                                    <p className="font-semibold font-headline">{subSkill.name}</p>
+                                                                    <p className="text-xs font-bold bg-primary text-primary-foreground rounded-full px-2 py-0.5">Lvl {subSkill.level}</p>
+                                                                </div>
+                                                                <div className="mt-2">
+                                                                    <Progress value={(subSkill.points / subSkill.maxPoints) * 100} className="h-2" />
+                                                                    <p className="text-xs text-muted-foreground mt-1 text-right">{subSkill.points} / {subSkill.maxPoints} XP</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                </li>
+                                            )
+                                        })}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                         )}
+                         <Button variant="outline" className="w-full" onClick={() => setAddSkillOpen(true)}>
                             <PlusCircle className="h-4 w-4 mr-2" /> Add Sub-skill
                         </Button>
                     </div>
+                </div>
 
+                <section className="mt-6">
+                    <h2 className="text-2xl font-headline font-semibold mb-4">Related Quests</h2>
                     {relatedTasks.length > 0 ? (
                         <div className="space-y-3">
                         {relatedTasks.map((task: Task) => (
