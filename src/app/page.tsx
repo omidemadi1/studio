@@ -152,6 +152,23 @@ const getFlattenedSkills = (skills: Skill[]): Skill[] => {
     return flattened;
 };
 
+// Component to prevent hydration errors from date formatting
+const ClientFormattedDate = ({ dateString, formatString }: { dateString: string; formatString: string }) => {
+  const [formattedDate, setFormattedDate] = useState('');
+
+  useEffect(() => {
+    setFormattedDate(format(new Date(dateString), formatString));
+  }, [dateString, formatString]);
+
+  // Render a placeholder on the server and initial client render
+  if (!formattedDate) {
+    return <span className="cursor-default">...</span>;
+  }
+
+  return <span className="cursor-default">{formattedDate}</span>;
+};
+
+
 export default function QuestsPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -544,7 +561,9 @@ export default function QuestsPage() {
                                                   )}
                                                   {task.dueDate && (
                                                       <Tooltip>
-                                                          <TooltipTrigger asChild><span className="cursor-default">{format(new Date(task.dueDate), 'MMM d')}</span></TooltipTrigger>
+                                                          <TooltipTrigger asChild>
+                                                              <ClientFormattedDate dateString={task.dueDate} formatString="MMM d" />
+                                                          </TooltipTrigger>
                                                           <TooltipContent>Due Date</TooltipContent>
                                                       </Tooltip>
                                                   )}
