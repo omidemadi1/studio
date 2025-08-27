@@ -509,36 +509,34 @@ export default function QuestsPage() {
                                     {project.tasks.filter(task => !task.completed).map((task: Task) => (
                                       <ContextMenu key={task.id}>
                                         <ContextMenuTrigger>
-                                          <li
-                                            className="flex flex-col gap-2 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
-                                            onClick={() => handleTaskClick(area.id, project.id, task.id)}
-                                          >
-                                            <div className="flex items-center gap-3 w-full">
+                                            <li
+                                                className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                                                onClick={() => handleTaskClick(area.id, project.id, task.id)}
+                                            >
                                                 <div onClick={(e) => e.stopPropagation()}>
-                                                <Checkbox
-                                                    id={task.id}
-                                                    checked={task.completed}
-                                                    onCheckedChange={(checked) =>
-                                                    updateTaskCompletion(task.id, !!checked)
-                                                    }
-                                                    className="w-5 h-5"
-                                                />
+                                                    <Checkbox
+                                                        id={task.id}
+                                                        checked={task.completed}
+                                                        onCheckedChange={(checked) =>
+                                                            updateTaskCompletion(task.id, !!checked)
+                                                        }
+                                                        className="w-5 h-5"
+                                                    />
                                                 </div>
                                                 <span
-                                                className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
+                                                    className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
                                                 >
-                                                {task.title}
+                                                    {task.title}
                                                 </span>
-                                                <span className="text-xs font-bold text-primary whitespace-nowrap">
-                                                +{task.xp} XP
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-end gap-3 pl-8 w-full">
-                                                {task.difficulty && <Badge variant="outline" className={cn('text-xs', difficultyColors[task.difficulty])}>{task.difficulty}</Badge>}
-                                                {task.tokens > 0 && <Badge variant="secondary" className="text-xs"><GemIcon className="h-3 w-3 mr-1" /> {task.tokens}</Badge>}
-                                                {task.dueDate && <Badge variant="outline" className="text-xs"><CalendarIcon className="h-3 w-3 mr-1" /> {format(new Date(task.dueDate), 'MMM d')}</Badge>}
-                                            </div>
-                                          </li>
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground ml-auto">
+                                                  {task.difficulty && <Badge variant="outline" className={cn('text-xs', difficultyColors[task.difficulty])}>{task.difficulty}</Badge>}
+                                                  {task.tokens > 0 && <Badge variant="secondary" className="text-xs"><GemIcon className="h-3 w-3 mr-1" /> {task.tokens}</Badge>}
+                                                  {task.dueDate && <Badge variant="outline" className="text-xs"><CalendarIcon className="h-3 w-3 mr-1" /> {format(new Date(task.dueDate), 'MMM d')}</Badge>}
+                                                  <span className="text-xs font-bold text-primary whitespace-nowrap">
+                                                      +{task.xp} XP
+                                                  </span>
+                                                </div>
+                                            </li>
                                         </ContextMenuTrigger>
                                         <ContextMenuContent>
                                           <ContextMenuItem onSelect={() => handleTaskClick(area.id, project.id, task.id)}>
@@ -1012,8 +1010,8 @@ export default function QuestsPage() {
             <>
               <DialogHeader className="flex flex-row items-start justify-between gap-4">
                 <VisuallyHidden>
-                    <DialogTitle>{editableTaskData.title}</DialogTitle>
-                    <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
+                    <DialogTitle>{editableTaskData.title || ''}</DialogTitle>
+                    <DialogDescription>Details for task: {editableTaskData.title || ''}. You can edit the details below.</DialogDescription>
                  </VisuallyHidden>
                 <Input
                   value={editableTaskData.title || ''}
