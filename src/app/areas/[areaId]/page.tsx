@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -40,7 +39,7 @@ import {
   Copy,
   Bell,
 } from 'lucide-react';
-import type { Task, Difficulty, Project, Skill } from '@/lib/types';
+import type { Task, Difficulty, Project, Skill, Area } from '@/lib/types';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -93,6 +92,10 @@ import { Separator } from '@/components/ui/separator';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { GemIcon } from '@/components/icons/gem-icon';
 
+const areaSchema = z.object({
+  name: z.string().min(1, 'Area name is required.'),
+  icon: z.string().min(1, 'An icon is required.'),
+});
 
 const projectSchema = z.object({
   name: z.string().min(1, 'Project name is required.'),
@@ -143,7 +146,7 @@ export default function AreaDetailPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { areaId } = useParams();
-  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject, addSkill, duplicateProject, deleteTask } = useQuestData();
+  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject, addSkill, duplicateProject, deleteTask, updateArea, deleteArea } = useQuestData();
 
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [editProjectState, setEditProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
@@ -157,10 +160,17 @@ export default function AreaDetailPage() {
   const [taskFilter, setTaskFilter] = useState<TaskFilterOption>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('projects');
   const [addSkillOpen, setAddSkillOpen] = useState(false);
+  const [editAreaOpen, setEditAreaOpen] = useState(false);
+  const [deleteAreaOpen, setDeleteAreaOpen] = useState(false);
 
   const selectableSkills = getFlattenedSkills(skills);
   const area = useMemo(() => getAreaById(areaId as string), [areaId, getAreaById]);
   const tasks = useMemo(() => getTasksByAreaId(areaId as string), [areaId, getTasksByAreaId]);
+
+  const areaForm = useForm<z.infer<typeof areaSchema>>({
+    resolver: zodResolver(areaSchema),
+    defaultValues: { name: '', icon: '' },
+  });
 
   const projectForm = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
@@ -288,6 +298,22 @@ export default function AreaDetailPage() {
     projectForm.reset();
   }
 
+  const onEditArea = (data: z.infer<typeof areaSchema>) => {
+    if (!area) return;
+    updateArea(area.id, data.name, data.icon);
+    setEditAreaOpen(false);
+    toast({ title: "Area Updated!", description: "Your area has been successfully updated." });
+  };
+  
+  const onDeleteArea = () => {
+      if (!area) return;
+      deleteArea(area.id);
+      setDeleteAreaOpen(false);
+      toast({ title: "Area Deleted", description: `The area "${area.name}" has been removed.`, variant: "destructive" });
+      router.push('/');
+  };
+
+
   async function onAddTask(data: z.infer<typeof taskSchema>) {
     if (!area) return;
     
@@ -413,6 +439,34 @@ export default function AreaDetailPage() {
               <AreaIcon className="w-8 h-8 text-accent" />
               <h1 className="text-3xl font-headline font-bold">{area.name}</h1>
               </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+                areaForm.reset({ name: area.name, icon: area.icon });
+                setEditAreaOpen(true);
+            }}>
+                <Pencil className="h-4 w-4 mr-2" /> Edit
+            </Button>
+            <AlertDialog open={deleteAreaOpen} onOpenChange={setDeleteAreaOpen}>
+                <AlertDialogTrigger asChild>
+                   <Button variant="destructive" size="sm">
+                      <Trash2 className="h-4 w-4 mr-2" /> Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the
+                      <span className="font-bold"> {area.name}</span> area.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDeleteArea}>Continue</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
           </div>
         </header>
 
@@ -632,7 +686,7 @@ export default function AreaDetailPage() {
               <div className="space-y-2">
                   <Card 
                       className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer border-2 border-dashed"
-                      onClick={() => {
+                      onClick={()={() => {
                         taskForm.reset();
                         setAddTaskState({open: true, projectId: null});
                       }}
@@ -677,6 +731,83 @@ export default function AreaDetailPage() {
           )}
         </section>
       </div>
+      
+      <Dialog open={editAreaOpen} onOpenChange={setEditAreaOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Edit Area</DialogTitle>
+                <DialogDescription>
+                    Change the name or icon for your area.
+                </DialogDescription>
+            </DialogHeader>
+            <Form {...areaForm}>
+                <form onSubmit={areaForm.handleSubmit(onEditArea)} className="space-y-4 py-4">
+                    <FormField
+                        control={areaForm.control}
+                        name="name"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Area Name</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., Fitness" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={areaForm.control}
+                        name="icon"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Icon</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant="outline" className="w-full justify-start" type="button">
+                                            {field.value ? (
+                                                <>
+                                                    {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
+                                                    {field.value}
+                                                </>
+                                            ) : 'Select an icon'}
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-2 max-w-[240px] max-h-[200px] overflow-y-auto">
+                                    <div className="grid grid-cols-6 gap-1">
+                                        {Object.keys(iconMap).map((iconName) => {
+                                            const IconComponent = iconMap[iconName];
+                                            return (
+                                                <Button
+                                                    key={iconName}
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    type="button"
+                                                    onClick={() => field.onChange(iconName)}
+                                                    className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
+                                                >
+                                                    <IconComponent className="h-5 w-5" />
+                                                    {field.value === iconName && <Check className="absolute bottom-0 right-0 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
+                                                </Button>
+                                            );
+                                        })}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <DialogFooter>
+                        <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
+                        <Button type="submit">Save Changes</Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+      </Dialog>
+
 
       <Dialog open={addProjectOpen} onOpenChange={setAddProjectOpen}>
           <DialogContent>
@@ -1109,3 +1240,5 @@ export default function AreaDetailPage() {
     </>
   );
 }
+
+    
