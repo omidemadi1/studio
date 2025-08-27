@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { z } from 'zod';
@@ -11,7 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuestData } from '@/context/quest-context';
 import { iconMap } from '@/lib/icon-map';
 import { cn } from '@/lib/utils';
-import type { Task, Difficulty, Skill } from '@/lib/types';
+import type { Task, Difficulty, Skill, Area, Project } from '@/lib/types';
 
 import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
@@ -34,7 +34,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
     Form, FormControl, FormField, FormItem,
@@ -51,11 +50,24 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { GemIcon } from '@/components/icons/gem-icon';
 import { Progress } from '@/components/ui/progress';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
+import { Loader2 } from 'lucide-react';
 
 const skillSchema = z.object({
   name: z.string().min(1, 'Skill name is required.'),
   icon: z.string().min(1, 'An icon is required.'),
+});
+
+const taskSchema = z.object({
+  title: z.string().min(1, 'Task title is required.'),
+  description: z.string().optional(),
+  dueDate: z.date().optional(),
+  reminder: z.number().optional(),
+  skillId: z.string().optional(),
+  areaId: z.string({ required_error: 'Please select an area.'}),
+  projectId: z.string({ required_error: 'Please select a project.'}),
 });
 
 const difficultyColors: Record<Difficulty, string> = {
@@ -76,16 +88,46 @@ const findSkillRecursive = (skills: Skill[], skillId: string): Skill | undefined
     return undefined;
 };
 
+// Helper to flatten skills for the select dropdown
+const getFlattenedSkills = (skills: Skill[]): Skill[] => {
+    const flattened: Skill[] = [];
+    const traverse = (skill: Skill) => {
+        // A skill is selectable if it has no sub-skills
+        if (!skill.subSkills || skill.subSkills.length === 0) {
+            flattened.push(skill);
+        }
+        if (skill.subSkills) {
+            skill.subSkills.forEach(traverse);
+        }
+    };
+    skills.forEach(traverse);
+    return flattened;
+};
+
 export default function SkillDetailPage() {
     const { skillId } = useParams();
     const router = useRouter();
     const { toast } = useToast();
-    const { skills, tasks, updateSkill, deleteSkill, areas, updateTaskCompletion, updateTaskDetails, addSkill } = useQuestData();
+    const { 
+        skills, 
+        tasks, 
+        updateSkill, 
+        deleteSkill, 
+        areas, 
+        updateTaskCompletion, 
+        updateTaskDetails, 
+        addSkill,
+        addTask,
+    } = useQuestData();
 
     const [editSkillOpen, setEditSkillOpen] = useState(false);
     const [addSkillOpen, setAddSkillOpen] = useState(false);
+    const [addTaskOpen, setAddTaskOpen] = useState(false);
     const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; taskId: string | null; }>({ open: false, taskId: null });
     const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
+    const [isCreatingTask, setIsCreatingTask] = useState(false);
+    
+    const selectableSkills = getFlattenedSkills(skills);
 
     const skill = useMemo(() => findSkillRecursive(skills, skillId as string), [skillId, skills]);
 
@@ -103,6 +145,25 @@ export default function SkillDetailPage() {
         resolver: zodResolver(skillSchema),
         values: { name: skill?.name || '', icon: skill?.icon || '' },
     });
+
+    const taskForm = useForm<z.infer<typeof taskSchema>>({
+        resolver: zodResolver(taskSchema),
+        defaultValues: { title: '', description: '' },
+    });
+
+    useEffect(() => {
+        if (addTaskOpen && skill) {
+            taskForm.reset();
+            // A skill can be a parent or a child, we want to pre-select it if it's a selectable one
+            const isSelectable = !skill.subSkills || skill.subSkills.length === 0;
+            if (isSelectable) {
+                taskForm.setValue('skillId', skill.id);
+            }
+        }
+    }, [addTaskOpen, skill, taskForm]);
+
+    const selectedAreaIdForTask = taskForm.watch('areaId');
+    const availableProjects = areas.find(a => a.id === selectedAreaIdForTask)?.projects || [];
     
     const subSkillForm = useForm<z.infer<typeof skillSchema>>({
         resolver: zodResolver(skillSchema),
@@ -130,6 +191,51 @@ export default function SkillDetailPage() {
         setAddSkillOpen(false);
         toast({ title: 'Sub-skill Created' });
     };
+    
+    const onAddTask = async (data: z.infer<typeof taskSchema>) => {
+        const areaId = data.areaId;
+        const projectId = data.projectId;
+
+        if (!areaId || !projectId) return;
+        setIsCreatingTask(true);
+        try {
+            const area = areas.find(a => a.id === areaId);
+            const project = area?.projects.find(p => p.id === projectId);
+            const projectName = project ? project.name : '';
+
+            const result = await suggestXpValue({ title: data.title, projectContext: projectName });
+            
+            const newTask: Task = {
+                id: `task-${Date.now()}`,
+                title: data.title,
+                completed: false,
+                xp: result.xp,
+                tokens: result.tokens,
+                description: data.description || '',
+                notes: '',
+                links: '',
+                difficulty: result.xp > 120 ? 'Very Hard' : result.xp > 80 ? 'Hard' : result.xp > 40 ? 'Medium' : 'Easy',
+                dueDate: data.dueDate?.toISOString(),
+                reminder: data.reminder,
+                skillId: data.skillId,
+                projectId: projectId,
+            };
+            
+            addTask(areaId, projectId, newTask);
+            taskForm.reset();
+            setAddTaskOpen(false);
+        } catch (error) {
+            console.error("Failed to add task:", error);
+            toast({
+                variant: "destructive",
+                title: "Error Creating Task",
+                description: "Could not suggest XP value. Please try again."
+            });
+        } finally {
+            setIsCreatingTask(false);
+        }
+    };
+
 
     const onDeleteSkill = () => {
         deleteSkill(skill.id);
@@ -310,11 +416,11 @@ export default function SkillDetailPage() {
                     </div>
 
                     <div className="lg:col-span-2">
-                        <Card className="bg-card/80 h-full">
+                        <Card className="bg-card/80 h-full flex flex-col">
                             <CardHeader>
                                 <CardTitle>Related Quests</CardTitle>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="flex-1">
                                 {relatedTasks.length > 0 ? (
                                     <div className="space-y-3">
                                     {relatedTasks.map((task: Task) => (
@@ -340,11 +446,16 @@ export default function SkillDetailPage() {
                                     ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center p-10 border-2 border-dashed rounded-lg">
+                                    <div className="text-center p-10 border-2 border-dashed rounded-lg h-full flex flex-col justify-center items-center">
                                         <p className="text-muted-foreground">No quests are currently assigned to this skill or its sub-skills.</p>
                                     </div>
                                 )}
                             </CardContent>
+                             <CardFooter>
+                                <Button variant="outline" className="w-full" onClick={() => setAddTaskOpen(true)}>
+                                    <PlusCircle className="h-4 w-4 mr-2" /> Add Quest
+                                </Button>
+                            </CardFooter>
                         </Card>
                     </div>
                 </div>
@@ -496,6 +607,145 @@ export default function SkillDetailPage() {
                             <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
                                 <Button type="submit">Create Sub-Skill</Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create a New Quest</DialogTitle>
+                        <DialogDescription>
+                            Add a new quest. The AI will assign a fair XP value.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Form {...taskForm}>
+                        <form onSubmit={taskForm.handleSubmit(onAddTask)} className="space-y-4">
+                            <FormField
+                                control={taskForm.control}
+                                name="title"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Task Title</FormLabel>
+                                    <FormControl>
+                                    <Input placeholder="e.g., Run 5km" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                control={taskForm.control}
+                                name="areaId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Area</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select an area" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        {areas.map(area => (
+                                            <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                                <FormField
+                                control={taskForm.control}
+                                name="projectId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Project</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedAreaIdForTask}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a project" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        {availableProjects.map(project => (
+                                            <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                            </div>
+
+                            <FormField
+                                control={taskForm.control}
+                                name="description"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Description</FormLabel>
+                                    <FormControl>
+                                    <Textarea placeholder="Add a description..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                control={taskForm.control}
+                                name="skillId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Skill Category</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a skill" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        {selectableSkills.map(skill => (
+                                            <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+
+                                <FormField
+                                control={taskForm.control}
+                                name="dueDate"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                    <FormLabel>Date</FormLabel>
+                                    <FormControl>
+                                        <DateTimePicker 
+                                            date={field.value} 
+                                            setDate={field.onChange}
+                                            reminder={taskForm.watch('reminder')}
+                                            setReminder={(rem) => taskForm.setValue('reminder', rem)}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                            </div>
+
+                            <DialogFooter>
+                                <Button type="submit" disabled={isCreatingTask}>
+                                    {isCreatingTask ? <Loader2 className="animate-spin" /> : "Create Quest" }
+                                </Button>
                             </DialogFooter>
                         </form>
                     </Form>
