@@ -60,7 +60,6 @@ import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 import type { Skill } from '@/lib/types';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const skillSchema = z.object({
   name: z.string().min(1, 'Skill name is required.'),
@@ -77,63 +76,6 @@ const defaultAvatars = [
     '/assets/avatars/warrior.png',
     '/assets/avatars/wizard.png',
 ];
-
-const SkillItem = ({ skill, onEdit, onDelete }: { skill: Skill, onEdit: (skill: Skill) => void, onDelete: (skill: Skill) => void }) => {
-    const SkillIcon = iconMap[skill.icon] || Lightbulb;
-    const [isOpen, setIsOpen] = useState(false);
-
-    return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-            <ContextMenu>
-                <ContextMenuTrigger>
-                    <div className="flex items-center gap-2 p-2 rounded-lg bg-card/80 hover:bg-muted/50">
-                        {skill.subSkills && skill.subSkills.length > 0 ? (
-                            <CollapsibleTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <ChevronRight className={cn("h-4 w-4 transition-transform", isOpen && "rotate-90")} />
-                                </Button>
-                            </CollapsibleTrigger>
-                        ) : (
-                            <div className="w-8" />
-                        )}
-                        <Link href={`/skills/${skill.id}`} className="flex-1">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <SkillIcon className="h-6 w-6 text-accent" />
-                                    <div>
-                                        <span className="font-headline font-semibold">
-                                            {skill.name} - Lvl {skill.level}
-                                        </span>
-                                        <Progress value={(skill.points / skill.maxPoints) * 100} className="h-1.5 w-32 mt-1" />
-                                    </div>
-                                </div>
-                                <span className="text-sm text-muted-foreground">
-                                    {skill.points} / {skill.maxPoints}
-                                </span>
-                            </div>
-                        </Link>
-                    </div>
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                    <ContextMenuItem onSelect={() => onEdit(skill)}>
-                        <Pencil className="h-4 w-4 mr-2" /> Edit Skill
-                    </ContextMenuItem>
-                    <ContextMenuItem onSelect={() => onDelete(skill)}>
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete Skill
-                    </ContextMenuItem>
-                </ContextMenuContent>
-            </ContextMenu>
-            <CollapsibleContent>
-                <div className="pl-10 pt-2 space-y-2">
-                    {skill.subSkills?.map(subSkill => (
-                        <SkillItem key={subSkill.id} skill={subSkill} onEdit={onEdit} onDelete={onDelete} />
-                    ))}
-                </div>
-            </CollapsibleContent>
-        </Collapsible>
-    );
-};
-
 
 export default function ProfilePage() {
   const { user, skills, updateUser, addSkill, resetDatabase, updateSkill, deleteSkill, tasks } = useQuestData();
@@ -439,10 +381,64 @@ export default function ProfilePage() {
             <span className="sr-only">Add Skill</span>
           </Button>
         </div>
-        <div className="space-y-2">
-          {skills.map((skill) => (
-            <SkillItem key={skill.id} skill={skill} onEdit={handleEditClick} onDelete={handleDeleteClick} />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {skills.map((skill) => {
+            const SkillIcon = iconMap[skill.icon] || Lightbulb;
+            return (
+              <ContextMenu key={skill.id}>
+                <ContextMenuTrigger>
+                  <Card className="bg-card/80 overflow-hidden h-full">
+                    <CardContent className="p-4">
+                        <Link href={`/skills/${skill.id}`} className='block'>
+                           <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                    <SkillIcon className="h-6 w-6 text-accent" />
+                                    <span className="font-headline font-semibold">
+                                        {skill.name} - Lvl {skill.level}
+                                    </span>
+                                </div>
+                                <span className="text-sm text-muted-foreground">
+                                    {skill.points} / {skill.maxPoints}
+                                </span>
+                            </div>
+                            <Progress value={(skill.points / skill.maxPoints) * 100} className="h-1.5 w-full" />
+                        </Link>
+                         {skill.subSkills && skill.subSkills.length > 0 && (
+                            <div className="mt-3 pl-4 border-l-2 border-muted/50 space-y-2">
+                                {skill.subSkills.map(subSkill => {
+                                    const SubSkillIcon = iconMap[subSkill.icon] || Lightbulb;
+                                    return (
+                                        <Link href={`/skills/${subSkill.id}`} key={subSkill.id} className='block text-xs'>
+                                           <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <SubSkillIcon className="h-4 w-4 text-accent/80" />
+                                                    <span className="font-medium">
+                                                        {subSkill.name} - Lvl {subSkill.level}
+                                                    </span>
+                                                </div>
+                                                <span className="text-muted-foreground">
+                                                    {subSkill.points} / {subSkill.maxPoints}
+                                                </span>
+                                            </div>
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </CardContent>
+                  </Card>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem onSelect={() => handleEditClick(skill)}>
+                    <Pencil className="h-4 w-4 mr-2" /> Edit Skill
+                  </ContextMenuItem>
+                  <ContextMenuItem onSelect={() => handleDeleteClick(skill)}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete Skill
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
+            );
+          })}
         </div>
       </section>
 
