@@ -528,14 +528,36 @@ export default function QuestsPage() {
                                                 >
                                                     {task.title}
                                                 </span>
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground ml-auto">
-                                                  {task.difficulty && <Badge variant="outline" className={cn('text-xs', difficultyColors[task.difficulty])}>{task.difficulty}</Badge>}
-                                                  {task.tokens > 0 && <Badge variant="secondary" className="text-xs"><GemIcon className="h-3 w-3 mr-1" /> {task.tokens}</Badge>}
-                                                  {task.dueDate && <Badge variant="outline" className="text-xs"><CalendarIcon className="h-3 w-3 mr-1" /> {format(new Date(task.dueDate), 'MMM d')}</Badge>}
-                                                  <span className="text-xs font-bold text-primary whitespace-nowrap">
-                                                      +{task.xp} XP
-                                                  </span>
+                                                <TooltipProvider>
+                                                <div className="flex items-center gap-4 text-xs text-muted-foreground ml-auto">
+                                                  {task.difficulty && (
+                                                      <Tooltip>
+                                                          <TooltipTrigger asChild><span className="cursor-default">{task.difficulty}</span></TooltipTrigger>
+                                                          <TooltipContent>Difficulty</TooltipContent>
+                                                      </Tooltip>
+                                                  )}
+                                                  {task.tokens > 0 && (
+                                                      <Tooltip>
+                                                          <TooltipTrigger asChild><span className="cursor-default">{task.tokens}</span></TooltipTrigger>
+                                                          <TooltipContent>Tokens</TooltipContent>
+                                                      </Tooltip>
+                                                  )}
+                                                  {task.dueDate && (
+                                                      <Tooltip>
+                                                          <TooltipTrigger asChild><span className="cursor-default">{format(new Date(task.dueDate), 'MMM d')}</span></TooltipTrigger>
+                                                          <TooltipContent>Due Date</TooltipContent>
+                                                      </Tooltip>
+                                                  )}
+                                                  <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                      <span className="text-xs font-bold text-primary whitespace-nowrap cursor-default">
+                                                          +{task.xp} XP
+                                                      </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Experience Points</TooltipContent>
+                                                  </Tooltip>
                                                 </div>
+                                                </TooltipProvider>
                                             </li>
                                         </ContextMenuTrigger>
                                         <ContextMenuContent>
