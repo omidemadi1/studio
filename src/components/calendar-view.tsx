@@ -364,7 +364,7 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
                     <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
                 </VisuallyHidden>
                  <Input
-                    value={editableTaskData.title}
+                    value={editableTaskData.title || ''}
                     onChange={(e) => handleTaskDataChange('title', e.target.value)}
                     className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
@@ -443,7 +443,7 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
                 <div>
                   <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
                   <Textarea
-                    value={editableTaskData.description}
+                    value={editableTaskData.description || ''}
                     onChange={(e) => handleTaskDataChange('description', e.target.value)}
                     placeholder="Add a description..."
                     className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -454,7 +454,7 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
                 <div>
                   <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
                   <Textarea
-                    value={editableTaskData.notes}
+                    value={editableTaskData.notes || ''}
                     onChange={(e) => handleTaskDataChange('notes', e.target.value)}
                     placeholder="Add notes..."
                     className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -465,7 +465,7 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
                 <div>
                   <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
                   <Textarea
-                    value={editableTaskData.links}
+                    value={editableTaskData.links || ''}
                     onChange={(e) => handleTaskDataChange('links', e.target.value)}
                     placeholder="Add links, one per line..."
                     className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -480,5 +480,3 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
     </>
   );
 }
-
-    

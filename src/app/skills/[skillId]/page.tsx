@@ -292,7 +292,7 @@ export default function SkillDetailPage() {
             </Dialog>
 
             <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
-                <DialogContent className="sm:max-w-xl">
+                <DialogContent className="sm:max-w-[400px]">
                 {currentTask && (
                     <>
                     <DialogHeader className="flex flex-row items-start justify-between gap-4">
@@ -374,37 +374,37 @@ export default function SkillDetailPage() {
                         )}
                     </div>
                     
-                    <div className="mt-6 space-y-2 text-sm">
+                    <div className="mt-2 space-y-2 text-sm">
                         <div>
                         <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
                         <Textarea
-                            value={editableTaskData.description}
+                            value={editableTaskData.description || ''}
                             onChange={(e) => handleTaskDataChange('description', e.target.value)}
                             placeholder="Add a description..."
                             className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                            rows={3}
+                            rows={2}
                         />
                         </div>
                         
                         <div>
                         <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
                         <Textarea
-                            value={editableTaskData.notes}
+                            value={editableTaskData.notes || ''}
                             onChange={(e) => handleTaskDataChange('notes', e.target.value)}
                             placeholder="Add notes..."
                             className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                            rows={3}
+                            rows={2}
                         />
                         </div>
 
                         <div>
                         <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
                         <Textarea
-                            value={editableTaskData.links}
+                            value={editableTaskData.links || ''}
                             onChange={(e) => handleTaskDataChange('links', e.target.value)}
                             placeholder="Add links, one per line..."
                             className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                            rows={3}
+                            rows={2}
                         />
                         </div>
                     </div>
@@ -415,5 +415,3 @@ export default function SkillDetailPage() {
         </>
     );
 }
-
-    

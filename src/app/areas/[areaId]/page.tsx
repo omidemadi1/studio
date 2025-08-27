@@ -274,9 +274,17 @@ export default function AreaDetailPage() {
 
   async function onAddTask(data: z.infer<typeof taskSchema>) {
     if (!area) return;
-
-    // The form gives us the correct projectId, whether it's from the quick-add state or the select dropdown.
+    
     const projectId = data.projectId;
+    if (!projectId) {
+        toast({
+            variant: "destructive",
+            title: "Project Not Selected",
+            description: "Please select a project for the task."
+        });
+        return;
+    }
+
 
     setIsCreatingTask(true);
     try {
@@ -398,7 +406,7 @@ export default function AreaDetailPage() {
           </Card>
           <Card className="bg-card/80">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total XP Gained</CardTitle>
+              <CardTitle className="text-sm font-medium">XP Gained</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -949,7 +957,7 @@ export default function AreaDetailPage() {
                   <div>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
                     <Textarea
-                      value={editableTaskData.description}
+                      value={editableTaskData.description || ''}
                       onChange={(e) => handleTaskDataChange('description', e.target.value)}
                       placeholder="Add a description..."
                       className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -960,7 +968,7 @@ export default function AreaDetailPage() {
                   <div>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
                     <Textarea
-                      value={editableTaskData.notes}
+                      value={editableTaskData.notes || ''}
                       onChange={(e) => handleTaskDataChange('notes', e.target.value)}
                       placeholder="Add notes..."
                       className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -971,7 +979,7 @@ export default function AreaDetailPage() {
                   <div>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
                     <Textarea
-                      value={editableTaskData.links}
+                      value={editableTaskData.links || ''}
                       onChange={(e) => handleTaskDataChange('links', e.target.value)}
                       placeholder="Add links, one per line..."
                       className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
