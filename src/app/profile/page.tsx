@@ -381,28 +381,52 @@ export default function ProfilePage() {
             <span className="sr-only">Add Skill</span>
           </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {skills.map((skill) => {
             const SkillIcon = iconMap[skill.icon] || Lightbulb;
+            const progress = (skill.points / skill.maxPoints) * 100;
+            const circumference = 2 * Math.PI * 45; // 2 * pi * radius
+            const strokeDashoffset = circumference - (progress / 100) * circumference;
+
             return (
               <ContextMenu key={skill.id}>
                 <ContextMenuTrigger>
                   <Card className="bg-card/80 overflow-hidden h-full">
-                    <CardContent className="p-4">
-                        <Link href={`/skills/${skill.id}`} className='block'>
-                           <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                    <SkillIcon className="h-6 w-6 text-accent" />
-                                    <span className="font-headline font-semibold">
-                                        {skill.name} - Lvl {skill.level}
-                                    </span>
-                                </div>
-                                <span className="text-sm text-muted-foreground">
-                                    {skill.points} / {skill.maxPoints}
-                                </span>
-                            </div>
-                            <Progress value={(skill.points / skill.maxPoints) * 100} className="h-1.5 w-full" />
-                        </Link>
+                    <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                      <Link href={`/skills/${skill.id}`} className="relative w-28 h-28">
+                          <svg className="w-full h-full" viewBox="0 0 100 100">
+                              <circle
+                                  className="text-muted/20"
+                                  stroke="currentColor"
+                                  strokeWidth="10"
+                                  cx="50"
+                                  cy="50"
+                                  r="45"
+                                  fill="transparent"
+                              />
+                              <circle
+                                  className="text-primary"
+                                  stroke="currentColor"
+                                  strokeWidth="10"
+                                  strokeLinecap="round"
+                                  cx="50"
+                                  cy="50"
+                                  r="45"
+                                  fill="transparent"
+                                  strokeDasharray={circumference}
+                                  strokeDashoffset={strokeDashoffset}
+                                  transform="rotate(-90 50 50)"
+                              />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <SkillIcon className="h-8 w-8 text-accent" />
+                              <span className="text-xs font-bold mt-1">Lvl {skill.level}</span>
+                          </div>
+                      </Link>
+                      <Link href={`/skills/${skill.id}`} className="mt-3 text-center">
+                        <p className="font-headline font-semibold">{skill.name}</p>
+                        <p className="text-xs text-muted-foreground">{skill.points} / {skill.maxPoints} XP</p>
+                      </Link>
                     </CardContent>
                   </Card>
                 </ContextMenuTrigger>
@@ -611,3 +635,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
