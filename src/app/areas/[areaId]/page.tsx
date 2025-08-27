@@ -322,10 +322,10 @@ export default function AreaDetailPage() {
   const AreaIcon = iconMap[area.icon] || Briefcase;
 
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => task.completed).length;
-  const totalXp = tasks.reduce((sum, task) => sum + task.xp, 0);
-  const totalTokens = tasks.reduce((sum, task) => sum + task.tokens, 0);
-  const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const completedTasks = tasks.filter((task) => task.completed);
+  const totalXp = completedTasks.reduce((sum, task) => sum + task.xp, 0);
+  const totalTokens = completedTasks.reduce((sum, task) => sum + task.tokens, 0);
+  const completionPercentage = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
   function handleTaskClick(projectId: string, taskId: string) {
     const project = area?.projects.find((p) => p.id === projectId);
@@ -564,8 +564,7 @@ export default function AreaDetailPage() {
                         </CardContent>
                         <CardFooter className='bg-muted/30 p-2 justify-center'>
                             <Button variant="ghost" size="sm" onClick={() => {
-                                taskForm.reset();
-                                taskForm.setValue('projectId', project.id);
+                                taskForm.reset({projectId: project.id});
                                 setAddTaskState({open: true, projectId: project.id});
                             }}>
                                 <PlusCircle className='h-4 w-4 mr-2'/> Add Task
