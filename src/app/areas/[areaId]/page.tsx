@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -74,6 +75,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -686,7 +688,7 @@ export default function AreaDetailPage() {
               <div className="space-y-2">
                   <Card 
                       className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer border-2 border-dashed"
-                      onClick={()={() => {
+                      onClick={() => {
                         taskForm.reset();
                         setAddTaskState({open: true, projectId: null});
                       }}
