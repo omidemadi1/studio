@@ -262,31 +262,53 @@ export default function SkillDetailPage() {
                 {skill.subSkills && skill.subSkills.length > 0 && (
                     <section className="mb-6">
                         <h2 className="text-2xl font-headline font-semibold mb-4">Sub-Skills</h2>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {skill.subSkills.map((subSkill) => {
                                 const SubSkillIcon = iconMap[subSkill.icon] || Lightbulb;
+                                const progress = (subSkill.points / subSkill.maxPoints) * 100;
+                                const circumference = 2 * Math.PI * 45; // 2 * pi * radius
+                                const strokeDashoffset = circumference - (progress / 100) * circumference;
                                 return (
-                                <Link href={`/skills/${subSkill.id}`} className="block hover:scale-[1.02] transition-transform duration-200" key={subSkill.id}>
-                                    <Card className="bg-card/80 h-full">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-3">
-                                            <SubSkillIcon className="h-6 w-6 text-accent" />
-                                            <span className="font-headline font-semibold">
-                                            {subSkill.name} - Lvl {subSkill.level}
-                                            </span>
-                                        </div>
-                                        <span className="text-sm text-muted-foreground">
-                                            {subSkill.points} / {subSkill.maxPoints}
-                                        </span>
-                                        </div>
-                                        <Progress
-                                        value={(subSkill.points / subSkill.maxPoints) * 100}
-                                        className="h-2"
-                                        />
-                                    </CardContent>
+                                    <Card key={subSkill.id} className="bg-card/80 overflow-hidden h-full flex items-center justify-center">
+                                      <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                                        <Link href={`/skills/${subSkill.id}`} className="relative w-40 h-40">
+                                            <svg className="w-full h-full" viewBox="0 0 100 100">
+                                                <circle
+                                                    className="text-muted/20"
+                                                    stroke="currentColor"
+                                                    strokeWidth="8"
+                                                    cx="50"
+                                                    cy="50"
+                                                    r="45"
+                                                    fill="transparent"
+                                                />
+                                                <circle
+                                                    className="text-primary"
+                                                    stroke="currentColor"
+                                                    strokeWidth="8"
+                                                    strokeLinecap="round"
+                                                    cx="50"
+                                                    cy="50"
+                                                    r="45"
+                                                    fill="transparent"
+                                                    strokeDasharray={circumference}
+                                                    strokeDashoffset={strokeDashoffset}
+                                                    transform="rotate(-90 50 50)"
+                                                />
+                                            </svg>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+                                                <div className="relative mb-2">
+                                                    <SubSkillIcon className="h-8 w-8 text-accent" />
+                                                    <div className="absolute -top-1 -right-2 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold border-2 border-card">
+                                                        {subSkill.level}
+                                                    </div>
+                                                </div>
+                                                <p className="font-headline font-semibold mt-1 text-sm">{subSkill.name}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{subSkill.points} / {subSkill.maxPoints} XP</p>
+                                            </div>
+                                        </Link>
+                                      </CardContent>
                                     </Card>
-                                </Link>
                                 );
                             })}
                         </div>
