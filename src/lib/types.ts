@@ -10,11 +10,13 @@ export interface User {
 
 export interface Skill {
   id: string;
-  name: string;
+  name:string;
   level: number;
   points: number;
   maxPoints: number;
   icon: string;
+  parentId?: string | null;
+  subSkills?: Skill[];
 }
 
 export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Very Hard';

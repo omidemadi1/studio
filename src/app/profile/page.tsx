@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check, Settings, LogOut, Trash2, Bell } from 'lucide-react';
+import { Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check, Settings, LogOut, Trash2, Bell, ChevronRight, ChevronDown } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
 import {
@@ -60,6 +60,7 @@ import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 import type { Skill } from '@/lib/types';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const skillSchema = z.object({
   name: z.string().min(1, 'Skill name is required.'),
@@ -76,6 +77,63 @@ const defaultAvatars = [
     '/assets/avatars/warrior.png',
     '/assets/avatars/wizard.png',
 ];
+
+const SkillItem = ({ skill, onEdit, onDelete }: { skill: Skill, onEdit: (skill: Skill) => void, onDelete: (skill: Skill) => void }) => {
+    const SkillIcon = iconMap[skill.icon] || Lightbulb;
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <ContextMenu>
+                <ContextMenuTrigger>
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-card/80 hover:bg-muted/50">
+                        {skill.subSkills && skill.subSkills.length > 0 ? (
+                            <CollapsibleTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <ChevronRight className={cn("h-4 w-4 transition-transform", isOpen && "rotate-90")} />
+                                </Button>
+                            </CollapsibleTrigger>
+                        ) : (
+                            <div className="w-8" />
+                        )}
+                        <Link href={`/skills/${skill.id}`} className="flex-1">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <SkillIcon className="h-6 w-6 text-accent" />
+                                    <div>
+                                        <span className="font-headline font-semibold">
+                                            {skill.name} - Lvl {skill.level}
+                                        </span>
+                                        <Progress value={(skill.points / skill.maxPoints) * 100} className="h-1.5 w-32 mt-1" />
+                                    </div>
+                                </div>
+                                <span className="text-sm text-muted-foreground">
+                                    {skill.points} / {skill.maxPoints}
+                                </span>
+                            </div>
+                        </Link>
+                    </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                    <ContextMenuItem onSelect={() => onEdit(skill)}>
+                        <Pencil className="h-4 w-4 mr-2" /> Edit Skill
+                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => onDelete(skill)}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete Skill
+                    </ContextMenuItem>
+                </ContextMenuContent>
+            </ContextMenu>
+            <CollapsibleContent>
+                <div className="pl-10 pt-2 space-y-2">
+                    {skill.subSkills?.map(subSkill => (
+                        <SkillItem key={subSkill.id} skill={subSkill} onEdit={onEdit} onDelete={onDelete} />
+                    ))}
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
+    );
+};
+
 
 export default function ProfilePage() {
   const { user, skills, updateUser, addSkill, resetDatabase, updateSkill, deleteSkill, tasks } = useQuestData();
@@ -128,6 +186,15 @@ export default function ProfilePage() {
     if (!deleteSkillState.skill) return;
     deleteSkill(deleteSkillState.skill.id);
     setDeleteSkillState({ open: false, skill: null });
+  };
+
+  const handleEditClick = (skill: Skill) => {
+    skillForm.reset({ name: skill.name, icon: skill.icon });
+    setEditSkillState({ open: true, skill });
+  };
+
+  const handleDeleteClick = (skill: Skill) => {
+    setDeleteSkillState({ open: true, skill });
   };
 
   const handleDeleteData = () => {
@@ -372,48 +439,10 @@ export default function ProfilePage() {
             <span className="sr-only">Add Skill</span>
           </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {skills.map((skill) => {
-            const SkillIcon = iconMap[skill.icon] || Lightbulb;
-            return (
-              <ContextMenu key={skill.id}>
-                  <ContextMenuTrigger>
-                      <Link href={`/skills/${skill.id}`} className="block hover:scale-[1.02] transition-transform duration-200">
-                        <Card className="bg-card/80 h-full">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-3">
-                                <SkillIcon className="h-6 w-6 text-accent" />
-                                <span className="font-headline font-semibold">
-                                  {skill.name} - Lvl {skill.level}
-                                </span>
-                              </div>
-                              <span className="text-sm text-muted-foreground">
-                                {skill.points} / {skill.maxPoints}
-                              </span>
-                            </div>
-                            <Progress
-                              value={(skill.points / skill.maxPoints) * 100}
-                              className="h-2"
-                            />
-                          </CardContent>
-                        </Card>
-                      </Link>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent>
-                    <ContextMenuItem onSelect={() => {
-                        skillForm.reset({ name: skill.name, icon: skill.icon });
-                        setEditSkillState({ open: true, skill });
-                    }}>
-                        <Pencil className="h-4 w-4 mr-2" /> Edit Skill
-                    </ContextMenuItem>
-                    <ContextMenuItem onSelect={() => setDeleteSkillState({ open: true, skill })}>
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete Skill
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-              </ContextMenu>
-            );
-          })}
+        <div className="space-y-2">
+          {skills.map((skill) => (
+            <SkillItem key={skill.id} skill={skill} onEdit={handleEditClick} onDelete={handleDeleteClick} />
+          ))}
         </div>
       </section>
 
@@ -452,7 +481,7 @@ export default function ProfilePage() {
                     <Popover>
                         <PopoverTrigger asChild>
                             <FormControl>
-                                <Button variant="outline" className="w-full justify-start">
+                                <Button variant="outline" className="w-full justify-start" type="button">
                                     {field.value ? (
                                         <>
                                             {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
@@ -471,6 +500,7 @@ export default function ProfilePage() {
                                             key={iconName}
                                             variant="ghost"
                                             size="icon"
+                                            type="button"
                                             onClick={() => field.onChange(iconName)}
                                             className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
                                         >
@@ -595,7 +625,7 @@ export default function ProfilePage() {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
                 This action cannot be undone. This will permanently delete the 
-                <span className="font-bold"> {deleteSkillState.skill?.name}</span> skill.
+                <span className="font-bold"> {deleteSkillState.skill?.name}</span> skill and all of its sub-skills.
             </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

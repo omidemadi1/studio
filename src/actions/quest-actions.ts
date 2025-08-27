@@ -53,14 +53,47 @@ export async function deleteTask(id: string) {
     revalidatePath('/');
 }
 
-export async function addSkill(name: string, icon: string) {
+export async function addSkill(name: string, icon: string, parentId?: string) {
   const id = `skill-${Date.now()}`;
   db.prepare(
-    'INSERT INTO skills (id, name, level, points, maxPoints, icon) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(id, name, 1, 0, 1000, icon);
+    'INSERT INTO skills (id, name, level, points, maxPoints, icon, parentId) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(id, name, 1, 0, 1000, icon, parentId || null);
   revalidatePath('/profile');
+  if (parentId) revalidatePath(`/skills/${parentId}`);
   revalidatePath('/');
 }
+
+const updateSkillAndParents = (skillId: string, xpChange: number, completed: boolean): { skillId: string, skillLeveledUp: boolean } | null => {
+    const skill = db.prepare('SELECT * FROM skills WHERE id = ?').get(skillId) as Skill;
+    if (!skill) return null;
+
+    let skillLeveledUp = false;
+    let newPoints = skill.points + xpChange;
+    let newSkillLevel = skill.level;
+    let newMaxPoints = skill.maxPoints;
+
+    if (completed && newPoints >= skill.maxPoints) {
+        newSkillLevel = skill.level + 1;
+        newMaxPoints = Math.floor(skill.maxPoints * 1.5);
+        skillLeveledUp = true;
+    } else if (!completed && newPoints < 0 && newSkillLevel > 1) {
+        const prevMaxPoints = Math.ceil(skill.maxPoints / 1.5);
+        newSkillLevel = skill.level - 1;
+        newMaxPoints = prevMaxPoints;
+        newPoints = prevMaxPoints + newPoints;
+    }
+    
+    db.prepare('UPDATE skills SET points = ?, level = ?, maxPoints = ? WHERE id = ?')
+      .run(newPoints, newSkillLevel, newMaxPoints, skillId);
+
+    // If there's a parent, recursively update it
+    if (skill.parentId) {
+        updateSkillAndParents(skill.parentId, xpChange, completed);
+    }
+    
+    return { skillId, skillLeveledUp };
+};
+
 
 export async function updateTaskCompletion(taskId: string, completed: boolean, focusDuration?: number) {
     const transaction = db.transaction(() => {
@@ -77,7 +110,6 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
         if (task) {
             const xpChange = completed ? task.xp : -task.xp;
             const tokenChange = completed ? task.tokens : -task.tokens;
-            skillIdToRevalidate = task.skillId;
             
             // Update user XP and level
             const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
@@ -96,28 +128,12 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
                 db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ?, tokens = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp, newTokens);
             }
 
-            // Update skill points and level
+            // Update skill points and level (recursively)
             if (task.skillId) {
-                const skill = db.prepare('SELECT * FROM skills WHERE id = ?').get(task.skillId) as Skill;
-                if (skill) {
-                    let newPoints = skill.points + xpChange;
-                    let newSkillLevel = skill.level;
-                    let newMaxPoints = skill.maxPoints;
-
-                    if (completed && newPoints >= skill.maxPoints) {
-                        newSkillLevel = skill.level + 1;
-                        newMaxPoints = Math.floor(skill.maxPoints * 1.5);
-                        skillLeveledUp = true;
-                    } else if (!completed && newPoints < 0 && newSkillLevel > 1) {
-                        // De-leveling logic
-                        const prevMaxPoints = Math.ceil(skill.maxPoints / 1.5);
-                        newSkillLevel = skill.level - 1;
-                        newMaxPoints = prevMaxPoints;
-                        newPoints = prevMaxPoints + newPoints; // newPoints is negative here
-                    }
-                    
-                    db.prepare('UPDATE skills SET points = ?, level = ?, maxPoints = ? WHERE id = ?')
-                      .run(newPoints, newSkillLevel, newMaxPoints, task.skillId);
+                const result = updateSkillAndParents(task.skillId, xpChange, completed);
+                if (result) {
+                    skillIdToRevalidate = result.skillId;
+                    skillLeveledUp = result.skillLeveledUp;
                 }
             }
         }
@@ -130,7 +146,19 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
     revalidatePath('/profile');
     revalidatePath('/focus');
     if (result && result.skillId) {
-        revalidatePath(`/skills/${result.skillId}`);
+        // Need to find the root parent to revalidate the correct skill page
+        let currentSkillId: string | null = result.skillId;
+        let rootSkillId = result.skillId;
+        while(currentSkillId) {
+            const skill = db.prepare('SELECT id, parentId FROM skills WHERE id = ?').get(currentSkillId) as {id: string, parentId: string | null};
+            if(skill && skill.parentId) {
+                rootSkillId = skill.parentId;
+                currentSkillId = skill.parentId;
+            } else {
+                currentSkillId = null;
+            }
+        }
+        revalidatePath(`/skills/${rootSkillId}`);
     }
 
     return result;
@@ -196,8 +224,7 @@ export async function updateSkill(id: string, name: string, icon: string) {
 }
 
 export async function deleteSkill(id: string) {
-    // Set skillId to null for tasks that use this skill
-    db.prepare('UPDATE tasks SET skillId = NULL WHERE skillId = ?').run(id);
+    // This will also delete sub-skills due to ON DELETE CASCADE
     db.prepare('DELETE FROM skills WHERE id = ?').run(id);
     revalidatePath('/profile');
     revalidatePath('/');
@@ -238,12 +265,20 @@ export async function resetDatabase() {
     revalidatePath('/');
 }
 
-const duplicateTaskTransaction = db.transaction((task: Task, newProjectId: string) => {
-    const newTaskId = `task-${Date.now()}`;
-    const newTask = { ...task, id: newTaskId, projectId: newProjectId, title: `${task.title} (copy)` };
-    db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.tokens, newTask.description, newTask.notes, newTask.links, newTask.difficulty, newTask.dueDate, newTask.reminder, newTask.skillId, newTask.focusDuration || 0, newProjectId);
-});
+export async function duplicateTask(taskId: string) {
+    const transaction = db.transaction(() => {
+        const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as Task;
+        if (!task) return;
+
+        const newTaskId = `task-${Date.now()}`;
+        const newTask = { ...task, id: newTaskId, title: `${task.title} (copy)` };
+        db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.tokens, newTask.description, newTask.notes, newTask.links, newTask.difficulty, newTask.dueDate, newTask.reminder, newTask.skillId, newTask.focusDuration || 0, task.projectId);
+    });
+    transaction();
+    revalidatePath('/');
+}
+
 
 const duplicateProjectTransaction = db.transaction((project: Project, newAreaId: string) => {
     const newProjectId = `proj-${Date.now()}`;
@@ -252,9 +287,21 @@ const duplicateProjectTransaction = db.transaction((project: Project, newAreaId:
 
     const tasks = db.prepare('SELECT * FROM tasks WHERE projectId = ?').all(project.id) as Task[];
     for (const task of tasks) {
-        duplicateTaskTransaction(task, newProjectId);
+        const taskToDuplicate = { ...task, projectId: newProjectId }; // This is needed to get TS to agree with the shape
+        duplicateTask(taskToDuplicate.id);
     }
 });
+
+export async function duplicateProject(projectId: string) {
+    const transaction = db.transaction(() => {
+        const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(projectId) as Project;
+        if (!project) return;
+        duplicateProjectTransaction(project, project.areaId);
+    });
+
+    transaction();
+    revalidatePath('/');
+}
 
 export async function duplicateArea(areaId: string) {
     const transaction = db.transaction(() => {

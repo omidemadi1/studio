@@ -43,7 +43,9 @@ const initializeDb = () => {
                 level INTEGER NOT NULL,
                 points INTEGER NOT NULL,
                 maxPoints INTEGER NOT NULL,
-                icon TEXT NOT NULL
+                icon TEXT NOT NULL,
+                parentId TEXT,
+                FOREIGN KEY (parentId) REFERENCES skills (id) ON DELETE CASCADE
             );
         `,
         areas: `
@@ -132,6 +134,14 @@ const initializeDb = () => {
         dbInstance.exec('ALTER TABLE tasks ADD COLUMN skillId TEXT');
     }
 
+    // Add 'parentId' column to 'skills' table if it doesn't exist (for migration)
+    try {
+        dbInstance.prepare('SELECT parentId FROM skills LIMIT 1').get();
+    } catch (e) {
+        console.log("Migrating skills table: adding 'parentId' column.");
+        dbInstance.exec('ALTER TABLE skills ADD COLUMN parentId TEXT');
+    }
+
 
     // Seed initial data only if users table is empty
     const userCount = dbInstance.prepare('SELECT count(*) as count FROM users').get() as { count: number };
@@ -158,15 +168,15 @@ export function initDb() {
 export function resetDbFile() {
     if (db) {
         db.close();
+        global.db = undefined; // Make sure the global ref is also cleared
     }
     if (fs.existsSync(dbFile)) {
         fs.unlinkSync(dbFile);
     }
-    console.log("Database file deleted.");
-    const newDb = initializeDb();
-    // Assign the new instance to both the module-scoped variable and the global variable.
-    db = newDb;
-    global.db = newDb;
+    console.log("Database file deleted and connection closed.");
+    // Re-initialize and update the references
+    db = initializeDb();
+    global.db = db;
 }
 
 

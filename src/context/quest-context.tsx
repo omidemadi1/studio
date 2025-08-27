@@ -25,7 +25,7 @@ interface QuestContextType {
   deleteProject: (id: string, areaId: string) => void;
   addTask: (areaId: string, projectId: string, task: Task) => void;
   deleteTask: (id: string) => void;
-  addSkill: (name: string, icon: string) => void;
+  addSkill: (name: string, icon: string, parentId?: string) => void;
   updateSkill: (id: string, name: string, icon: string) => void;
   deleteSkill: (id: string) => void;
   updateUser: (newUserData: Partial<User>) => void;
@@ -125,8 +125,21 @@ export const QuestProvider = ({
         description: completed ? `You earned ${taskData.task.xp} XP for "${taskData.task.title}"!` : 'Quest marked as incomplete.',
     });
     
+    // We need to flatten skills to find the one that leveled up
+    const findSkill = (skills: Skill[], skillId: string | undefined): Skill | undefined => {
+        if (!skillId) return undefined;
+        for (const s of skills) {
+            if (s.id === skillId) return s;
+            if (s.subSkills) {
+                const found = findSkill(s.subSkills, skillId);
+                if (found) return found;
+            }
+        }
+        return undefined;
+    }
+
     if (result?.skillLeveledUp) {
-        const skill = skills.find(s => s.id === result.skillId);
+        const skill = findSkill(skills, result.skillId);
         if (skill) {
             toast({
                 title: "Skill Level Up!",
@@ -198,8 +211,8 @@ export const QuestProvider = ({
       router.refresh();
   };
 
-  const addSkill = async (name: string, icon: string) => {
-    await QuestActions.addSkill(name, icon);
+  const addSkill = async (name: string, icon: string, parentId?: string) => {
+    await QuestActions.addSkill(name, icon, parentId);
     toast({ title: 'Skill Added', description: `New skill "${name}" is now ready to level up.` });
     router.refresh();
   };

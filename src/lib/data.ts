@@ -29,7 +29,21 @@ export function getUser(): User {
 
 export function getSkills(): Skill[] {
     return withErrorHandling(() => {
-        return db.prepare('SELECT * FROM skills').all() as Skill[];
+        const allSkills = db.prepare('SELECT * FROM skills').all() as Skill[];
+        const skillMap = new Map(allSkills.map(s => [s.id, { ...s, subSkills: [] as Skill[] }]));
+
+        const rootSkills: Skill[] = [];
+
+        for (const skill of allSkills) {
+            if (skill.parentId && skillMap.has(skill.parentId)) {
+                const parent = skillMap.get(skill.parentId)!;
+                parent.subSkills.push(skillMap.get(skill.id)!);
+            } else {
+                rootSkills.push(skillMap.get(skill.id)!);
+            }
+        }
+        
+        return rootSkills;
     }, []);
 }
 
