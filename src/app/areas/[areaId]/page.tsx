@@ -273,8 +273,18 @@ export default function AreaDetailPage() {
   }
 
   async function onAddTask(data: z.infer<typeof taskSchema>) {
+    if (!area) return;
+
+    // Use projectId from state if available (quick add), otherwise from form data.
     const projectId = addTaskState.projectId || data.projectId;
-    if (!area || !projectId) return;
+    if (!projectId) {
+        toast({
+            variant: "destructive",
+            title: "Project not selected",
+            description: "Please select a project for the task."
+        });
+        return;
+    }
 
     setIsCreatingTask(true);
     try {
@@ -937,7 +947,7 @@ export default function AreaDetailPage() {
                   )}
                 </div>
                 
-                <div className="mt-6 space-y-2 text-sm">
+                <div className="mt-2 space-y-2 text-sm">
                   <div>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
                     <Textarea
@@ -1056,3 +1066,4 @@ export default function AreaDetailPage() {
     </>
   );
 }
+
