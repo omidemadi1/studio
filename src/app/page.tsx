@@ -101,6 +101,7 @@ import { GemIcon } from '@/components/icons/gem-icon';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
+  icon: z.string().min(1, 'An icon is required.'),
 });
 
 const projectSchema = z.object({
@@ -188,7 +189,7 @@ export default function QuestsPage() {
 
   const areaForm = useForm<z.infer<typeof areaSchema>>({
     resolver: zodResolver(areaSchema),
-    defaultValues: { name: '' },
+    defaultValues: { name: '', icon: '' },
   });
 
   const projectForm = useForm<z.infer<typeof projectSchema>>({
@@ -228,14 +229,14 @@ export default function QuestsPage() {
 
 
   function onAddArea(data: z.infer<typeof areaSchema>) {
-    addArea(data.name);
+    addArea(data.name, data.icon);
     areaForm.reset();
     setAddAreaOpen(false);
   }
 
   function onEditArea(data: z.infer<typeof areaSchema>) {
     if (!editAreaState.area) return;
-    updateArea(editAreaState.area.id, data.name);
+    updateArea(editAreaState.area.id, data.name, data.icon);
     setEditAreaState({ open: false, area: null });
     areaForm.reset();
   }
@@ -563,7 +564,7 @@ export default function QuestsPage() {
                 </ContextMenuTrigger>
                 <ContextMenuContent>
                     <ContextMenuItem onSelect={() => {
-                        areaForm.setValue('name', area.name);
+                        areaForm.reset({ name: area.name, icon: area.icon });
                         setEditAreaState({ open: true, area });
                     }}>
                         <Pencil className="h-4 w-4 mr-2" /> Edit
@@ -606,6 +607,50 @@ export default function QuestsPage() {
                   </FormItem>
                 )}
               />
+               <FormField
+                control={areaForm.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icon</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button variant="outline" className="w-full justify-start" type="button">
+                                    {field.value ? (
+                                        <>
+                                            {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
+                                            {field.value}
+                                        </>
+                                    ) : 'Select an icon'}
+                                </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2 max-w-[240px] max-h-[200px] overflow-y-auto">
+                            <div className="grid grid-cols-6 gap-1">
+                                {Object.keys(iconMap).map((iconName) => {
+                                    const IconComponent = iconMap[iconName];
+                                    return (
+                                        <Button
+                                            key={iconName}
+                                            variant="ghost"
+                                            size="icon"
+                                            type="button"
+                                            onClick={() => field.onChange(iconName)}
+                                            className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
+                                        >
+                                            <IconComponent className="h-5 w-5" />
+                                            {field.value === iconName && <Check className="absolute bottom-0 right-0 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <DialogFooter>
                 <Button type="submit">Create Area</Button>
               </DialogFooter>
@@ -619,7 +664,7 @@ export default function QuestsPage() {
           <DialogHeader>
             <DialogTitle>Edit Area</DialogTitle>
             <DialogDescription>
-                Update the name of your area.
+                Update the name and icon of your area.
             </DialogDescription>
           </DialogHeader>
           <Form {...areaForm}>
@@ -633,6 +678,50 @@ export default function QuestsPage() {
                     <FormControl>
                       <Input placeholder="e.g., Fitness" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={areaForm.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icon</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button variant="outline" className="w-full justify-start" type="button">
+                                    {field.value ? (
+                                        <>
+                                            {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
+                                            {field.value}
+                                        </>
+                                    ) : 'Select an icon'}
+                                </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2 max-w-[240px] max-h-[200px] overflow-y-auto">
+                            <div className="grid grid-cols-6 gap-1">
+                                {Object.keys(iconMap).map((iconName) => {
+                                    const IconComponent = iconMap[iconName];
+                                    return (
+                                        <Button
+                                            key={iconName}
+                                            variant="ghost"
+                                            size="icon"
+                                            type="button"
+                                            onClick={() => field.onChange(iconName)}
+                                            className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
+                                        >
+                                            <IconComponent className="h-5 w-5" />
+                                            {field.value === iconName && <Check className="absolute bottom-0 right-0 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -893,7 +982,7 @@ export default function QuestsPage() {
       </Dialog>
 
       <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-[400px]">
           {currentTask && areaId && projectId && (
             <>
               <DialogHeader className="flex flex-row items-start justify-between gap-4">
@@ -987,7 +1076,7 @@ export default function QuestsPage() {
                     onChange={(e) => handleTaskDataChange('description', e.target.value)}
                     placeholder="Add a description..."
                     className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    rows={3}
+                    rows={2}
                   />
                 </div>
                 
@@ -998,7 +1087,7 @@ export default function QuestsPage() {
                     onChange={(e) => handleTaskDataChange('notes', e.target.value)}
                     placeholder="Add notes..."
                     className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    rows={3}
+                    rows={2}
                   />
                 </div>
 
@@ -1009,7 +1098,7 @@ export default function QuestsPage() {
                     onChange={(e) => handleTaskDataChange('links', e.target.value)}
                     placeholder="Add links, one per line..."
                     className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    rows={3}
+                    rows={2}
                   />
                 </div>
               </div>

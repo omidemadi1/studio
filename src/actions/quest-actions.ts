@@ -7,16 +7,15 @@ import { revalidatePath } from 'next/cache'
 import { getWeek } from 'date-fns';
 import { suggestWeeklyMissions } from '@/ai/flows/suggest-weekly-missions';
 
-export async function addArea(name: string) {
+export async function addArea(name: string, icon: string) {
   const id = `area-${Date.now()}`
-  // 'Briefcase' is used as a default icon
-  db.prepare('INSERT INTO areas (id, name, icon) VALUES (?, ?, ?)').run(id, name, 'Briefcase')
+  db.prepare('INSERT INTO areas (id, name, icon) VALUES (?, ?, ?)').run(id, name, icon)
   revalidatePath('/')
   revalidatePath('/areas')
 }
 
-export async function updateArea(id: string, name: string) {
-  db.prepare('UPDATE areas SET name = ? WHERE id = ?').run(name, id);
+export async function updateArea(id: string, name: string, icon: string) {
+  db.prepare('UPDATE areas SET name = ?, icon = ? WHERE id = ?').run(name, icon, id);
   revalidatePath('/');
   revalidatePath(`/areas/${id}`);
 }
@@ -45,7 +44,7 @@ export async function addTask(areaId: string, projectId: string, task: Task) {
     db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.notes, task.links, task.difficulty, task.dueDate, task.reminder, task.skillId, task.focusDuration || 0, projectId);
     revalidatePath(`/areas/${areaId}`);
-    revalidatePath(`/skills/${task.skillId}`);
+    if (task.skillId) revalidatePath(`/skills/${task.skillId}`);
     revalidatePath('/');
 }
 
@@ -256,22 +255,6 @@ const duplicateProjectTransaction = db.transaction((project: Project, newAreaId:
         duplicateTaskTransaction(task, newProjectId);
     }
 });
-
-export async function duplicateTask(taskId: string) {
-    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as Task;
-    if (task) {
-        duplicateTaskTransaction(task, task.projectId);
-        revalidatePath('/');
-    }
-}
-
-export async function duplicateProject(projectId: string) {
-    const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(projectId) as Project;
-    if (project) {
-        duplicateProjectTransaction(project, project.areaId);
-        revalidatePath('/');
-    }
-}
 
 export async function duplicateArea(areaId: string) {
     const transaction = db.transaction(() => {

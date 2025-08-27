@@ -17,8 +17,8 @@ interface QuestContextType {
   updateWeeklyMissionCompletion: (missionId: string, completed: boolean) => void;
   updateTaskCompletion: (taskId: string, completed: boolean, focusDuration?: number) => void;
   updateTaskDetails: (taskId: string, details: Partial<Task>) => void;
-  addArea: (name: string) => void;
-  updateArea: (id: string, name: string) => void;
+  addArea: (name: string, icon: string) => void;
+  updateArea: (id: string, name: string, icon: string) => void;
   deleteArea: (id: string) => void;
   addProject: (areaId: string, name: string) => void;
   updateProject: (id: string, name: string) => void;
@@ -139,14 +139,14 @@ export const QuestProvider = ({
 
   }, [getTask, toast, router, skills]);
   
-  const addArea = async (name: string) => {
-    await QuestActions.addArea(name);
+  const addArea = async (name: string, icon: string) => {
+    await QuestActions.addArea(name, icon);
     toast({ title: 'Area Created', description: `New area "${name}" has been added.`});
     router.refresh();
   };
 
-  const updateArea = async (id: string, name: string) => {
-    await QuestActions.updateArea(id, name);
+  const updateArea = async (id: string, name: string, icon: string) => {
+    await QuestActions.updateArea(id, name, icon);
     toast({ title: 'Area Updated' });
     router.refresh();
   };
