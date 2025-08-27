@@ -49,7 +49,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { Task, Difficulty, Area, Project, WeeklyMission } from '@/lib/types';
+import type { Task, Difficulty, Area, Project, WeeklyMission, Skill } from '@/lib/types';
 import { iconMap } from '@/lib/icon-map';
 import {
   Swords,
@@ -136,6 +136,22 @@ const difficultyColors: Record<Difficulty, string> = {
 
 type ViewMode = 'list' | 'calendar';
 
+// Helper to flatten skills for the select dropdown
+const getFlattenedSkills = (skills: Skill[]): Skill[] => {
+    const flattened: Skill[] = [];
+    const traverse = (skill: Skill) => {
+        // A skill is selectable if it has no sub-skills
+        if (!skill.subSkills || skill.subSkills.length === 0) {
+            flattened.push(skill);
+        }
+        if (skill.subSkills) {
+            skill.subSkills.forEach(traverse);
+        }
+    };
+    skills.forEach(traverse);
+    return flattened;
+};
+
 export default function QuestsPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -177,6 +193,7 @@ export default function QuestsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [addSkillOpen, setAddSkillOpen] = useState(false);
 
+  const selectableSkills = getFlattenedSkills(skills);
 
   useEffect(() => {
     async function fetchMissions() {
@@ -860,7 +877,7 @@ export default function QuestsPage() {
                   render={({ field }) => (
                       <FormItem>
                       <FormLabel>Area</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={!!addTaskState.areaId}>
+                      <Select onValueChange={field.onChange} value={field.value || ''} disabled={!!addTaskState.areaId}>
                           <FormControl>
                           <SelectTrigger>
                               <SelectValue placeholder="Select an area" />
@@ -882,7 +899,7 @@ export default function QuestsPage() {
                   render={({ field }) => (
                       <FormItem>
                       <FormLabel>Project</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={!!addTaskState.projectId || !selectedAreaIdForTask}>
+                      <Select onValueChange={field.onChange} value={field.value || ''} disabled={!!addTaskState.projectId || !selectedAreaIdForTask}>
                           <FormControl>
                           <SelectTrigger>
                               <SelectValue placeholder="Select a project" />
@@ -921,14 +938,14 @@ export default function QuestsPage() {
                   render={({ field }) => (
                     <FormItem>
                         <FormLabel>Skill Category</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a skill" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {skills.map(skill => (
+                          {selectableSkills.map(skill => (
                             <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
                           ))}
                             <Separator />

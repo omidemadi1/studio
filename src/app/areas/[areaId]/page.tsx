@@ -40,7 +40,7 @@ import {
   Copy,
   Bell,
 } from 'lucide-react';
-import type { Task, Difficulty, Project } from '@/lib/types';
+import type { Task, Difficulty, Project, Skill } from '@/lib/types';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -123,18 +123,34 @@ type SortOption = 'name-asc' | 'name-desc' | 'progress-asc' | 'progress-desc' | 
 type TaskFilterOption = 'all' | 'incomplete' | 'completed';
 type ViewMode = 'projects' | 'tasks';
 
+// Helper to flatten skills for the select dropdown
+const getFlattenedSkills = (skills: Skill[]): Skill[] => {
+    const flattened: Skill[] = [];
+    const traverse = (skill: Skill) => {
+        // A skill is selectable if it has no sub-skills
+        if (!skill.subSkills || skill.subSkills.length === 0) {
+            flattened.push(skill);
+        }
+        if (skill.subSkills) {
+            skill.subSkills.forEach(traverse);
+        }
+    };
+    skills.forEach(traverse);
+    return flattened;
+};
 
 export default function AreaDetailPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { areaId } = useParams();
-  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject, addSkill, duplicateProject } = useQuestData();
+  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject, addSkill, duplicateProject, deleteTask } = useQuestData();
 
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [editProjectState, setEditProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
   const [deleteProjectState, setDeleteProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; projectId: string | null }>({ open: false, projectId: null });
   const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; projectId: string | null; taskId: string | null; }>({ open: false, projectId: null, taskId: null });
+  const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
   const [sortOption, setSortOption] = useState<SortOption>('name-asc');
@@ -142,7 +158,7 @@ export default function AreaDetailPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('projects');
   const [addSkillOpen, setAddSkillOpen] = useState(false);
 
-
+  const selectableSkills = getFlattenedSkills(skills);
   const area = useMemo(() => getAreaById(areaId as string), [areaId, getAreaById]);
   const tasks = useMemo(() => getTasksByAreaId(areaId as string), [areaId, getTasksByAreaId]);
 
@@ -329,8 +345,8 @@ export default function AreaDetailPage() {
 
   const AreaIcon = iconMap[area.icon] || Briefcase;
 
-  const totalTasks = tasks.length;
   const completedTasks = tasks.filter((task) => task.completed);
+  const totalTasks = tasks.length;
   const totalXp = completedTasks.reduce((sum, task) => sum + task.xp, 0);
   const totalTokens = completedTasks.reduce((sum, task) => sum + task.tokens, 0);
   const completionPercentage = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
@@ -344,7 +360,7 @@ export default function AreaDetailPage() {
         description: task.description || '',
         notes: task.notes || '',
         links: task.links || '',
-        reminder: task.reminder
+        reminder: task.reminder,
       });
     }
     setTaskDetailState({
@@ -369,6 +385,12 @@ export default function AreaDetailPage() {
     if (!deleteProjectState.project) return;
     deleteProject(deleteProjectState.project.id, area.id)
     setDeleteProjectState({ open: false, project: null });
+  };
+  
+  const handleDeleteTask = () => {
+    if (!deleteTaskState.task) return;
+    deleteTask(deleteTaskState.task.id);
+    setDeleteTaskState({ open: false, task: null });
   };
 
   const handleFocusClick = () => {
@@ -766,7 +788,7 @@ export default function AreaDetailPage() {
                       render={({ field }) => (
                           <FormItem>
                               <FormLabel>Project</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <Select onValueChange={field.onChange} defaultValue={field.value || ''} value={field.value || ''}>
                                   <FormControl>
                                       <SelectTrigger disabled={!!addTaskState.projectId}>
                                           <SelectValue placeholder="Select a project" />
@@ -805,14 +827,14 @@ export default function AreaDetailPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Skill Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a skill" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {skills.map(skill => (
+                            {selectableSkills.map(skill => (
                               <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
                             ))}
                              <Separator />
@@ -1069,6 +1091,21 @@ export default function AreaDetailPage() {
           </Form>
         </DialogContent>
       </Dialog>
+       <AlertDialog open={deleteTaskState.open} onOpenChange={(open) => setDeleteTaskState({ open, task: open ? deleteTaskState.task : null })}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the 
+                <span className="font-bold"> {deleteTaskState.task?.title}</span> task.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteTaskState({open: false, task: null})}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTask}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
