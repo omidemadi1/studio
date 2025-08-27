@@ -403,28 +403,6 @@ export default function ProfilePage() {
                             </div>
                             <Progress value={(skill.points / skill.maxPoints) * 100} className="h-1.5 w-full" />
                         </Link>
-                         {skill.subSkills && skill.subSkills.length > 0 && (
-                            <div className="mt-3 pl-4 border-l-2 border-muted/50 space-y-2">
-                                {skill.subSkills.map(subSkill => {
-                                    const SubSkillIcon = iconMap[subSkill.icon] || Lightbulb;
-                                    return (
-                                        <Link href={`/skills/${subSkill.id}`} key={subSkill.id} className='block text-xs'>
-                                           <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <SubSkillIcon className="h-4 w-4 text-accent/80" />
-                                                    <span className="font-medium">
-                                                        {subSkill.name} - Lvl {subSkill.level}
-                                                    </span>
-                                                </div>
-                                                <span className="text-muted-foreground">
-                                                    {subSkill.points} / {subSkill.maxPoints}
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    )
-                                })}
-                            </div>
-                        )}
                     </CardContent>
                   </Card>
                 </ContextMenuTrigger>
