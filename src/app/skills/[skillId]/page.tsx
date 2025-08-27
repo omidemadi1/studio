@@ -409,7 +409,7 @@ export default function SkillDetailPage() {
                                 </CardFooter>
                             </Card>
                         )}
-                         {(!skill.subSkills || skill.subSkills.length === 0) && (
+                         {(!skill.subSkills || skill.subSkills.length === 0) && !skill.parentId && (
                              <Button variant="outline" className="w-full" onClick={() => setAddSkillOpen(true)}>
                                 <PlusCircle className="h-4 w-4 mr-2" /> Add Sub-skill
                             </Button>
