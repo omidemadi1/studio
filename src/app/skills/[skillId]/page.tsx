@@ -17,7 +17,7 @@ import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
     Command, Tag, Flame, Calendar as CalendarIcon, AlignLeft,
     StickyNote, Link as LinkIcon, Clock, ArrowUp, Crosshair,
-    PlusCircle, GitBranch,
+    PlusCircle, GitBranch, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -65,7 +65,6 @@ const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required.'),
   description: z.string().optional(),
   dueDate: z.date().optional(),
-  reminder: z.number().optional(),
   skillId: z.string().optional(),
   areaId: z.string({ required_error: 'Please select an area.'}),
   projectId: z.string({ required_error: 'Please select a project.'}),
@@ -217,7 +216,6 @@ export default function SkillDetailPage() {
                 links: '',
                 difficulty: result.xp > 120 ? 'Very Hard' : result.xp > 80 ? 'Hard' : result.xp > 40 ? 'Medium' : 'Easy',
                 dueDate: data.dueDate?.toISOString(),
-                reminder: data.reminder,
                 skillId: data.skillId,
                 projectId: projectId,
             };
@@ -304,6 +302,20 @@ export default function SkillDetailPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span tabIndex={0}>
+                                        <Button variant="outline" size="sm" disabled>
+                                            <Sparkles className="h-4 w-4 mr-2" /> AI Upgrade
+                                        </Button>
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Coming soon</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                         <Button variant="outline" size="sm" onClick={() => {
                             skillForm.reset({ name: skill.name, icon: skill.icon });
                             setEditSkillOpen(true);
@@ -733,8 +745,6 @@ export default function SkillDetailPage() {
                                         <DateTimePicker 
                                             date={field.value} 
                                             setDate={field.onChange}
-                                            reminder={taskForm.watch('reminder')}
-                                            setReminder={(rem) => taskForm.setValue('reminder', rem)}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -815,8 +825,6 @@ export default function SkillDetailPage() {
                                 if (!taskId) return;
                                 updateTaskDetails(taskId, { dueDate: date?.toISOString() });
                             }}
-                            reminder={editableTaskData.reminder}
-                            setReminder={(rem) => handleTaskDataChange('reminder', rem)}
                         />
                         </>
 
