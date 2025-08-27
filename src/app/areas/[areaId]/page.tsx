@@ -275,16 +275,8 @@ export default function AreaDetailPage() {
   async function onAddTask(data: z.infer<typeof taskSchema>) {
     if (!area) return;
 
-    // Use projectId from state if available (quick add), otherwise from form data.
-    const projectId = addTaskState.projectId || data.projectId;
-    if (!projectId) {
-        toast({
-            variant: "destructive",
-            title: "Project not selected",
-            description: "Please select a project for the task."
-        });
-        return;
-    }
+    // The form gives us the correct projectId, whether it's from the quick-add state or the select dropdown.
+    const projectId = data.projectId;
 
     setIsCreatingTask(true);
     try {
@@ -571,7 +563,11 @@ export default function AreaDetailPage() {
                         </ul>
                         </CardContent>
                         <CardFooter className='bg-muted/30 p-2 justify-center'>
-                            <Button variant="ghost" size="sm" onClick={() => setAddTaskState({open: true, projectId: project.id})}>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                                taskForm.reset();
+                                taskForm.setValue('projectId', project.id);
+                                setAddTaskState({open: true, projectId: project.id});
+                            }}>
                                 <PlusCircle className='h-4 w-4 mr-2'/> Add Task
                             </Button>
                         </CardFooter>
@@ -607,7 +603,10 @@ export default function AreaDetailPage() {
               <div className="space-y-2">
                   <Card 
                       className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer border-2 border-dashed"
-                      onClick={() => setAddTaskState({open: true, projectId: null})}
+                      onClick={() => {
+                        taskForm.reset();
+                        setAddTaskState({open: true, projectId: null});
+                      }}
                   >
                       <PlusCircle className="h-5 w-5 text-muted-foreground" />
                       <span className="text-sm font-medium text-muted-foreground">Add new Task</span>
@@ -753,7 +752,7 @@ export default function AreaDetailPage() {
                   )}
                 />
 
-                {!addTaskState.projectId && (
+                
                   <FormField
                       control={taskForm.control}
                       name="projectId"
@@ -762,7 +761,7 @@ export default function AreaDetailPage() {
                               <FormLabel>Project</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
-                                      <SelectTrigger>
+                                      <SelectTrigger disabled={!!addTaskState.projectId}>
                                           <SelectValue placeholder="Select a project" />
                                       </SelectTrigger>
                                   </FormControl>
@@ -776,7 +775,7 @@ export default function AreaDetailPage() {
                           </FormItem>
                       )}
                   />
-                )}
+                
                 
                 <FormField
                   control={taskForm.control}
@@ -872,7 +871,7 @@ export default function AreaDetailPage() {
                    <Input
                       value={editableTaskData.title || ''}
                       onChange={(e) => handleTaskDataChange('title', e.target.value)}
-                      className="text-2xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      className="text-xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
                   <div className='flex items-center gap-2 flex-shrink-0'>
                     <TooltipProvider>
@@ -1066,4 +1065,3 @@ export default function AreaDetailPage() {
     </>
   );
 }
-
