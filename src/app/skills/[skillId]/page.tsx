@@ -66,8 +66,6 @@ const taskSchema = z.object({
   description: z.string().optional(),
   dueDate: z.date().optional(),
   skillId: z.string().optional(),
-  areaId: z.string().optional(),
-  projectId: z.string().optional(),
 });
 
 const difficultyColors: Record<Difficulty, string> = {
@@ -161,9 +159,6 @@ export default function SkillDetailPage() {
             }
         }
     }, [addTaskOpen, skill, taskForm]);
-
-    const selectedAreaIdForTask = taskForm.watch('areaId');
-    const availableProjects = areas.find(a => a.id === selectedAreaIdForTask)?.projects || [];
     
     const subSkillForm = useForm<z.infer<typeof skillSchema>>({
         resolver: zodResolver(skillSchema),
@@ -195,10 +190,7 @@ export default function SkillDetailPage() {
     const onAddTask = async (data: z.infer<typeof taskSchema>) => {
         setIsCreatingTask(true);
         try {
-            const project = data.projectId ? areas.flatMap(a => a.projects).find(p => p.id === data.projectId) : undefined;
-            const projectName = project ? project.name : '';
-
-            const result = await suggestXpValue({ title: data.title, projectContext: projectName });
+            const result = await suggestXpValue({ title: data.title });
             
             const newTask: Task = {
                 id: `task-${Date.now()}`,
@@ -212,10 +204,10 @@ export default function SkillDetailPage() {
                 difficulty: result.xp > 120 ? 'Very Hard' : result.xp > 80 ? 'Hard' : result.xp > 40 ? 'Medium' : 'Easy',
                 dueDate: data.dueDate?.toISOString(),
                 skillId: data.skillId,
-                projectId: data.projectId,
+                projectId: null,
             };
             
-            addTask(newTask, data.areaId);
+            addTask(newTask);
             taskForm.reset();
             setAddTaskOpen(false);
         } catch (error) {

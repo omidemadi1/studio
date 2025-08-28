@@ -340,7 +340,7 @@ export default function QuestsPage() {
             projectId: projectId,
         };
         
-        addTask(areaId, projectId, newTask);
+        addTask(newTask, areaId);
         
         taskForm.reset();
         setAddTaskState({ open: false, areaId: null, projectId: null });

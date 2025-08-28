@@ -47,6 +47,13 @@ export function getSkills(): Skill[] {
     }, []);
 }
 
+export function getAllTasks(): Task[] {
+    return withErrorHandling(() => {
+        return db.prepare('SELECT * FROM tasks').all().map(t => ({...t, completed: !!(t as any).completed})) as Task[];
+    }, []);
+}
+
+
 export function getAreas(): Area[] {
     return withErrorHandling(() => {
         const areas = db.prepare('SELECT * FROM areas').all() as Area[];

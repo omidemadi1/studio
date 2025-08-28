@@ -5,7 +5,7 @@ import BottomNav from "@/components/bottom-nav";
 import { Toaster } from "@/components/ui/toaster";
 import { QuestProvider } from "@/context/quest-context";
 import { initDb } from "@/lib/db";
-import { getAreas, getUser, getSkills, getWeeklyMissions } from "@/lib/data";
+import { getAreas, getUser, getSkills, getWeeklyMissions, getAllTasks } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Questify",
@@ -25,6 +25,7 @@ export default function RootLayout({
   const user = getUser();
   const skills = getSkills();
   const weeklyMissions = getWeeklyMissions();
+  const tasks = getAllTasks();
 
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
@@ -48,6 +49,7 @@ export default function RootLayout({
             initialUser={user} 
             initialSkills={skills} 
             initialWeeklyMissions={weeklyMissions}
+            initialTasks={tasks}
         >
           <div className="relative flex min-h-screen w-full flex-col">
             <main className="flex-1 pb-24">{children}</main>

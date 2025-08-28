@@ -46,18 +46,21 @@ export const QuestProvider = ({
     initialAreas,
     initialUser,
     initialSkills,
-    initialWeeklyMissions
+    initialWeeklyMissions,
+    initialTasks
 }: { 
     children: ReactNode,
     initialAreas: Area[],
     initialUser: User,
     initialSkills: Skill[],
-    initialWeeklyMissions: WeeklyMission[]
+    initialWeeklyMissions: WeeklyMission[],
+    initialTasks: Task[],
 }) => {
   const [areas, setAreas] = useState<Area[]>(initialAreas);
   const [user, setUser] = useState<User>(initialUser);
   const [skills, setSkills] = useState<Skill[]>(initialSkills);
   const [weeklyMissions, setWeeklyMissions] = useState<WeeklyMission[]>(initialWeeklyMissions);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -76,6 +79,10 @@ export const QuestProvider = ({
   useEffect(() => {
     setWeeklyMissions(initialWeeklyMissions);
   }, [initialWeeklyMissions]);
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   const addXp = useCallback(async (xp: number, message?: string) => {
     const oldUser = user;
@@ -273,14 +280,11 @@ export const QuestProvider = ({
       router.refresh();
   }, [toast, router]);
 
-
-  const allTasks = useMemo(() => areas.flatMap(area => area.projects.flatMap(p => p.tasks)), [areas]);
-  
   const value = { 
     areas, 
     user, 
     skills, 
-    tasks: allTasks, 
+    tasks,
     weeklyMissions,
     maybeGenerateWeeklyMissions,
     updateWeeklyMissionCompletion,
