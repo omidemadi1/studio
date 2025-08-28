@@ -23,7 +23,7 @@ interface QuestContextType {
   addProject: (areaId: string, name: string) => void;
   updateProject: (id: string, name: string) => void;
   deleteProject: (id: string, areaId: string) => void;
-  addTask: (areaId: string, projectId: string, task: Task) => void;
+  addTask: (task: Task, areaId?: string) => void;
   deleteTask: (id: string) => void;
   addSkill: (name: string, icon: string, parentId?: string) => void;
   updateSkill: (id: string, name: string, icon: string) => void;
@@ -188,8 +188,8 @@ export const QuestProvider = ({
     router.refresh();
   };
 
-  const addTask = async (areaId: string, projectId: string, task: Task) => {
-    await QuestActions.addTask(areaId, projectId, task);
+  const addTask = async (task: Task, areaId?: string) => {
+    await QuestActions.addTask(task, areaId);
     toast({ title: "Quest Created!", description: `AI has assigned ${task.xp} XP to your new quest.` });
     router.refresh();
   };

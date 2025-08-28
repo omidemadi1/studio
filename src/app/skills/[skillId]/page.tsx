@@ -66,8 +66,8 @@ const taskSchema = z.object({
   description: z.string().optional(),
   dueDate: z.date().optional(),
   skillId: z.string().optional(),
-  areaId: z.string({ required_error: 'Please select an area.'}),
-  projectId: z.string({ required_error: 'Please select a project.'}),
+  areaId: z.string().optional(),
+  projectId: z.string().optional(),
 });
 
 const difficultyColors: Record<Difficulty, string> = {
@@ -193,14 +193,9 @@ export default function SkillDetailPage() {
     };
     
     const onAddTask = async (data: z.infer<typeof taskSchema>) => {
-        const areaId = data.areaId;
-        const projectId = data.projectId;
-
-        if (!areaId || !projectId) return;
         setIsCreatingTask(true);
         try {
-            const area = areas.find(a => a.id === areaId);
-            const project = area?.projects.find(p => p.id === projectId);
+            const project = data.projectId ? areas.flatMap(a => a.projects).find(p => p.id === data.projectId) : undefined;
             const projectName = project ? project.name : '';
 
             const result = await suggestXpValue({ title: data.title, projectContext: projectName });
@@ -217,10 +212,10 @@ export default function SkillDetailPage() {
                 difficulty: result.xp > 120 ? 'Very Hard' : result.xp > 80 ? 'Hard' : result.xp > 40 ? 'Medium' : 'Easy',
                 dueDate: data.dueDate?.toISOString(),
                 skillId: data.skillId,
-                projectId: projectId,
+                projectId: data.projectId,
             };
             
-            addTask(areaId, projectId, newTask);
+            addTask(newTask, data.areaId);
             taskForm.reset();
             setAddTaskOpen(false);
         } catch (error) {
@@ -265,7 +260,7 @@ export default function SkillDetailPage() {
     const { taskId } = taskDetailState;
     const currentTask = relatedTasks.find(t => t.id === taskId);
     const { area, project } = useMemo(() => {
-        if (!currentTask) return { area: null, project: null };
+        if (!currentTask?.projectId) return { area: null, project: null };
         for (const a of areas) {
             const p = a.projects.find(p => p.id === currentTask.projectId);
             if (p) return { area: a, project: p };
@@ -649,53 +644,6 @@ export default function SkillDetailPage() {
                                 </FormItem>
                                 )}
                             />
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                control={taskForm.control}
-                                name="areaId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Area</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select an area" />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        {areas.map(area => (
-                                            <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
-                                        ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                                <FormField
-                                control={taskForm.control}
-                                name="projectId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Project</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedAreaIdForTask}>
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a project" />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        {availableProjects.map(project => (
-                                            <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
-                                        ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                            </div>
 
                             <FormField
                                 control={taskForm.control}
@@ -754,6 +702,7 @@ export default function SkillDetailPage() {
                             </div>
 
                             <DialogFooter>
+                                <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
                                 <Button type="submit" disabled={isCreatingTask}>
                                     {isCreatingTask ? <Loader2 className="animate-spin" /> : "Create Quest" }
                                 </Button>
@@ -801,11 +750,16 @@ export default function SkillDetailPage() {
                     </DialogHeader>
                     <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
 
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
-                        <div className="font-semibold">{area?.name}</div>
+                        {area && project && (
+                            <>
+                                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
+                                <div className="font-semibold">{area?.name}</div>
 
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
-                        <div className="font-semibold">{project?.name}</div>
+                                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
+                                <div className="font-semibold">{project?.name}</div>
+                            </>
+                        )}
+
 
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
                         <div className="font-semibold">{currentTaskSkill?.name}</div>

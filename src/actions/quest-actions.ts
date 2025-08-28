@@ -40,11 +40,16 @@ export async function updateProject(id: string, name: string) {
     // For now, revalidating the home page should be sufficient.
 }
 
-export async function addTask(areaId: string, projectId: string, task: Task) {
+export async function addTask(task: Task, areaId?: string) {
     db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.notes, task.links, task.difficulty, task.dueDate, task.reminder, task.skillId, task.focusDuration || 0, projectId);
-    revalidatePath(`/areas/${areaId}`);
-    if (task.skillId) revalidatePath(`/skills/${task.skillId}`);
+      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.notes, task.links, task.difficulty, task.dueDate, task.reminder, task.skillId, task.focusDuration || 0, task.projectId || null);
+    
+    if (areaId) {
+      revalidatePath(`/areas/${areaId}`);
+    }
+    if (task.skillId) {
+      revalidatePath(`/skills/${task.skillId}`);
+    }
     revalidatePath('/');
 }
 

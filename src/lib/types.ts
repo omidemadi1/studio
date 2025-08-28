@@ -1,3 +1,4 @@
+
 export interface User {
   id: number;
   name: string;
@@ -35,7 +36,7 @@ export interface Task {
   reminder?: number; // minutes before due date
   skillId?: string;
   focusDuration?: number;
-  projectId: string;
+  projectId?: string;
 }
 
 export interface Project {
