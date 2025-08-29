@@ -72,6 +72,24 @@ export function getAreas(): Area[] {
     }, []);
 }
 
+export function getArchivedAreas(): Area[] {
+    return withErrorHandling(() => {
+        const areas = db.prepare('SELECT * FROM areas WHERE archived = 1').all() as Area[];
+        
+        const projectsStmt = db.prepare('SELECT * FROM projects WHERE areaId = ?');
+        const tasksStmt = db.prepare('SELECT * FROM tasks WHERE projectId = ?');
+
+        return areas.map(area => {
+            const projects = projectsStmt.all(area.id) as Project[];
+            const projectsWithTasks = projects.map(project => {
+                const tasks = tasksStmt.all(project.id).map(t => ({...t, completed: !!(t as any).completed})) as Task[];
+                return { ...project, tasks };
+            });
+            return { ...area, projects: projectsWithTasks };
+        });
+    }, []);
+}
+
 export function getMarketItems(): MarketItem[] {
     return withErrorHandling(() => {
         return db.prepare('SELECT * FROM market_items').all() as MarketItem[];
@@ -87,3 +105,5 @@ export function getWeeklyMissions(): WeeklyMission[] {
         return db.prepare('SELECT * FROM weekly_missions WHERE weekIdentifier = ?').all(weekIdentifier) as WeeklyMission[];
     }, []);
 }
+
+    

@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check, Settings, LogOut, Trash2, Bell, ChevronRight, ChevronDown } from 'lucide-react';
+import { Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check, Settings, LogOut, Trash2, Bell, ChevronRight, ChevronDown, Archive } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
 import {
@@ -187,6 +187,12 @@ export default function ProfilePage() {
                 <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem asChild className="focus:bg-transparent">
                        <ThemeToggle />
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/profile/archived">
+                            <Archive className="mr-2 h-4 w-4" />
+                            <span>Archived Areas</span>
+                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                         <LogOut className="mr-2 h-4 w-4" />
@@ -640,4 +646,5 @@ export default function ProfilePage() {
 
     
 
+    
     
