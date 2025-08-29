@@ -39,6 +39,7 @@ import {
   Check,
   Copy,
   Bell,
+  Archive,
 } from 'lucide-react';
 import type { Task, Difficulty, Project, Skill, Area } from '@/lib/types';
 import { z } from 'zod';
@@ -443,32 +444,58 @@ export default function AreaDetailPage() {
               </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => {
-                areaForm.reset({ name: area.name, icon: area.icon });
-                setEditAreaOpen(true);
-            }}>
-                <Pencil className="h-4 w-4 mr-2" /> Edit
-            </Button>
-            <AlertDialog open={deleteAreaOpen} onOpenChange={setDeleteAreaOpen}>
-                <AlertDialogTrigger asChild>
-                   <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4 mr-2" /> Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the
-                      <span className="font-bold"> {area.name}</span> area.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDeleteArea}>Continue</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={() => {
+                            areaForm.reset({ name: area.name, icon: area.icon });
+                            setEditAreaOpen(true);
+                        }}>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Edit Area</p>
+                    </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={() => toast({ title: "Coming soon!", description: "Archiving will be available in a future update." })}>
+                            <Archive className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Archive Area</p>
+                    </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <AlertDialog open={deleteAreaOpen} onOpenChange={setDeleteAreaOpen}>
+                            <AlertDialogTrigger asChild>
+                               <Button variant="destructive" size="icon">
+                                  <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the
+                                  <span className="font-bold"> {area.name}</span> area.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={onDeleteArea}>Continue</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Delete Area</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
           </div>
         </header>
 
