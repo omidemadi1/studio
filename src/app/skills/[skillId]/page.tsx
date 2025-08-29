@@ -441,7 +441,7 @@ export default function SkillDetailPage() {
                                             {task.title}
                                             </span>
                                             <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
-                                            <span className="text-xs font-bold text-primary">+{task.xp} XP</span>
+                                            <span className="text-xs font-bold text-primary">+{task.xp + (task.bonusXp || 0)} XP</span>
                                         </Card>
                                     ))}
                                     </div>
@@ -775,7 +775,7 @@ export default function SkillDetailPage() {
                         </>
 
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                        <div className="font-semibold">{currentTask.xp}</div>
+                        <div className="font-semibold">{currentTask.xp + (currentTask.bonusXp || 0)}</div>
 
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
                         <div className="font-semibold">{currentTask.tokens}</div>

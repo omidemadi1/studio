@@ -219,7 +219,7 @@ export default function QuestsPage() {
       setLoadingSuggestions(false);
     }
     fetchMissions();
-  }, []);
+  }, [maybeGenerateWeeklyMissions]);
 
 
   const areaForm = useForm<z.infer<typeof areaSchema>>({
@@ -570,7 +570,7 @@ export default function QuestsPage() {
                                                   <Tooltip>
                                                     <TooltipTrigger asChild>
                                                       <span className="text-xs font-bold text-primary whitespace-nowrap cursor-default">
-                                                          +{task.xp} XP
+                                                          +{task.xp + (task.bonusXp || 0)} XP
                                                       </span>
                                                     </TooltipTrigger>
                                                     <TooltipContent>Experience Points</TooltipContent>
@@ -1117,7 +1117,7 @@ export default function QuestsPage() {
                 </>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                <div className="font-semibold">{currentTask.xp}</div>
+                <div className="font-semibold">{currentTask.xp + (currentTask.bonusXp || 0)}</div>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
                 <div className="font-semibold">{currentTask.tokens}</div>

@@ -78,6 +78,7 @@ const initializeDb = () => {
                 reminder INTEGER,
                 skillId TEXT,
                 focusDuration INTEGER DEFAULT 0,
+                bonusXp INTEGER DEFAULT 0,
                 projectId TEXT,
                 FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE,
                 FOREIGN KEY (skillId) REFERENCES skills (id) ON DELETE SET NULL
@@ -117,8 +118,8 @@ const initializeDb = () => {
     if (projectIdColumn && projectIdColumn.notnull === 1) {
         console.log("Migrating tasks table: making 'projectId' nullable.");
         dbInstance.transaction(() => {
-            dbInstance.exec('CREATE TABLE tasks_new (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, completed BOOLEAN NOT NULL DEFAULT 0, xp INTEGER NOT NULL, tokens INTEGER NOT NULL DEFAULT 0, description TEXT, notes TEXT, links TEXT, difficulty TEXT, dueDate TEXT, reminder INTEGER, skillId TEXT, focusDuration INTEGER DEFAULT 0, projectId TEXT, FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE, FOREIGN KEY (skillId) REFERENCES skills (id) ON DELETE SET NULL)');
-            dbInstance.exec('INSERT INTO tasks_new(id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId) SELECT id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId FROM tasks');
+            dbInstance.exec('CREATE TABLE tasks_new (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, completed BOOLEAN NOT NULL DEFAULT 0, xp INTEGER NOT NULL, tokens INTEGER NOT NULL DEFAULT 0, description TEXT, notes TEXT, links TEXT, difficulty TEXT, dueDate TEXT, reminder INTEGER, skillId TEXT, focusDuration INTEGER DEFAULT 0, bonusXp INTEGER DEFAULT 0, projectId TEXT, FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE, FOREIGN KEY (skillId) REFERENCES skills (id) ON DELETE SET NULL)');
+            dbInstance.exec('INSERT INTO tasks_new(id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp) SELECT id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp FROM tasks');
             dbInstance.exec('DROP TABLE tasks');
             dbInstance.exec('ALTER TABLE tasks_new RENAME TO tasks');
         })();
@@ -155,6 +156,14 @@ const initializeDb = () => {
     } catch (e) {
         console.log("Migrating skills table: adding 'parentId' column.");
         dbInstance.exec('ALTER TABLE skills ADD COLUMN parentId TEXT');
+    }
+    
+    // Add 'bonusXp' column to 'tasks' table if it doesn't exist (for migration)
+    try {
+        dbInstance.prepare('SELECT bonusXp FROM tasks LIMIT 1').get();
+    } catch (e) {
+        console.log("Migrating tasks table: adding 'bonusXp' column.");
+        dbInstance.exec('ALTER TABLE tasks ADD COLUMN bonusXp INTEGER DEFAULT 0');
     }
 
 

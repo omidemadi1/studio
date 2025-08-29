@@ -41,8 +41,8 @@ export async function updateProject(id: string, name: string) {
 }
 
 export async function addTask(task: Task, areaId?: string) {
-    db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.notes, task.links, task.difficulty, task.dueDate, task.reminder, task.skillId, task.focusDuration || 0, task.projectId || null);
+    db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.notes, task.links, task.difficulty, task.dueDate, task.reminder, task.skillId, task.focusDuration || 0, task.projectId || null, task.bonusXp || 0);
     
     if (areaId) {
       revalidatePath(`/areas/${areaId}`);
@@ -100,20 +100,29 @@ const updateSkillAndParents = (skillId: string, xpChange: number, completed: boo
 };
 
 
-export async function updateTaskCompletion(taskId: string, completed: boolean, focusDuration?: number) {
+export async function updateTaskCompletion(taskId: string, completed: boolean, focusDuration?: number, bonusXp?: number) {
     const transaction = db.transaction(() => {
         let skillIdToRevalidate: string | undefined;
         let skillLeveledUp = false;
 
+        const setClauses = ['completed = ?'];
+        const params: (number | string)[] = [completed ? 1 : 0];
+
         if (focusDuration) {
-            db.prepare('UPDATE tasks SET completed = ?, focusDuration = (focusDuration + ?) WHERE id = ?').run(completed ? 1 : 0, focusDuration, taskId);
-        } else {
-            db.prepare('UPDATE tasks SET completed = ? WHERE id = ?').run(completed ? 1 : 0, taskId);
+            setClauses.push('focusDuration = (focusDuration + ?)');
+            params.push(focusDuration);
         }
+        if (bonusXp) {
+            setClauses.push('bonusXp = (bonusXp + ?)');
+            params.push(bonusXp);
+        }
+        params.push(taskId);
+
+        db.prepare(`UPDATE tasks SET ${setClauses.join(', ')} WHERE id = ?`).run(...params);
 
         const task = db.prepare('SELECT xp, tokens, skillId FROM tasks WHERE id = ?').get(taskId) as Task;
         if (task) {
-            const xpChange = completed ? task.xp : -task.xp;
+            const xpChange = completed ? (task.xp + (bonusXp || 0)) : -(task.xp + (bonusXp || 0));
             const tokenChange = completed ? task.tokens : -task.tokens;
             
             // Update user XP and level
@@ -142,7 +151,7 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
                 }
             }
         }
-        return { skillId: skillIdToRevalidate, skillLeveledUp };
+        return { skillId: skillIdToRevalidate, skillLeveledUp, bonusXp: bonusXp || 0 };
     });
     
     const result = transaction();

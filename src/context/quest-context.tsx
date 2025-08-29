@@ -15,7 +15,7 @@ interface QuestContextType {
   weeklyMissions: WeeklyMission[];
   maybeGenerateWeeklyMissions: () => Promise<void>;
   updateWeeklyMissionCompletion: (missionId: string, completed: boolean) => void;
-  updateTaskCompletion: (taskId: string, completed: boolean, focusDuration?: number) => void;
+  updateTaskCompletion: (taskId: string, completed: boolean, focusDuration?: number, bonusXp?: number) => void;
   updateTaskDetails: (taskId: string, details: Partial<Task>) => void;
   addArea: (name: string, icon: string) => void;
   updateArea: (id: string, name: string, icon: string) => void;
@@ -30,7 +30,7 @@ interface QuestContextType {
   deleteSkill: (id: string) => void;
   updateUser: (newUserData: Partial<User>) => void;
   addXp: (xp: number, message?: string) => void;
-  getTask: (taskId: string) => { task: Task; areaId: string; projectId: string } | null;
+  getTask: (taskId: string) => { task: Task; areaId: string | null; projectId: string | null } | null;
   getAreaById: (areaId: string) => Area | undefined;
   getTasksByAreaId: (areaId: string) => Task[];
   resetDatabase: () => void;
@@ -102,14 +102,21 @@ export const QuestProvider = ({
 
 
   const getTask = useCallback((taskId: string) => {
-    for (const area of areas) {
-      for (const project of area.projects) {
-        const task = project.tasks.find(t => t.id === taskId);
-        if (task) return { task, areaId: area.id, projectId: project.id };
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return null;
+
+    if (task.projectId) {
+      for (const area of areas) {
+        const project = area.projects.find(p => p.id === task.projectId);
+        if (project) {
+          return { task, areaId: area.id, projectId: project.id };
+        }
       }
     }
-    return null;
-  }, [areas]);
+    
+    // Task without a project
+    return { task, areaId: null, projectId: null };
+  }, [areas, tasks]);
   
   const getAreaById = useCallback((areaId: string) => {
     return areas.find(a => a.id === areaId);
@@ -121,15 +128,17 @@ export const QuestProvider = ({
     return area.projects.flatMap(p => p.tasks);
   }, [areas]);
 
-  const updateTaskCompletion = useCallback(async (taskId: string, completed: boolean, focusDuration?: number) => {
+  const updateTaskCompletion = useCallback(async (taskId: string, completed: boolean, focusDuration?: number, bonusXp?: number) => {
     const taskData = getTask(taskId);
     if (!taskData) return;
 
-    const result = await QuestActions.updateTaskCompletion(taskId, completed, focusDuration);
+    const result = await QuestActions.updateTaskCompletion(taskId, completed, focusDuration, bonusXp);
     
+    const totalXpEarned = taskData.task.xp + (bonusXp || 0);
+
     toast({
         title: completed ? 'Quest Complete!' : 'Quest Updated',
-        description: completed ? `You earned ${taskData.task.xp} XP for "${taskData.task.title}"!` : 'Quest marked as incomplete.',
+        description: completed ? `You earned ${totalXpEarned} XP for "${taskData.task.title}"!` : 'Quest marked as incomplete.',
     });
     
     // We need to flatten skills to find the one that leveled up

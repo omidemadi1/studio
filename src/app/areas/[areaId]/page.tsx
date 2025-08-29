@@ -355,7 +355,7 @@ export default function AreaDetailPage() {
             projectId: projectId,
         };
         
-        addTask(area.id, projectId, newTask);
+        addTask(newTask, area.id);
         
         taskForm.reset();
         setAddTaskState({ open: false, projectId: null });
@@ -700,7 +700,7 @@ export default function AreaDetailPage() {
                       <Card
                           key={task.id}
                           className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => handleTaskClick(task.projectId, task.id)}
+                          onClick={() => handleTaskClick(task.projectId || '', task.id)}
                       >
                           <div onClick={(e) => e.stopPropagation()}>
                           <Checkbox
@@ -1093,7 +1093,7 @@ export default function AreaDetailPage() {
                   </>
 
                   <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                  <div className="font-semibold">{currentTask.xp}</div>
+                  <div className="font-semibold">{currentTask.xp + (currentTask.bonusXp || 0)}</div>
                   
                   <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
                   <div className="font-semibold">{currentTask.tokens}</div>
@@ -1243,4 +1243,3 @@ export default function AreaDetailPage() {
   );
 }
 
-    

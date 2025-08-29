@@ -36,6 +36,7 @@ export interface Task {
   reminder?: number; // minutes before due date
   skillId?: string;
   focusDuration?: number;
+  bonusXp?: number;
   projectId?: string;
 }
 

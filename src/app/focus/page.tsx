@@ -17,7 +17,6 @@ function FocusPageContents() {
 
   const {
     tasks: allTasks,
-    addXp,
     getTask,
     updateTaskCompletion,
   } = useQuestData();
@@ -41,7 +40,7 @@ function FocusPageContents() {
         setIsActive(false);
         setTimeElapsed(0);
     }
-  }, [paramTaskId]);
+  }, [paramTaskId, isActive]);
 
   // Stopwatch logic
   useEffect(() => {
@@ -72,24 +71,21 @@ function FocusPageContents() {
     setIsActive(!isActive);
   }, [isActive, selectedTaskId, toast]);
 
-  const handleStopwatchFinish = useCallback(() => {
+  const handleStopwatchFinish = useCallback(async () => {
     if (!selectedTaskId || !isActive) return;
 
     setIsActive(false);
     const result = getTask(selectedTaskId);
     if (!result) return;
 
-    // Mark the task as completed, which also awards base XP and adds focus time
-    updateTaskCompletion(selectedTaskId, true, timeElapsed);
-
     // Calculate bonus XP: 5% of task XP for every 5 minutes of focus
     const minutesFocused = Math.floor(timeElapsed / 60);
     const bonusXp = Math.floor(minutesFocused / 5) * Math.ceil(result.task.xp * 0.05);
 
+    // Mark the task as completed, which also awards base XP and adds focus time
+    await updateTaskCompletion(selectedTaskId, true, timeElapsed, bonusXp);
+
     if (bonusXp > 0) {
-      addXp(
-        bonusXp
-      );
        toast({
         title: 'Session Complete!',
         description: `You focused for ${minutesFocused} minutes and earned a bonus of ${bonusXp} XP!`,
@@ -108,7 +104,6 @@ function FocusPageContents() {
     isActive,
     timeElapsed,
     getTask,
-    addXp,
     toast,
     updateTaskCompletion,
   ]);
