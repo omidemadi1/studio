@@ -52,7 +52,8 @@ const initializeDb = () => {
             CREATE TABLE IF NOT EXISTS areas (
                 id TEXT PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
-                icon TEXT NOT NULL
+                icon TEXT NOT NULL,
+                archived BOOLEAN NOT NULL DEFAULT 0
             );
         `,
         projects: `
@@ -164,6 +165,14 @@ const initializeDb = () => {
     } catch (e) {
         console.log("Migrating tasks table: adding 'bonusXp' column.");
         dbInstance.exec('ALTER TABLE tasks ADD COLUMN bonusXp INTEGER DEFAULT 0');
+    }
+
+    // Add 'archived' column to 'areas' table if it doesn't exist (for migration)
+    try {
+        dbInstance.prepare('SELECT archived FROM areas LIMIT 1').get();
+    } catch (e) {
+        console.log("Migrating areas table: adding 'archived' column.");
+        dbInstance.exec('ALTER TABLE areas ADD COLUMN archived BOOLEAN NOT NULL DEFAULT 0');
     }
 
 

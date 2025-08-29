@@ -19,6 +19,7 @@ interface QuestContextType {
   updateTaskDetails: (taskId: string, details: Partial<Task>) => void;
   addArea: (name: string, icon: string) => void;
   updateArea: (id: string, name: string, icon: string) => void;
+  archiveArea: (id: string, archived: boolean) => void;
   deleteArea: (id: string) => void;
   addProject: (areaId: string, name: string) => void;
   updateProject: (id: string, name: string) => void;
@@ -179,6 +180,12 @@ export const QuestProvider = ({
     toast({ title: 'Area Updated' });
     router.refresh();
   };
+  
+  const archiveArea = async (id: string, archived: boolean) => {
+    await QuestActions.archiveArea(id, archived);
+    toast({ title: archived ? 'Area Archived' : 'Area Unarchived' });
+    router.refresh();
+  };
 
   const deleteArea = async (id: string) => {
     await QuestActions.deleteArea(id);
@@ -301,6 +308,7 @@ export const QuestProvider = ({
     updateTaskDetails, 
     addArea, 
     updateArea, 
+    archiveArea,
     deleteArea, 
     addProject, 
     updateProject, 

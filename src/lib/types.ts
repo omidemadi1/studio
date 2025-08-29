@@ -52,6 +52,7 @@ export interface Area {
   name: string;
   icon: string;
   projects: Project[];
+  archived: boolean;
 }
 
 export interface MarketItem {

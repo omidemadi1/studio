@@ -149,7 +149,7 @@ export default function AreaDetailPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { areaId } = useParams();
-  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject, addSkill, duplicateProject, deleteTask, updateArea, deleteArea } = useQuestData();
+  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject, addSkill, duplicateProject, deleteTask, updateArea, deleteArea, archiveArea } = useQuestData();
 
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [editProjectState, setEditProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
@@ -165,6 +165,8 @@ export default function AreaDetailPage() {
   const [addSkillOpen, setAddSkillOpen] = useState(false);
   const [editAreaOpen, setEditAreaOpen] = useState(false);
   const [deleteAreaOpen, setDeleteAreaOpen] = useState(false);
+  const [archiveAreaOpen, setArchiveAreaOpen] = useState(false);
+
 
   const selectableSkills = getFlattenedSkills(skills);
   const area = useMemo(() => getAreaById(areaId as string), [areaId, getAreaById]);
@@ -306,6 +308,14 @@ export default function AreaDetailPage() {
     updateArea(area.id, data.name, data.icon);
     setEditAreaOpen(false);
     toast({ title: "Area Updated!", description: "Your area has been successfully updated." });
+  };
+
+  const onArchiveArea = () => {
+    if (!area) return;
+    archiveArea(area.id, true);
+    setArchiveAreaOpen(false);
+    toast({ title: "Area Archived", description: `The area "${area.name}" has been archived.` });
+    router.push('/');
   };
   
   const onDeleteArea = () => {
@@ -460,9 +470,25 @@ export default function AreaDetailPage() {
                 </Tooltip>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="outline" size="icon" onClick={() => toast({ title: "Coming soon!", description: "Archiving will be available in a future update." })}>
-                            <Archive className="h-4 w-4" />
-                        </Button>
+                       <AlertDialog open={archiveAreaOpen} onOpenChange={setArchiveAreaOpen}>
+                            <AlertDialogTrigger asChild>
+                               <Button variant="outline" size="icon">
+                                  <Archive className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure you want to archive this area?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Archiving this area will hide it from your main quest list. You can view archived areas later.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={onArchiveArea}>Archive</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                     </TooltipTrigger>
                     <TooltipContent>
                         <p>Archive Area</p>
@@ -1028,8 +1054,6 @@ export default function AreaDetailPage() {
                            <DateTimePicker 
                                 date={field.value} 
                                 setDate={field.onChange}
-                                reminder={taskForm.watch('reminder')}
-                                setReminder={(rem) => taskForm.setValue('reminder', rem)}
                             />
                         </FormControl>
                         <FormMessage />
@@ -1114,8 +1138,6 @@ export default function AreaDetailPage() {
                         if (!taskId) return;
                         updateTaskDetails(taskId, { dueDate: date?.toISOString() });
                       }}
-                      reminder={editableTaskData.reminder}
-                      setReminder={(rem) => handleTaskDataChange('reminder', rem)}
                     />
                   </>
 
@@ -1269,4 +1291,3 @@ export default function AreaDetailPage() {
     </>
   );
 }
-

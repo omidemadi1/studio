@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Clock, Bell, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,9 @@ import { Separator } from './separator';
 interface DateTimePickerProps {
   date: Date | undefined;
   setDate: (date: Date | undefined) => void;
-  reminder?: number;
-  setReminder?: (reminder: number | undefined) => void;
 }
 
-export function DateTimePicker({ date, setDate, reminder, setReminder }: DateTimePickerProps) {
+export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [includeTime, setIncludeTime] = React.useState(!!date && (date.getHours() !== 0 || date.getMinutes() !== 0));
 
@@ -73,7 +71,6 @@ export function DateTimePicker({ date, setDate, reminder, setReminder }: DateTim
 
   const handleClear = () => {
     setDate(undefined);
-    setReminder?.(undefined);
     setIncludeTime(false);
     setOpen(false);
   }
@@ -95,12 +92,6 @@ export function DateTimePicker({ date, setDate, reminder, setReminder }: DateTim
           {date ? (
             <div className='flex flex-col items-start'>
                 <span className='text-sm leading-tight'>{format(date, includeTime ? 'PPP p' : 'PPP')}</span>
-                {reminder !== undefined && (
-                  <span className='text-xs text-muted-foreground leading-tight'>
-                    <Bell className="inline-block h-3 w-3 mr-1" />
-                    {reminder === 0 ? 'On time' : ` ${reminder}m before`}
-                  </span>
-                )}
             </div>
           )
           : (<span>Pick a date</span>)}
@@ -177,33 +168,6 @@ export function DateTimePicker({ date, setDate, reminder, setReminder }: DateTim
                 </Select>
                 </div>
             </div>
-          )}
-          {setReminder && date && (
-            <>
-              <Separator />
-              <div className="flex items-center justify-center gap-2">
-                <Bell className="h-4 w-4" />
-                <div className="flex items-center gap-1 w-full">
-                    <Select
-                      value={reminder !== undefined ? String(reminder) : 'none'}
-                      onValueChange={(value) => setReminder(value === 'none' ? undefined : Number(value))}
-                    >
-                        <SelectTrigger className="w-full h-8 text-xs">
-                            <SelectValue placeholder="No reminder" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none" className="text-xs">No reminder</SelectItem>
-                            <SelectItem value="0" className="text-xs">On time of event</SelectItem>
-                            <SelectItem value="5" className="text-xs">5 minutes before</SelectItem>
-                            <SelectItem value="15" className="text-xs">15 minutes before</SelectItem>
-                            <SelectItem value="30" className="text-xs">30 minutes before</SelectItem>
-                            <SelectItem value="60" className="text-xs">1 hour before</SelectItem>
-                            <SelectItem value="1440" className="text-xs">1 day before</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-              </div>
-            </>
           )}
           <Separator />
           <Button variant="ghost" onClick={handleClear} className="w-full justify-center">

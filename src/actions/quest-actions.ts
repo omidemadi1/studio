@@ -20,6 +20,12 @@ export async function updateArea(id: string, name: string, icon: string) {
   revalidatePath(`/areas/${id}`);
 }
 
+export async function archiveArea(id: string, archived: boolean) {
+  db.prepare('UPDATE areas SET archived = ? WHERE id = ?').run(archived ? 1 : 0, id);
+  revalidatePath('/');
+  revalidatePath(`/areas/${id}`);
+}
+
 export async function deleteArea(id: string) {
     db.prepare('DELETE FROM areas WHERE id = ?').run(id);
     revalidatePath('/');

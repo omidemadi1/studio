@@ -56,7 +56,7 @@ export function getAllTasks(): Task[] {
 
 export function getAreas(): Area[] {
     return withErrorHandling(() => {
-        const areas = db.prepare('SELECT * FROM areas').all() as Area[];
+        const areas = db.prepare('SELECT * FROM areas WHERE archived = 0').all() as Area[];
         
         const projectsStmt = db.prepare('SELECT * FROM projects WHERE areaId = ?');
         const tasksStmt = db.prepare('SELECT * FROM tasks WHERE projectId = ?');
