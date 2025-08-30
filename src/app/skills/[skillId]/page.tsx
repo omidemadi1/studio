@@ -17,7 +17,7 @@ import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
     Command, Tag, Flame, Calendar as CalendarIcon, AlignLeft,
     StickyNote, Link as LinkIcon, Clock, ArrowUp, Crosshair,
-    PlusCircle, GitBranch, Sparkles,
+    PlusCircle, GitBranch, Sparkles, Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -36,6 +36,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
     Form, FormControl, FormField, FormItem,
     FormLabel, FormMessage,
@@ -116,12 +122,15 @@ export default function SkillDetailPage() {
         updateTaskDetails, 
         addSkill,
         addTask,
+        deleteTask,
+        duplicateTask,
     } = useQuestData();
 
     const [editSkillOpen, setEditSkillOpen] = useState(false);
     const [addSkillOpen, setAddSkillOpen] = useState(false);
     const [addTaskOpen, setAddTaskOpen] = useState(false);
     const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; taskId: string | null; }>({ open: false, taskId: null });
+    const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
     const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
     const [isCreatingTask, setIsCreatingTask] = useState(false);
     
@@ -242,6 +251,13 @@ export default function SkillDetailPage() {
         }
         setTaskDetailState({ open: true, taskId });
     };
+
+    const handleDeleteTask = () => {
+        if (!deleteTaskState.task) return;
+        deleteTask(deleteTaskState.task.id);
+        setDeleteTaskState({ open: false, task: null });
+    };
+
 
     const handleTaskDataChange = (field: keyof Task, value: string | number | undefined) => {
         if (!taskDetailState.taskId) return;
@@ -424,25 +440,39 @@ export default function SkillDetailPage() {
                                 {relatedTasks.length > 0 ? (
                                     <div className="space-y-3">
                                     {relatedTasks.map((task: Task) => (
-                                        <Card
-                                            key={task.id}
-                                            className="flex items-center gap-3 p-3 bg-background hover:bg-muted/50 transition-colors cursor-pointer"
-                                            onClick={() => handleTaskClick(task.id)}
-                                        >
-                                            <div onClick={(e) => e.stopPropagation()}>
-                                            <Checkbox
-                                                id={`task-${task.id}`}
-                                                checked={task.completed}
-                                                onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
-                                                className="w-5 h-5"
-                                            />
-                                            </div>
-                                            <span className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}>
-                                            {task.title}
-                                            </span>
-                                            <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
-                                            <span className="text-xs font-bold text-primary">+{task.xp + (task.bonusXp || 0)} XP</span>
-                                        </Card>
+                                        <ContextMenu key={task.id}>
+                                            <ContextMenuTrigger>
+                                                <Card
+                                                    className="flex items-center gap-3 p-3 bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                                                    onClick={() => handleTaskClick(task.id)}
+                                                >
+                                                    <div onClick={(e) => e.stopPropagation()}>
+                                                        <Checkbox
+                                                            id={`task-${task.id}`}
+                                                            checked={task.completed}
+                                                            onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
+                                                            className="w-5 h-5"
+                                                        />
+                                                    </div>
+                                                    <span className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}>
+                                                        {task.title}
+                                                    </span>
+                                                    <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
+                                                    <span className="text-xs font-bold text-primary">+{task.xp + (task.bonusXp || 0)} XP</span>
+                                                </Card>
+                                            </ContextMenuTrigger>
+                                            <ContextMenuContent>
+                                                <ContextMenuItem onSelect={() => handleTaskClick(task.id)}>
+                                                    <Pencil className="h-4 w-4 mr-2" /> Edit
+                                                </ContextMenuItem>
+                                                <ContextMenuItem onSelect={() => duplicateTask(task.id)}>
+                                                    <Copy className="h-4 w-4 mr-2" /> Duplicate
+                                                </ContextMenuItem>
+                                                <ContextMenuItem onSelect={() => setDeleteTaskState({ open: true, task })}>
+                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                                </ContextMenuItem>
+                                            </ContextMenuContent>
+                                        </ContextMenu>
                                     ))}
                                     </div>
                                 ) : (
@@ -828,6 +858,22 @@ export default function SkillDetailPage() {
                 )}
                 </DialogContent>
             </Dialog>
+
+             <AlertDialog open={deleteTaskState.open} onOpenChange={(open) => setDeleteTaskState({ open, task: open ? deleteTaskState.task : null })}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the 
+                        <span className="font-bold"> {deleteTaskState.task?.title}</span> task.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setDeleteTaskState({open: false, task: null})}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteTask}>Continue</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
