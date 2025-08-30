@@ -439,41 +439,49 @@ export default function SkillDetailPage() {
                             <CardContent className="flex-1">
                                 {relatedTasks.length > 0 ? (
                                     <div className="space-y-3">
-                                    {relatedTasks.map((task: Task) => (
-                                        <ContextMenu key={task.id}>
-                                            <ContextMenuTrigger>
-                                                <Card
-                                                    className="flex items-center gap-3 p-3 bg-background hover:bg-muted/50 transition-colors cursor-pointer"
-                                                    onClick={() => handleTaskClick(task.id)}
-                                                >
-                                                    <div onClick={(e) => e.stopPropagation()}>
-                                                        <Checkbox
-                                                            id={`task-${task.id}`}
-                                                            checked={task.completed}
-                                                            onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
-                                                            className="w-5 h-5"
-                                                        />
-                                                    </div>
-                                                    <span className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}>
-                                                        {task.title}
-                                                    </span>
-                                                    <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
-                                                    <span className="text-xs font-bold text-primary">+{task.xp + (task.bonusXp || 0)} XP</span>
-                                                </Card>
-                                            </ContextMenuTrigger>
-                                            <ContextMenuContent>
-                                                <ContextMenuItem onSelect={() => handleTaskClick(task.id)}>
-                                                    <Pencil className="h-4 w-4 mr-2" /> Edit
-                                                </ContextMenuItem>
-                                                <ContextMenuItem onSelect={() => duplicateTask(task.id)}>
-                                                    <Copy className="h-4 w-4 mr-2" /> Duplicate
-                                                </ContextMenuItem>
-                                                <ContextMenuItem onSelect={() => setDeleteTaskState({ open: true, task })}>
-                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                                </ContextMenuItem>
-                                            </ContextMenuContent>
-                                        </ContextMenu>
-                                    ))}
+                                    {relatedTasks.map((task: Task) => {
+                                        const taskSkill = task.skillId ? findSkillRecursive(skills, task.skillId) : null;
+                                        return (
+                                            <ContextMenu key={task.id}>
+                                                <ContextMenuTrigger>
+                                                    <Card
+                                                        className="flex items-center gap-3 p-3 bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                                                        onClick={() => handleTaskClick(task.id)}
+                                                    >
+                                                        <div onClick={(e) => e.stopPropagation()}>
+                                                            <Checkbox
+                                                                id={`task-${task.id}`}
+                                                                checked={task.completed}
+                                                                onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
+                                                                className="w-5 h-5"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1 space-y-1">
+                                                          <p className={cn("text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}>
+                                                              {task.title}
+                                                          </p>
+                                                          {taskSkill && taskSkill.id !== skill.id && (
+                                                              <Badge variant="secondary" className="text-xs">{taskSkill.name}</Badge>
+                                                          )}
+                                                        </div>
+                                                        <Badge variant="outline" className={cn('ml-auto', task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
+                                                        <span className="text-xs font-bold text-primary">+{task.xp + (task.bonusXp || 0)} XP</span>
+                                                    </Card>
+                                                </ContextMenuTrigger>
+                                                <ContextMenuContent>
+                                                    <ContextMenuItem onSelect={() => handleTaskClick(task.id)}>
+                                                        <Pencil className="h-4 w-4 mr-2" /> Edit
+                                                    </ContextMenuItem>
+                                                    <ContextMenuItem onSelect={() => duplicateTask(task.id)}>
+                                                        <Copy className="h-4 w-4 mr-2" /> Duplicate
+                                                    </ContextMenuItem>
+                                                    <ContextMenuItem onSelect={() => setDeleteTaskState({ open: true, task })}>
+                                                        <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                                    </ContextMenuItem>
+                                                </ContextMenuContent>
+                                            </ContextMenu>
+                                        )
+                                    })}
                                     </div>
                                 ) : (
                                     <div className="text-center p-10 border-2 border-dashed rounded-lg h-full flex flex-col justify-center items-center">
@@ -877,3 +885,4 @@ export default function SkillDetailPage() {
         </>
     );
 }
+

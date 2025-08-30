@@ -33,6 +33,53 @@ This project follows a typical Next.js application structure, with several key d
 -   **`tsconfig.json`**: TypeScript configuration.
 -   **`apphosting.yaml`**: Configuration for application hosting (likely Google Cloud App Hosting).
 
+## Current Application Architecture
+
+The application currently utilizes a **Full-stack Next.js Architecture**, which can be characterized as a **Modular Monolith**. This means:
+
+*   **Frontend & Backend Integration**: Next.js provides a unified framework for both the user interface (React) and server-side logic (API Routes, Server Actions), all within a single codebase.
+*   **Technologies**:
+    *   **Frontend**: React, TypeScript, Tailwind CSS for a modern, responsive user experience.
+    *   **Backend**: Next.js server actions and API routes, likely interacting with a lightweight database.
+    *   **Database**: A local SQLite database (`app.db`) is used for managing application data (users, quests, skills, tasks).
+    *   **Artificial Intelligence (AI)**: Integrated using Google Genkit, with specific AI flows (`src/ai/flows`) for features like smart task suggestions.
+    *   **PWA Capabilities**: Files in the `public` directory (e.g., `manifest.json`, `sw.js`) indicate support for Progressive Web App features, enabling an app-like experience.
+
+This architecture is effective for rapid development and deployment, keeping the entire application within a single, coherent deployment unit.
+
+## Future Architectural Roadmap: Microservices
+
+To enhance scalability, allow for independent development teams, and provide technological flexibility for specific, complex domains (like AI and Blockchain), the application is planned to evolve towards a microservices architecture. This transition will be iterative, focusing on decoupling key functionalities into independent services.
+
+**Candidates for Microservices:**
+
+1.  **AI Services Microservice:**
+    *   **Rationale**: AI functionalities, especially those involving complex models or heavy computational loads (e.g., Genkit flows for task suggestions, XP value calculation), often benefit from independent scaling and specialized environments. Decoupling this allows for dedicated resource allocation and potentially different technology stacks better suited for machine learning.
+    *   **Scope**: This microservice would encapsulate all AI-related logic found in `src/ai`. The main Next.js application would interact with this service via a well-defined API (e.g., REST or gRPC).
+    *   **Data Management**: This service would manage its own data (e.g., AI model configurations, training data, or historical prediction logs) in its dedicated data store.
+
+2.  **Blockchain Integration Microservice:**
+    *   **Rationale**: Given the plan to incorporate blockchain technology, creating a dedicated microservice for this domain is crucial. Blockchain interactions (e.g., managing wallets, sending transactions, interacting with smart contracts, querying on-chain data) can be complex, often involve external dependencies, and require high security. Isolating this logic protects the core application and allows for specialized development and monitoring.
+    *   **Scope**: This microservice would handle all interactions with the blockchain (e.g., Polygon). It would expose a simplified API for the Next.js application to perform blockchain-related operations without needing to understand the underlying complexities.
+    *   **Data Management**: This service would maintain its own data, which might include off-chain caches of blockchain data, transaction statuses, or user-specific blockchain credentials (in a secure manner).
+
+**Core Application (Next.js Monolith as a Client/Gateway):**
+
+The existing Next.js application would evolve to act as a **client or API Gateway** to these new microservices. It would continue to manage:
+
+*   **User Interface (UI)**: Presenting the frontend to users.
+*   **Core Business Logic**: Managing quests, skills, user profiles, and other functionalities that remain central to the application's primary purpose.
+*   **Internal Database**: It would retain its own dedicated database (e.g., the current SQLite database, potentially migrating to a more robust relational database like PostgreSQL for production) to manage its core domain data (users, quests, skills, tasks). This adheres to the "Database per Service" principle where each service owns its data.
+
+**Key Considerations for the Transition:**
+
+*   **Inter-service Communication**: Define clear APIs (REST, gRPC, Message Queues) for how the Next.js application will communicate with the new AI and Blockchain microservices.
+*   **Data Consistency**: Implement strategies to maintain data consistency across services, especially if data needs to be replicated or synchronized.
+*   **Observability**: Establish robust logging, monitoring, and tracing across all services to understand system behavior and troubleshoot issues.
+*   **Deployment & Operations**: Microservices introduce increased operational complexity. Tools for orchestration (e.g., Kubernetes), continuous integration/continuous deployment (CI/CD), and infrastructure as code will become vital.
+
+This roadmap outlines a strategic move towards a more distributed and scalable architecture, allowing the application to grow and adapt more effectively to future demands and new feature integrations.
+
 
 ## Publishing on Your Own Server (Self-Hosting)
 This section details the steps to deploy this Next.js application on your own server, rather than using cloud-specific hosting solutions. This involves building the application, running it with Node.js, and using a reverse proxy for robust production serving.
@@ -173,7 +220,7 @@ A reverse proxy (e.g., Nginx or Caddy) is critical for:
 
 By following these comprehensive steps, your Next.js application will be successfully deployed and accessible on your own server, running securely with HTTPS.
 
- 
+
 ## Creating an Android Application from this Web App
 The `docs/blueprint.md` file indicates that the original plan for an Android version of this application was to build a **native mobile app using Flutter**. However, if you wish to leverage the existing Next.js web codebase to create an Android app, here are a few approaches:
 
