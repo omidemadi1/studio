@@ -485,11 +485,11 @@ export default function SkillDetailPage() {
                                                           </p>
                                                         </div>
                                                          <TooltipProvider>
-                                                            <div className="flex items-center gap-4 text-xs text-muted-foreground ml-auto">
+                                                            <div className="flex items-center gap-4 text-xs ml-auto">
                                                                 {taskSkill && taskSkill.id !== skill.id && (
                                                                      <Tooltip>
                                                                         <TooltipTrigger asChild>
-                                                                            <Badge variant="outline" className="cursor-default border-0">{taskSkill.name}</Badge>
+                                                                            <Badge variant="outline" className="cursor-default border-0 text-muted-foreground">{taskSkill.name}</Badge>
                                                                         </TooltipTrigger>
                                                                         <TooltipContent>Sub-skill</TooltipContent>
                                                                     </Tooltip>
@@ -502,14 +502,16 @@ export default function SkillDetailPage() {
                                                                 )}
                                                                 {task.tokens > 0 && (
                                                                     <Tooltip>
-                                                                        <TooltipTrigger asChild><span className="cursor-default">{task.tokens}</span></TooltipTrigger>
+                                                                        <TooltipTrigger asChild><span className="cursor-default text-muted-foreground">{task.tokens}</span></TooltipTrigger>
                                                                         <TooltipContent>Tokens</TooltipContent>
                                                                     </Tooltip>
                                                                 )}
                                                                 {task.dueDate && (
                                                                     <Tooltip>
                                                                         <TooltipTrigger asChild>
-                                                                            <ClientFormattedDate dateString={task.dueDate} formatString="MMM d" />
+                                                                            <span className="text-muted-foreground">
+                                                                                <ClientFormattedDate dateString={task.dueDate} formatString="MMM d" />
+                                                                            </span>
                                                                         </TooltipTrigger>
                                                                         <TooltipContent>Due Date</TooltipContent>
                                                                     </Tooltip>
