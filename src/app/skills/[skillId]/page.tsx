@@ -17,7 +17,7 @@ import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
     Command, Tag, Flame, Calendar as CalendarIcon, AlignLeft,
     StickyNote, Link as LinkIcon, Clock, ArrowUp, Crosshair,
-    PlusCircle, GitBranch, Sparkles, Copy,
+    PlusCircle, GitBranch, Sparkles, Copy, Expand,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -72,6 +72,8 @@ const taskSchema = z.object({
   description: z.string().optional(),
   dueDate: z.date().optional(),
   skillId: z.string().optional(),
+  areaId: z.string().optional(),
+  projectId: z.string().optional(),
 });
 
 const difficultyColors: Record<Difficulty, string> = {
@@ -157,6 +159,9 @@ export default function SkillDetailPage() {
         resolver: zodResolver(taskSchema),
         defaultValues: { title: '', description: '' },
     });
+     const selectedAreaIdForTask = taskForm.watch('areaId');
+    const availableProjects = areas.find(a => a.id === selectedAreaIdForTask)?.projects || [];
+
 
     useEffect(() => {
         if (addTaskOpen && skill) {
@@ -213,10 +218,10 @@ export default function SkillDetailPage() {
                 difficulty: result.xp > 120 ? 'Very Hard' : result.xp > 80 ? 'Hard' : result.xp > 40 ? 'Medium' : 'Easy',
                 dueDate: data.dueDate?.toISOString(),
                 skillId: data.skillId,
-                projectId: null,
+                projectId: data.projectId,
             };
             
-            addTask(newTask);
+            addTask(newTask, data.areaId);
             taskForm.reset();
             setAddTaskOpen(false);
         } catch (error) {
@@ -456,16 +461,18 @@ export default function SkillDetailPage() {
                                                                 className="w-5 h-5"
                                                             />
                                                         </div>
-                                                        <div className="flex-1 space-y-1">
+                                                        <div className="flex-1">
                                                           <p className={cn("text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}>
                                                               {task.title}
                                                           </p>
-                                                          {taskSkill && taskSkill.id !== skill.id && (
-                                                              <Badge variant="secondary" className="text-xs">{taskSkill.name}</Badge>
-                                                          )}
                                                         </div>
-                                                        <Badge variant="outline" className={cn('ml-auto', task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
-                                                        <span className="text-xs font-bold text-primary">+{task.xp + (task.bonusXp || 0)} XP</span>
+                                                        <div className="flex items-center gap-2 ml-auto">
+                                                            {taskSkill && taskSkill.id !== skill.id && (
+                                                                <Badge variant="secondary" className="text-xs">{taskSkill.name}</Badge>
+                                                            )}
+                                                            <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
+                                                            <span className="text-xs font-bold text-primary">+{task.xp + (task.bonusXp || 0)} XP</span>
+                                                        </div>
                                                     </Card>
                                                 </ContextMenuTrigger>
                                                 <ContextMenuContent>
@@ -674,6 +681,52 @@ export default function SkillDetailPage() {
                                 </FormItem>
                                 )}
                             />
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                control={taskForm.control}
+                                name="areaId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Area (Optional)</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select an area" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        {areas.map(area => (
+                                            <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                                <FormField
+                                control={taskForm.control}
+                                name="projectId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Project (Optional)</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedAreaIdForTask}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a project" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        {availableProjects.map(project => (
+                                            <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                            </div>
 
                             <FormField
                                 control={taskForm.control}
@@ -758,6 +811,16 @@ export default function SkillDetailPage() {
                         />
                         <div className='flex items-center gap-2 flex-shrink-0'>
                           <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => router.push(area ? `/areas/${area.id}` : `/skills/${skill.id}`)}>
+                                  <Expand className="h-5 w-5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Expand</p>
+                              </TooltipContent>
+                            </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
@@ -885,4 +948,3 @@ export default function SkillDetailPage() {
         </>
     );
 }
-
