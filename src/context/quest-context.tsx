@@ -115,7 +115,7 @@ export const QuestProvider = ({
       }
     }
     
-    // Task without a project
+    // Task without a project (e.g. skill-only task)
     return { task, areaId: null, projectId: null };
   }, [areas, tasks]);
   
