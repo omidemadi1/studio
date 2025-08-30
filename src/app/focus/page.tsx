@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuestData } from '@/context/quest-context';
 import { Play, Pause, Hourglass, StopCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Task } from '@/lib/types';
 
 function FocusPageContents() {
   const { toast } = useToast();
@@ -17,7 +18,6 @@ function FocusPageContents() {
 
   const {
     tasks: allTasks,
-    getTask,
     updateTaskCompletion,
   } = useQuestData();
   
@@ -72,15 +72,23 @@ function FocusPageContents() {
   }, [isActive, selectedTaskId, toast]);
 
   const handleStopwatchFinish = useCallback(async () => {
-    if (!selectedTaskId || !isActive) return;
-
+    if (!selectedTaskId) return;
+    
     setIsActive(false);
-    const result = getTask(selectedTaskId);
-    if (!result) return;
+    const task = allTasks.find(t => t.id === selectedTaskId);
+    
+    if (!task) {
+        toast({
+            variant: "destructive",
+            title: "Task not found!",
+            description: "The selected task could not be found."
+        });
+        return;
+    }
 
     // Calculate bonus XP: 5% of task XP for every 5 minutes of focus
     const minutesFocused = Math.floor(timeElapsed / 60);
-    const bonusXp = Math.floor(minutesFocused / 5) * Math.ceil(result.task.xp * 0.05);
+    const bonusXp = Math.floor(minutesFocused / 5) * Math.ceil(task.xp * 0.05);
 
     // Mark the task as completed, which also awards base XP and adds focus time
     await updateTaskCompletion(selectedTaskId, true, timeElapsed, bonusXp);
@@ -101,9 +109,8 @@ function FocusPageContents() {
     setSelectedTaskId(null);
   }, [
     selectedTaskId,
-    isActive,
     timeElapsed,
-    getTask,
+    allTasks,
     toast,
     updateTaskCompletion,
   ]);
