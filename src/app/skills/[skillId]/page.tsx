@@ -12,6 +12,7 @@ import { useQuestData } from '@/context/quest-context';
 import { iconMap } from '@/lib/icon-map';
 import { cn } from '@/lib/utils';
 import type { Task, Difficulty, Skill, Area, Project } from '@/lib/types';
+import { format } from 'date-fns';
 
 import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
@@ -109,6 +110,23 @@ const getFlattenedSkills = (skills: Skill[]): Skill[] => {
     skills.forEach(traverse);
     return flattened;
 };
+
+// Component to prevent hydration errors from date formatting
+const ClientFormattedDate = ({ dateString, formatString }: { dateString: string; formatString: string }) => {
+  const [formattedDate, setFormattedDate] = useState('');
+
+  useEffect(() => {
+    setFormattedDate(format(new Date(dateString), formatString));
+  }, [dateString, formatString]);
+
+  // Render a placeholder on the server and initial client render
+  if (!formattedDate) {
+    return <span className="cursor-default">...</span>;
+  }
+
+  return <span className="cursor-default">{formattedDate}</span>;
+};
+
 
 export default function SkillDetailPage() {
     const { skillId } = useParams();
@@ -449,8 +467,8 @@ export default function SkillDetailPage() {
                                         return (
                                             <ContextMenu key={task.id}>
                                                 <ContextMenuTrigger>
-                                                    <Card
-                                                        className="flex items-center gap-3 p-3 bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                                                    <div
+                                                        className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
                                                         onClick={() => handleTaskClick(task.id)}
                                                     >
                                                         <div onClick={(e) => e.stopPropagation()}>
@@ -466,14 +484,47 @@ export default function SkillDetailPage() {
                                                               {task.title}
                                                           </p>
                                                         </div>
-                                                        <div className="flex items-center gap-2 ml-auto">
-                                                            {taskSkill && taskSkill.id !== skill.id && (
-                                                                <Badge variant="secondary" className="text-xs">{taskSkill.name}</Badge>
-                                                            )}
-                                                            <Badge variant="outline" className={cn(task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge>
-                                                            <span className="text-xs font-bold text-primary">+{task.xp + (task.bonusXp || 0)} XP</span>
-                                                        </div>
-                                                    </Card>
+                                                         <TooltipProvider>
+                                                            <div className="flex items-center gap-4 text-xs text-muted-foreground ml-auto">
+                                                                {taskSkill && taskSkill.id !== skill.id && (
+                                                                     <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <Badge variant="secondary" className="cursor-default">{taskSkill.name}</Badge>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent>Sub-skill</TooltipContent>
+                                                                    </Tooltip>
+                                                                )}
+                                                                {task.difficulty && (
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild><Badge variant="outline" className={cn("cursor-default", task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge></TooltipTrigger>
+                                                                        <TooltipContent>Difficulty</TooltipContent>
+                                                                    </Tooltip>
+                                                                )}
+                                                                {task.tokens > 0 && (
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild><span className="cursor-default">{task.tokens}</span></TooltipTrigger>
+                                                                        <TooltipContent>Tokens</TooltipContent>
+                                                                    </Tooltip>
+                                                                )}
+                                                                {task.dueDate && (
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <ClientFormattedDate dateString={task.dueDate} formatString="MMM d" />
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent>Due Date</TooltipContent>
+                                                                    </Tooltip>
+                                                                )}
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                    <span className="text-xs font-bold text-primary whitespace-nowrap cursor-default">
+                                                                        +{task.xp + (task.bonusXp || 0)} XP
+                                                                    </span>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Experience Points</TooltipContent>
+                                                                </Tooltip>
+                                                            </div>
+                                                        </TooltipProvider>
+                                                    </div>
                                                 </ContextMenuTrigger>
                                                 <ContextMenuContent>
                                                     <ContextMenuItem onSelect={() => handleTaskClick(task.id)}>
