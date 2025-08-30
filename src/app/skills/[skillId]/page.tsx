@@ -78,10 +78,10 @@ const taskSchema = z.object({
 });
 
 const difficultyColors: Record<Difficulty, string> = {
-    Easy: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30',
-    Medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30',
-    Hard: 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30',
-    'Very Hard': 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30',
+    Easy: 'text-green-400',
+    Medium: 'text-yellow-400',
+    Hard: 'text-orange-400',
+    'Very Hard': 'text-red-400',
 };
 
 const findSkillRecursive = (skills: Skill[], skillId: string): Skill | undefined => {
@@ -489,14 +489,14 @@ export default function SkillDetailPage() {
                                                                 {taskSkill && taskSkill.id !== skill.id && (
                                                                      <Tooltip>
                                                                         <TooltipTrigger asChild>
-                                                                            <Badge variant="secondary" className="cursor-default">{taskSkill.name}</Badge>
+                                                                            <Badge variant="outline" className="cursor-default border-0">{taskSkill.name}</Badge>
                                                                         </TooltipTrigger>
                                                                         <TooltipContent>Sub-skill</TooltipContent>
                                                                     </Tooltip>
                                                                 )}
                                                                 {task.difficulty && (
                                                                     <Tooltip>
-                                                                        <TooltipTrigger asChild><Badge variant="outline" className={cn("cursor-default", task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge></TooltipTrigger>
+                                                                        <TooltipTrigger asChild><Badge variant="outline" className={cn("cursor-default border-0", task.difficulty ? difficultyColors[task.difficulty || 'Easy'] : '')}>{task.difficulty}</Badge></TooltipTrigger>
                                                                         <TooltipContent>Difficulty</TooltipContent>
                                                                     </Tooltip>
                                                                 )}
