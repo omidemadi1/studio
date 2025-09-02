@@ -84,11 +84,10 @@ export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
         <Button
           variant={'ghost'}
           className={cn(
-            'w-full justify-start text-left font-normal h-10',
+            'w-full justify-start text-left font-normal h-10 px-2',
             !date && 'text-muted-foreground'
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? (
             <div className='flex flex-col items-start'>
                 <span className='text-sm leading-tight'>{format(date, includeTime ? 'PPP p' : 'PPP')}</span>
