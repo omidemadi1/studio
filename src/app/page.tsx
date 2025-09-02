@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { Task, WeeklyMission } from '@/lib/types';
+import type { Task, WeeklyMission, Area, Project, Skill } from '@/lib/types';
 import {
   Sparkles,
   Swords,
@@ -18,6 +18,8 @@ import {
   Folder,
   Filter,
   ArrowUpDown,
+  Command,
+  Tag,
 } from 'lucide-react';
 import { useQuestData } from '@/context/quest-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,7 +38,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 type ViewMode = 'list' | 'calendar';
 type TimeRange = 'today' | 'week' | 'month';
-type SortOption = 'date-asc' | 'date-desc' | 'name-asc' | 'name-desc' | 'xp-asc' | 'xp-desc';
+type SortOption = 'date-asc' | 'date-desc' | 'name-asc' | 'name-desc' | 'xp-asc' | 'xp-desc' | 'area-asc' | 'project-asc' | 'skill-asc';
 type TaskFilterOption = 'all' | 'incomplete' | 'completed';
 
 
@@ -53,6 +55,8 @@ export default function QuestsPage() {
     user, 
     tasks,
     weeklyMissions,
+    areas,
+    skills,
     updateTaskCompletion,
     updateWeeklyMissionCompletion,
     maybeGenerateWeeklyMissions,
@@ -79,6 +83,38 @@ export default function QuestsPage() {
       fetchMissions();
     }
   }, [maybeGenerateWeeklyMissions, isClient]);
+
+  const taskDetailsMap = useMemo(() => {
+    const map = new Map<string, { area?: Area, project?: Project, skill?: Skill }>();
+    tasks.forEach(task => {
+        let area, project, skill;
+        if (task.projectId) {
+            for (const a of areas) {
+                const p = a.projects.find(proj => proj.id === task.projectId);
+                if (p) {
+                    area = a;
+                    project = p;
+                    break;
+                }
+            }
+        }
+        if (task.skillId) {
+            const findSkill = (skills: Skill[], skillId: string): Skill | undefined => {
+                for (const s of skills) {
+                    if (s.id === skillId) return s;
+                    if (s.subSkills) {
+                        const found = findSkill(s.subSkills, skillId);
+                        if (found) return found;
+                    }
+                }
+                return undefined;
+            }
+            skill = findSkill(skills, task.skillId);
+        }
+        map.set(task.id, { area, project, skill });
+    });
+    return map;
+  }, [tasks, areas, skills]);
 
   const filteredAndSortedTasks = useMemo(() => {
     if (!isClient) return [];
@@ -135,10 +171,31 @@ export default function QuestsPage() {
         case 'xp-desc':
             filteredTasks.sort((a, b) => b.xp - a.xp);
             break;
+        case 'area-asc':
+            filteredTasks.sort((a, b) => {
+                const areaA = taskDetailsMap.get(a.id)?.area?.name || 'zzzz';
+                const areaB = taskDetailsMap.get(b.id)?.area?.name || 'zzzz';
+                return areaA.localeCompare(areaB);
+            });
+            break;
+        case 'project-asc':
+            filteredTasks.sort((a, b) => {
+                const projectA = taskDetailsMap.get(a.id)?.project?.name || 'zzzz';
+                const projectB = taskDetailsMap.get(b.id)?.project?.name || 'zzzz';
+                return projectA.localeCompare(projectB);
+            });
+            break;
+        case 'skill-asc':
+             filteredTasks.sort((a, b) => {
+                const skillA = taskDetailsMap.get(a.id)?.skill?.name || 'zzzz';
+                const skillB = taskDetailsMap.get(b.id)?.skill?.name || 'zzzz';
+                return skillA.localeCompare(skillB);
+            });
+            break;
     }
 
     return filteredTasks;
-  }, [tasks, isClient, timeRange, taskFilter, sortOption]);
+  }, [tasks, isClient, timeRange, taskFilter, sortOption, taskDetailsMap]);
 
 
   const weekDays = useMemo(() => {
@@ -287,12 +344,12 @@ export default function QuestsPage() {
                             </TooltipTrigger>
                             <DropdownMenuContent>
                                 <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
-                                <DropdownMenuRadioItem value="date-asc">Due Date (Soonest)</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="date-desc">Due Date (Latest)</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="xp-desc">XP (High-Low)</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="xp-asc">XP (Low-High)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="date-asc">Due Date</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="name-asc">Name</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="xp-desc">XP</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="area-asc">Area</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="project-asc">Project</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="skill-asc">Skill</DropdownMenuRadioItem>
                                 </DropdownMenuRadioGroup>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -322,7 +379,9 @@ export default function QuestsPage() {
         {(viewMode === 'list' || timeRange === 'today') ? (
           <div className="space-y-3">
               {filteredAndSortedTasks.length > 0 ? (
-                  filteredAndSortedTasks.map((task: Task) => (
+                  filteredAndSortedTasks.map((task: Task) => {
+                      const details = taskDetailsMap.get(task.id);
+                      return (
                       <Card key={task.id} className="bg-card/80">
                           <CardContent className="p-3 flex items-center gap-4">
                               <Checkbox
@@ -331,18 +390,26 @@ export default function QuestsPage() {
                                   onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
                                   className="w-5 h-5"
                               />
-                              <label
-                                  htmlFor={`task-list-${task.id}`}
-                                  className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
-                              >
-                                  {task.title}
-                              </label>
+                              <div className="flex-1">
+                                  <label
+                                      htmlFor={`task-list-${task.id}`}
+                                      className={cn("text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
+                                  >
+                                      {task.title}
+                                  </label>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                      {details?.area && <div className="flex items-center gap-1"><Command className="h-3 w-3" />{details.area.name}</div>}
+                                      {details?.project && <div className="flex items-center gap-1"><Folder className="h-3 w-3" />{details.project.name}</div>}
+                                      {details?.skill && <div className="flex items-center gap-1"><Tag className="h-3 w-3" />{details.skill.name}</div>}
+                                  </div>
+                              </div>
                               <span className="text-xs font-bold text-primary whitespace-nowrap">
                                   +{task.xp} XP
                               </span>
                           </CardContent>
                       </Card>
-                  ))
+                      )
+                  })
               ) : (
                   <Card className="bg-card/80">
                       <CardContent className="p-6 text-center">
