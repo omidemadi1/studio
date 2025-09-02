@@ -923,13 +923,13 @@ export default function SkillDetailPage() {
                         />
                         </>
 
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium col-span-2 pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
-                        <div className="col-span-2 -mt-4">
+                        <div className="flex items-start gap-2 text-muted-foreground font-medium pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
+                        <div className="-mt-2">
                             <Textarea
                                 value={editableTaskData.description || ''}
                                 onChange={(e) => handleTaskDataChange('description', e.target.value)}
                                 placeholder="Add a description..."
-                                className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                                className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 -ml-2"
                                 rows={2}
                             />
                         </div>
