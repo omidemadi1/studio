@@ -2,9 +2,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { isToday } from 'date-fns';
+import { isToday, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, format } from 'date-fns';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,9 @@ import type { Task, WeeklyMission } from '@/lib/types';
 import {
   Sparkles,
   Swords,
+  LayoutList,
+  Calendar as CalendarIcon,
+  Folder
 } from 'lucide-react';
 import { useQuestData } from '@/context/quest-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,7 +27,18 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+
+type ViewMode = 'list' | 'calendar';
+
+const MiniTaskCard = ({ task }: { task: Task }) => {
+    return (
+        <Card className={cn("p-2 text-xs rounded-md mb-1 shadow-sm", task.completed ? 'bg-muted/50' : 'bg-background/50')}>
+            <p className={cn("font-semibold truncate", task.completed && "line-through text-muted-foreground")}>{task.title}</p>
+        </Card>
+    );
+};
 
 export default function QuestsPage() {
   const { 
@@ -37,6 +51,7 @@ export default function QuestsPage() {
   } = useQuestData();
 
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   const todaysTasks = useMemo(() => {
     return tasks.filter(task => task.dueDate && isToday(new Date(task.dueDate)) && !task.completed);
@@ -50,6 +65,16 @@ export default function QuestsPage() {
     }
     fetchMissions();
   }, [maybeGenerateWeeklyMissions]);
+
+  const weekDays = useMemo(() => {
+    const start = startOfWeek(new Date());
+    const end = endOfWeek(new Date());
+    return eachDayOfInterval({ start, end });
+  }, []);
+
+  const getTasksForDay = useCallback((day: Date) => {
+    return tasks.filter(task => task.dueDate && isSameDay(new Date(task.dueDate), day));
+  }, [tasks]);
 
 
   return (
@@ -133,44 +158,75 @@ export default function QuestsPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-headline font-semibold flex items-center gap-2 mb-4">
-            <Swords className="w-6 h-6 text-accent" />
-            Today's Quests
-        </h2>
-        <div className="space-y-3">
-            {todaysTasks.length > 0 ? (
-                todaysTasks.map((task: Task) => (
-                    <Card key={task.id} className="bg-card/80">
-                        <CardContent className="p-3 flex items-center gap-4">
-                            <Checkbox
-                                id={`task-${task.id}`}
-                                checked={task.completed}
-                                onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
-                                className="w-5 h-5"
-                            />
-                            <label
-                                htmlFor={`task-${task.id}`}
-                                className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
-                            >
-                                {task.title}
-                            </label>
-                            <span className="text-xs font-bold text-primary whitespace-nowrap">
-                                +{task.xp} XP
-                            </span>
-                        </CardContent>
-                    </Card>
-                ))
-            ) : (
-                <Card className="bg-card/80">
-                    <CardContent className="p-6 text-center">
-                        <p className="text-muted-foreground text-sm">No quests scheduled for today. Time for a side quest?</p>
-                        <Button variant="link" asChild className='mt-2'>
-                           <Link href="/manager">Go to Manager</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
+        <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-headline font-semibold flex items-center gap-2">
+                <Swords className="w-6 h-6 text-accent" />
+                Today's Quests
+            </h2>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                <TabsList>
+                    <TabsTrigger value="list"><LayoutList className="h-4 w-4" /></TabsTrigger>
+                    <TabsTrigger value="calendar"><CalendarIcon className="h-4 w-4" /></TabsTrigger>
+                </TabsList>
+            </Tabs>
         </div>
+
+        {viewMode === 'list' ? (
+          <div className="space-y-3">
+              {todaysTasks.length > 0 ? (
+                  todaysTasks.map((task: Task) => (
+                      <Card key={task.id} className="bg-card/80">
+                          <CardContent className="p-3 flex items-center gap-4">
+                              <Checkbox
+                                  id={`task-${task.id}`}
+                                  checked={task.completed}
+                                  onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
+                                  className="w-5 h-5"
+                              />
+                              <label
+                                  htmlFor={`task-${task.id}`}
+                                  className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
+                              >
+                                  {task.title}
+                              </label>
+                              <span className="text-xs font-bold text-primary whitespace-nowrap">
+                                  +{task.xp} XP
+                              </span>
+                          </CardContent>
+                      </Card>
+                  ))
+              ) : (
+                  <Card className="bg-card/80">
+                      <CardContent className="p-6 text-center">
+                          <p className="text-muted-foreground text-sm">No quests scheduled for today. Time for a side quest?</p>
+                          <Button variant="link" asChild className='mt-2'>
+                            <Link href="/manager">Go to Manager</Link>
+                          </Button>
+                      </CardContent>
+                  </Card>
+              )}
+          </div>
+        ) : (
+            <div className="grid grid-cols-7 border-t border-l">
+                {weekDays.map(day => {
+                    const tasksForDay = getTasksForDay(day);
+                    const isCurrentDay = isToday(day);
+                    return (
+                        <div key={day.toISOString()} className={cn("border-r border-b p-2 min-h-[100px]", isCurrentDay && "bg-muted/30")}>
+                            <div className={cn("text-center text-xs font-semibold mb-2", isCurrentDay && "text-primary")}>
+                                <div>{format(day, 'EEE')}</div>
+                                <div>{format(day, 'd')}</div>
+                            </div>
+                            <div className="space-y-1">
+                                {tasksForDay.map(task => (
+                                    <MiniTaskCard key={task.id} task={task} />
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        )}
       </section>
     </div>
   );
