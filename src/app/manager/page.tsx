@@ -325,8 +325,6 @@ export default function ManagerPage() {
             xp: xp,
             tokens: tokens,
             description: data.description || '',
-            notes: '',
-            links: '',
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
             dueDate: data.dueDate?.toISOString(),
             reminder: data.reminder,
@@ -1042,7 +1040,7 @@ export default function ManagerPage() {
       </Dialog>
 
       <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-md">
           {currentTask && areaId && projectId && (
             <>
               <DialogHeader className="flex flex-row items-start justify-between gap-4">
@@ -1100,7 +1098,7 @@ export default function ManagerPage() {
                 )}
 
                 <>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Due Date</div>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Date</div>
                   <DateTimePicker
                     date={currentTask.dueDate ? new Date(currentTask.dueDate) : undefined}
                     setDate={(date) => {
@@ -1109,6 +1107,18 @@ export default function ManagerPage() {
                     }}
                   />
                 </>
+
+                <div className="flex items-center gap-2 text-muted-foreground font-medium col-span-2 pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
+                <div className="col-span-2 -mt-4">
+                  <Textarea
+                      value={editableTaskData.description || ''}
+                      onChange={(e) => handleTaskDataChange('description', e.target.value)}
+                      placeholder="Add a description..."
+                      className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                      rows={2}
+                  />
+                </div>
+
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
                 <div className="font-semibold">{currentTask.xp + (currentTask.bonusXp || 0)}</div>
@@ -1124,19 +1134,6 @@ export default function ManagerPage() {
                     </div>
                   </>
                 )}
-              </div>
-              
-              <div className="mt-2 space-y-2 text-sm">
-                <div>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><AlignLeft className="h-4 w-4" /> Details</div>
-                  <Textarea
-                    value={editableTaskData.description || ''}
-                    onChange={(e) => handleTaskDataChange('description', e.target.value)}
-                    placeholder="Add a description..."
-                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    rows={2}
-                  />
-                </div>
               </div>
             </>
           )}
