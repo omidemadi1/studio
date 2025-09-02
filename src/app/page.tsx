@@ -60,6 +60,7 @@ import { GemIcon } from '@/components/icons/gem-icon';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import { Label } from '@/components/ui/label';
 
 
 type ViewMode = 'list' | 'calendar';
