@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { isToday, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, format } from 'date-fns';
+import { isToday, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +15,9 @@ import {
   Swords,
   LayoutList,
   Calendar as CalendarIcon,
-  Folder
+  Folder,
+  Filter,
+  ArrowUpDown,
 } from 'lucide-react';
 import { useQuestData } from '@/context/quest-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,9 +30,15 @@ import {
 } from "@/components/ui/carousel"
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 type ViewMode = 'list' | 'calendar';
+type TimeRange = 'today' | 'week' | 'month';
+type SortOption = 'date-asc' | 'date-desc' | 'name-asc' | 'name-desc' | 'xp-asc' | 'xp-desc';
+type TaskFilterOption = 'all' | 'incomplete' | 'completed';
+
 
 const MiniTaskCard = ({ task }: { task: Task }) => {
     return (
@@ -52,7 +60,9 @@ export default function QuestsPage() {
 
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [todaysTasks, setTodaysTasks] = useState<Task[]>([]);
+  const [timeRange, setTimeRange] = useState<TimeRange>('today');
+  const [sortOption, setSortOption] = useState<SortOption>('date-asc');
+  const [taskFilter, setTaskFilter] = useState<TaskFilterOption>('incomplete');
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -60,33 +70,104 @@ export default function QuestsPage() {
   }, []);
   
   useEffect(() => {
-    if (isClient) {
-      setTodaysTasks(tasks.filter(task => task.dueDate && isToday(new Date(task.dueDate)) && !task.completed));
-    }
-  }, [tasks, isClient]);
-
-  useEffect(() => {
     async function fetchMissions() {
       setLoadingSuggestions(true);
       await maybeGenerateWeeklyMissions();
       setLoadingSuggestions(false);
     }
-    fetchMissions();
-  }, [maybeGenerateWeeklyMissions]);
+    if (isClient) {
+      fetchMissions();
+    }
+  }, [maybeGenerateWeeklyMissions, isClient]);
+
+  const filteredAndSortedTasks = useMemo(() => {
+    if (!isClient) return [];
+    
+    const now = new Date();
+    let interval: Interval;
+    switch (timeRange) {
+        case 'today':
+            interval = { start: now, end: now };
+            break;
+        case 'week':
+            interval = { start: startOfWeek(now), end: endOfWeek(now) };
+            break;
+        case 'month':
+            interval = { start: startOfMonth(now), end: endOfMonth(now) };
+            break;
+    }
+
+    let filteredTasks = tasks.filter(task => {
+        const isMatchingStatus = taskFilter === 'all' || (taskFilter === 'completed' ? task.completed : !task.completed);
+        
+        if (!isMatchingStatus) return false;
+
+        if (timeRange === 'today') {
+            return task.dueDate && isToday(new Date(task.dueDate));
+        }
+        
+        return task.dueDate && isWithinInterval(new Date(task.dueDate), interval);
+    });
+
+    const getTaskDate = (task: Task, direction: 'asc' | 'desc'): number => {
+        if (!task.dueDate) {
+            return direction === 'asc' ? Infinity : -Infinity;
+        }
+        return new Date(task.dueDate).getTime();
+    };
+
+    switch (sortOption) {
+        case 'date-asc':
+            filteredTasks.sort((a, b) => getTaskDate(a, 'asc') - getTaskDate(b, 'asc'));
+            break;
+        case 'date-desc':
+            filteredTasks.sort((a, b) => getTaskDate(b, 'desc') - getTaskDate(a, 'desc'));
+            break;
+        case 'name-asc':
+            filteredTasks.sort((a, b) => a.title.localeCompare(b.title));
+            break;
+        case 'name-desc':
+            filteredTasks.sort((a, b) => b.title.localeCompare(a.title));
+            break;
+        case 'xp-asc':
+            filteredTasks.sort((a, b) => a.xp - b.xp);
+            break;
+        case 'xp-desc':
+            filteredTasks.sort((a, b) => b.xp - a.xp);
+            break;
+    }
+
+    return filteredTasks;
+  }, [tasks, isClient, timeRange, taskFilter, sortOption]);
+
 
   const weekDays = useMemo(() => {
+    if (!isClient) return [];
     const start = startOfWeek(new Date());
     const end = endOfWeek(new Date());
     return eachDayOfInterval({ start, end });
-  }, []);
+  }, [isClient]);
+
+  const monthDays = useMemo(() => {
+    if (!isClient) return [];
+    const start = startOfWeek(startOfMonth(new Date()));
+    const end = endOfWeek(endOfMonth(new Date()));
+    return eachDayOfInterval({ start, end });
+  }, [isClient]);
+  
 
   const getTasksForDay = useCallback((day: Date) => {
     return tasks.filter(task => task.dueDate && isSameDay(new Date(task.dueDate), day));
   }, [tasks]);
 
+  const calendarDays = useMemo(() => {
+    if (timeRange === 'week') return weekDays;
+    if (timeRange === 'month') return monthDays;
+    return [];
+  }, [timeRange, weekDays, monthDays]);
 
   return (
-    <div className="container mx-auto max-w-4xl p-4 sm:p-6">
+    <div className="container mx-auto max-w-4xl p-4 sm-p-6">
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-headline font-bold text-primary">Questify</h1>
         <Avatar>
@@ -169,30 +250,89 @@ export default function QuestsPage() {
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-headline font-semibold flex items-center gap-2">
                 <Swords className="w-6 h-6 text-accent" />
-                Today's Quests
+                Quests
             </h2>
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-                <TabsList>
-                    <TabsTrigger value="list"><LayoutList className="h-4 w-4" /></TabsTrigger>
-                    <TabsTrigger value="calendar"><CalendarIcon className="h-4 w-4" /></TabsTrigger>
-                </TabsList>
-            </Tabs>
+            <div className="flex items-center gap-2">
+                 <TooltipProvider>
+                    <Tooltip>
+                        <DropdownMenu>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <Filter className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuRadioGroup value={taskFilter} onValueChange={(v) => setTaskFilter(v as TaskFilterOption)}>
+                                <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="incomplete">Incomplete</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="completed">Completed</DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <TooltipContent>
+                            <p>Filter tasks</p>
+                        </TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <DropdownMenu>
+                            <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <ArrowUpDown className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+                                <DropdownMenuRadioItem value="date-asc">Due Date (Soonest)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="date-desc">Due Date (Latest)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="name-asc">Name (A-Z)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="name-desc">Name (Z-A)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="xp-desc">XP (High-Low)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="xp-asc">XP (Low-High)</DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <TooltipContent>
+                            <p>Sort tasks</p>
+                        </TooltipContent>
+                    </Tooltip>
+                 </TooltipProvider>
+
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                    <TabsList className='hidden sm:inline-flex'>
+                        <TabsTrigger value="list"><LayoutList className="h-4 w-4" /></TabsTrigger>
+                        <TabsTrigger value="calendar"><CalendarIcon className="h-4 w-4" /></TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
         </div>
 
-        {viewMode === 'list' ? (
+        <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)} className='mb-4'>
+            <TabsList className='w-full'>
+                <TabsTrigger value="today" className='flex-1'>Today</TabsTrigger>
+                <TabsTrigger value="week" className='flex-1'>This Week</TabsTrigger>
+                <TabsTrigger value="month" className='flex-1'>This Month</TabsTrigger>
+            </TabsList>
+        </Tabs>
+
+        {(viewMode === 'list' || timeRange === 'today') ? (
           <div className="space-y-3">
-              {todaysTasks.length > 0 ? (
-                  todaysTasks.map((task: Task) => (
+              {filteredAndSortedTasks.length > 0 ? (
+                  filteredAndSortedTasks.map((task: Task) => (
                       <Card key={task.id} className="bg-card/80">
                           <CardContent className="p-3 flex items-center gap-4">
                               <Checkbox
-                                  id={`task-${task.id}`}
+                                  id={`task-list-${task.id}`}
                                   checked={task.completed}
                                   onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
                                   className="w-5 h-5"
                               />
                               <label
-                                  htmlFor={`task-${task.id}`}
+                                  htmlFor={`task-list-${task.id}`}
                                   className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
                               >
                                   {task.title}
@@ -206,7 +346,7 @@ export default function QuestsPage() {
               ) : (
                   <Card className="bg-card/80">
                       <CardContent className="p-6 text-center">
-                          <p className="text-muted-foreground text-sm">No quests scheduled for today. Time for a side quest?</p>
+                          <p className="text-muted-foreground text-sm">No quests scheduled for this period. Time for a side quest?</p>
                           <Button variant="link" asChild className='mt-2'>
                             <Link href="/manager">Go to Manager</Link>
                           </Button>
@@ -216,12 +356,13 @@ export default function QuestsPage() {
           </div>
         ) : (
             <div className="grid grid-cols-7 border-t border-l">
-                {weekDays.map(day => {
+                {calendarDays.map(day => {
                     const tasksForDay = getTasksForDay(day);
                     const isCurrentDay = isToday(day);
+                    const isCurrentMonth = timeRange === 'month' ? isSameDay(startOfMonth(new Date()), startOfMonth(day)) : true;
                     return (
-                        <div key={day.toISOString()} className={cn("border-r border-b p-2 min-h-[100px]", isCurrentDay && "bg-muted/30")}>
-                            <div className={cn("text-center text-xs font-semibold mb-2", isCurrentDay && "text-primary")}>
+                        <div key={day.toISOString()} className={cn("border-r border-b p-2 min-h-[100px]", isCurrentDay && "bg-muted/30", !isCurrentMonth && "bg-muted/10")}>
+                            <div className={cn("text-center text-xs font-semibold mb-2", isCurrentDay && "text-primary", !isCurrentMonth && "text-muted-foreground")}>
                                 <div>{format(day, 'EEE')}</div>
                                 <div>{format(day, 'd')}</div>
                             </div>
