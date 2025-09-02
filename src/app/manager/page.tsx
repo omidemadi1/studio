@@ -60,8 +60,6 @@ import {
   Calendar as CalendarIcon,
   AlignLeft,
   ArrowUp,
-  StickyNote,
-  Link as LinkIcon,
   Clock,
   Briefcase,
   Sparkles,
@@ -71,10 +69,6 @@ import {
   Trash2,
   Check,
   Copy,
-  ChevronDown,
-  ArrowLeft,
-  ArrowRight,
-  Bell,
   Lightbulb,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
@@ -103,8 +97,6 @@ const projectSchema = z.object({
 const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required.'),
   description: z.string().optional(),
-  notes: z.string().optional(),
-  links: z.string().optional(),
   dueDate: z.date().optional(),
   reminder: z.number().optional(),
   skillId: z.string().optional(),
@@ -219,8 +211,6 @@ export default function ManagerPage() {
     defaultValues: {
       title: '',
       description: '',
-      notes: '',
-      links: '',
     },
   });
   
@@ -335,8 +325,8 @@ export default function ManagerPage() {
             xp: xp,
             tokens: tokens,
             description: data.description || '',
-            notes: data.notes || '',
-            links: data.links || '',
+            notes: '',
+            links: '',
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
             dueDate: data.dueDate?.toISOString(),
             reminder: data.reminder,
@@ -368,8 +358,6 @@ export default function ManagerPage() {
       setEditableTaskData({
         title: task.title,
         description: task.description || '',
-        notes: task.notes || '',
-        links: task.links || '',
         reminder: task.reminder,
       });
     }
@@ -1145,28 +1133,6 @@ export default function ManagerPage() {
                     value={editableTaskData.description || ''}
                     onChange={(e) => handleTaskDataChange('description', e.target.value)}
                     placeholder="Add a description..."
-                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    rows={2}
-                  />
-                </div>
-                
-                <div>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
-                  <Textarea
-                    value={editableTaskData.notes || ''}
-                    onChange={(e) => handleTaskDataChange('notes', e.target.value)}
-                    placeholder="Add notes..."
-                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    rows={2}
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
-                  <Textarea
-                    value={editableTaskData.links || ''}
-                    onChange={(e) => handleTaskDataChange('links', e.target.value)}
-                    placeholder="Add links, one per line..."
                     className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                     rows={2}
                   />

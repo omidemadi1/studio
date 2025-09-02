@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
     Command, Tag, Flame, Calendar as CalendarIcon, AlignLeft,
-    StickyNote, Link as LinkIcon, Clock, ArrowUp, Crosshair,
+    Clock, ArrowUp, Crosshair,
     PlusCircle, GitBranch, Sparkles, Copy, Expand,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -59,7 +59,6 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { GemIcon } from '@/components/icons/gem-icon';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { Loader2 } from 'lucide-react';
 
@@ -267,8 +266,6 @@ export default function SkillDetailPage() {
           setEditableTaskData({
             title: task.title ?? '',
             description: task.description ?? '',
-            notes: task.notes ?? '',
-            links: task.links ?? '',
             reminder: task.reminder,
           });
         }
@@ -951,28 +948,6 @@ export default function SkillDetailPage() {
                             value={editableTaskData.description || ''}
                             onChange={(e) => handleTaskDataChange('description', e.target.value)}
                             placeholder="Add a description..."
-                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                            rows={2}
-                        />
-                        </div>
-                        
-                        <div>
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
-                        <Textarea
-                            value={editableTaskData.notes || ''}
-                            onChange={(e) => handleTaskDataChange('notes', e.target.value)}
-                            placeholder="Add notes..."
-                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                            rows={2}
-                        />
-                        </div>
-
-                        <div>
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
-                        <Textarea
-                            value={editableTaskData.links || ''}
-                            onChange={(e) => handleTaskDataChange('links', e.target.value)}
-                            placeholder="Add links, one per line..."
                             className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                             rows={2}
                         />

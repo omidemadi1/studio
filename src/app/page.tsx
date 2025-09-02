@@ -2,7 +2,8 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React,_ from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { isToday, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import Link from 'next/link';
@@ -25,8 +26,6 @@ import {
   Tag,
   Flame,
   AlignLeft,
-  StickyNote,
-  Link as LinkIcon,
   Clock,
   ArrowUp,
   Crosshair,
@@ -317,8 +316,6 @@ export default function QuestsPage() {
           setEditableTaskData({
             title: task.title ?? '',
             description: task.description ?? '',
-            notes: task.notes ?? '',
-            links: task.links ?? '',
             reminder: task.reminder,
           });
         }
@@ -670,28 +667,6 @@ export default function QuestsPage() {
                         value={editableTaskData.description || ''}
                         onChange={(e) => handleTaskDataChange('description', e.target.value)}
                         placeholder="Add a description..."
-                        className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                        rows={2}
-                    />
-                    </div>
-                    
-                    <div>
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><StickyNote className="h-4 w-4" /> Notes</div>
-                    <Textarea
-                        value={editableTaskData.notes || ''}
-                        onChange={(e) => handleTaskDataChange('notes', e.target.value)}
-                        placeholder="Add notes..."
-                        className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                        rows={2}
-                    />
-                    </div>
-
-                    <div>
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1"><LinkIcon className="h-4 w-4" /> Links</div>
-                    <Textarea
-                        value={editableTaskData.links || ''}
-                        onChange={(e) => handleTaskDataChange('links', e.target.value)}
-                        placeholder="Add links, one per line..."
                         className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                         rows={2}
                     />

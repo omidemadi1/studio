@@ -72,8 +72,6 @@ const initializeDb = () => {
                 xp INTEGER NOT NULL,
                 tokens INTEGER NOT NULL DEFAULT 0,
                 description TEXT,
-                notes TEXT,
-                links TEXT,
                 difficulty TEXT,
                 dueDate TEXT,
                 reminder INTEGER,
@@ -112,67 +110,19 @@ const initializeDb = () => {
       dbInstance.exec(schema[tableName as keyof typeof schema]);
     }
     
-    // Check if projectId column in tasks table needs to be altered
     const tableInfo = dbInstance.pragma(`table_info(tasks)`) as { name: string, notnull: number }[];
-    const projectIdColumn = tableInfo.find(col => col.name === 'projectId');
     
-    if (projectIdColumn && projectIdColumn.notnull === 1) {
-        console.log("Migrating tasks table: making 'projectId' nullable.");
+    const columnsToDrop = ['notes', 'links'];
+    const hasColumnsToDrop = tableInfo.some(col => columnsToDrop.includes(col.name));
+
+    if (hasColumnsToDrop) {
+        console.log("Migrating tasks table: removing 'notes' and 'links' columns.");
         dbInstance.transaction(() => {
-            dbInstance.exec('CREATE TABLE tasks_new (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, completed BOOLEAN NOT NULL DEFAULT 0, xp INTEGER NOT NULL, tokens INTEGER NOT NULL DEFAULT 0, description TEXT, notes TEXT, links TEXT, difficulty TEXT, dueDate TEXT, reminder INTEGER, skillId TEXT, focusDuration INTEGER DEFAULT 0, bonusXp INTEGER DEFAULT 0, projectId TEXT, FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE, FOREIGN KEY (skillId) REFERENCES skills (id) ON DELETE SET NULL)');
-            dbInstance.exec('INSERT INTO tasks_new(id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp) SELECT id, title, completed, xp, tokens, description, notes, links, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp FROM tasks');
+            dbInstance.exec('CREATE TABLE tasks_new (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, completed BOOLEAN NOT NULL DEFAULT 0, xp INTEGER NOT NULL, tokens INTEGER NOT NULL DEFAULT 0, description TEXT, difficulty TEXT, dueDate TEXT, reminder INTEGER, skillId TEXT, focusDuration INTEGER DEFAULT 0, bonusXp INTEGER DEFAULT 0, projectId TEXT, FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE, FOREIGN KEY (skillId) REFERENCES skills (id) ON DELETE SET NULL)');
+            dbInstance.exec('INSERT INTO tasks_new(id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp) SELECT id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp FROM tasks');
             dbInstance.exec('DROP TABLE tasks');
             dbInstance.exec('ALTER TABLE tasks_new RENAME TO tasks');
         })();
-    }
-
-
-    // Add 'tokens' column to 'tasks' table if it doesn't exist (for migration)
-    try {
-        dbInstance.prepare('SELECT tokens FROM tasks LIMIT 1').get();
-    } catch (e) {
-        console.log("Migrating tasks table: adding 'tokens' column.");
-        dbInstance.exec('ALTER TABLE tasks ADD COLUMN tokens INTEGER NOT NULL DEFAULT 0');
-    }
-
-    // Add 'reminder' column to 'tasks' table if it doesn't exist (for migration)
-    try {
-        dbInstance.prepare('SELECT reminder FROM tasks LIMIT 1').get();
-    } catch (e) {
-        console.log("Migrating tasks table: adding 'reminder' column.");
-        dbInstance.exec('ALTER TABLE tasks ADD COLUMN reminder INTEGER');
-    }
-    
-    // Add 'skillId' column to 'tasks' table if it doesn't exist (for migration)
-    try {
-        dbInstance.prepare('SELECT skillId FROM tasks LIMIT 1').get();
-    } catch (e) {
-        console.log("Migrating tasks table: adding 'skillId' column.");
-        dbInstance.exec('ALTER TABLE tasks ADD COLUMN skillId TEXT');
-    }
-
-    // Add 'parentId' column to 'skills' table if it doesn't exist (for migration)
-    try {
-        dbInstance.prepare('SELECT parentId FROM skills LIMIT 1').get();
-    } catch (e) {
-        console.log("Migrating skills table: adding 'parentId' column.");
-        dbInstance.exec('ALTER TABLE skills ADD COLUMN parentId TEXT');
-    }
-    
-    // Add 'bonusXp' column to 'tasks' table if it doesn't exist (for migration)
-    try {
-        dbInstance.prepare('SELECT bonusXp FROM tasks LIMIT 1').get();
-    } catch (e) {
-        console.log("Migrating tasks table: adding 'bonusXp' column.");
-        dbInstance.exec('ALTER TABLE tasks ADD COLUMN bonusXp INTEGER DEFAULT 0');
-    }
-
-    // Add 'archived' column to 'areas' table if it doesn't exist (for migration)
-    try {
-        dbInstance.prepare('SELECT archived FROM areas LIMIT 1').get();
-    } catch (e) {
-        console.log("Migrating areas table: adding 'archived' column.");
-        dbInstance.exec('ALTER TABLE areas ADD COLUMN archived BOOLEAN NOT NULL DEFAULT 0');
     }
 
 

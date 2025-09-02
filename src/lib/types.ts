@@ -29,8 +29,6 @@ export interface Task {
   xp: number;
   tokens: number;
   description?: string;
-  notes?: string;
-  links?: string;
   difficulty?: Difficulty;
   dueDate?: string;
   reminder?: number; // minutes before due date
