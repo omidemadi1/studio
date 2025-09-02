@@ -47,8 +47,8 @@ export async function updateProject(id: string, name: string) {
 }
 
 export async function addTask(task: Task, areaId?: string) {
-    db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.difficulty, task.dueDate, task.reminder, task.skillId, task.focusDuration || 0, task.projectId || null, task.bonusXp || 0);
+    db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp, markdown) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.difficulty, task.dueDate, task.reminder, task.skillId, task.focusDuration || 0, task.projectId || null, task.bonusXp || 0, task.markdown || '');
     
     if (areaId) {
       revalidatePath(`/areas/${areaId}`);
@@ -185,7 +185,7 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
 }
 
 export async function updateTaskDetails(taskId: string, details: Partial<Task>) {
-  const { title, description, dueDate, skillId, reminder } = details;
+  const { title, description, dueDate, skillId, reminder, markdown } = details;
   const oldTask = db.prepare('SELECT skillId FROM tasks WHERE id = ?').get(taskId) as Task;
   
   const updates: string[] = [];
@@ -210,6 +210,10 @@ export async function updateTaskDetails(taskId: string, details: Partial<Task>) 
   if (reminder !== undefined) {
     updates.push('reminder = ?');
     params.push(reminder);
+  }
+  if (markdown !== undefined) {
+    updates.push('markdown = ?');
+    params.push(markdown);
   }
   
   if (updates.length > 0) {
@@ -284,8 +288,8 @@ export async function duplicateTask(taskId: string) {
 
         const newTaskId = `task-${Date.now()}`;
         const newTask = { ...task, id: newTaskId, title: `${task.title} (copy)` };
-        db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.tokens, newTask.description, newTask.difficulty, newTask.dueDate, newTask.reminder, newTask.skillId, newTask.focusDuration || 0, task.projectId);
+        db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, markdown) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.tokens, newTask.description, newTask.difficulty, newTask.dueDate, newTask.reminder, newTask.skillId, newTask.focusDuration || 0, task.projectId, newTask.markdown);
     });
     transaction();
     revalidatePath('/');

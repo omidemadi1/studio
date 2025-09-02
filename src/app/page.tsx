@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -142,7 +141,7 @@ export default function QuestsPage() {
   const [sortOption, setSortOption] = useState<SortOption>('date-asc');
   const [taskFilter, setTaskFilter] = useState<TaskFilterOption>('incomplete');
   const [isClient, setIsClient] = useState(false);
-  const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; taskId: string | null; }>({ open: false, taskId: null });
+  const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; taskId: string | null; isExpanded: boolean; }>({ open: false, taskId: null, isExpanded: false });
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
@@ -316,9 +315,10 @@ export default function QuestsPage() {
           setEditableTaskData({
             title: task.title ?? '',
             description: task.description ?? '',
+            markdown: task.markdown ?? '',
           });
         }
-        setTaskDetailState({ open: true, taskId });
+        setTaskDetailState(prev => ({ ...prev, open: true, taskId }));
     };
 
     const handleTaskDataChange = (field: keyof Task, value: string | number | undefined) => {
@@ -575,7 +575,7 @@ export default function QuestsPage() {
       </section>
     </div>
         <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className={cn("sm:max-w-md", taskDetailState.isExpanded && "sm:max-w-3xl")}>
             {currentTask && (
                 <>
                 <DialogHeader className="flex flex-row items-start justify-between gap-4">
@@ -590,16 +590,26 @@ export default function QuestsPage() {
                     />
                     <div className='flex items-center gap-2 flex-shrink-0'>
                         <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
-                                <Crosshair className="h-5 w-5" />
-                            </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                            <p>Focus on this task</p>
-                            </TooltipContent>
-                        </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => setTaskDetailState(prev => ({ ...prev, isExpanded: !prev.isExpanded }))}>
+                                        <Expand className="h-5 w-5" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                <p>Expand</p>
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
+                                    <Crosshair className="h-5 w-5" />
+                                </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                <p>Focus on this task</p>
+                                </TooltipContent>
+                            </Tooltip>
                         </TooltipProvider>
                         <Checkbox
                             checked={currentTask.completed}
@@ -610,6 +620,7 @@ export default function QuestsPage() {
                         />
                     </div>
                 </DialogHeader>
+                
                 <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
                     
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
@@ -641,8 +652,8 @@ export default function QuestsPage() {
                         }}
                     />
                     
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium pt-2 self-start"><AlignLeft className="h-4 w-4" /> Details</div>
-                    <div className="-mt-2 text-left">
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
+                    <div className="text-left">
                         <Textarea
                             value={editableTaskData.description || ''}
                             onChange={(e) => handleTaskDataChange('description', e.target.value)}
@@ -666,6 +677,18 @@ export default function QuestsPage() {
                         </div>
                     </>
                     )}
+                </div>
+                <Separator />
+                <div>
+                  <Label htmlFor="markdown-editor" className="text-muted-foreground font-medium">Markdown Details</Label>
+                  <Textarea
+                    id="markdown-editor"
+                    value={editableTaskData.markdown || ''}
+                    onChange={(e) => handleTaskDataChange('markdown', e.target.value)}
+                    placeholder="Add detailed notes in Markdown..."
+                    className="mt-2"
+                    rows={taskDetailState.isExpanded ? 15 : 5}
+                  />
                 </div>
                 </>
             )}

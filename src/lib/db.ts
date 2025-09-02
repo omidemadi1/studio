@@ -79,6 +79,7 @@ const initializeDb = () => {
                 focusDuration INTEGER DEFAULT 0,
                 bonusXp INTEGER DEFAULT 0,
                 projectId TEXT,
+                markdown TEXT,
                 FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE,
                 FOREIGN KEY (skillId) REFERENCES skills (id) ON DELETE SET NULL
             );
@@ -110,19 +111,23 @@ const initializeDb = () => {
       dbInstance.exec(schema[tableName as keyof typeof schema]);
     }
     
+    // Migration for adding 'markdown' column to 'tasks' table
     const tableInfo = dbInstance.pragma(`table_info(tasks)`) as { name: string, notnull: number }[];
+    const hasMarkdownColumn = tableInfo.some(col => col.name === 'markdown');
     
-    const columnsToDrop = ['notes', 'links'];
-    const hasColumnsToDrop = tableInfo.some(col => columnsToDrop.includes(col.name));
-
-    if (hasColumnsToDrop) {
-        console.log("Migrating tasks table: removing 'notes' and 'links' columns.");
-        dbInstance.transaction(() => {
-            dbInstance.exec('CREATE TABLE tasks_new (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, completed BOOLEAN NOT NULL DEFAULT 0, xp INTEGER NOT NULL, tokens INTEGER NOT NULL DEFAULT 0, description TEXT, difficulty TEXT, dueDate TEXT, reminder INTEGER, skillId TEXT, focusDuration INTEGER DEFAULT 0, bonusXp INTEGER DEFAULT 0, projectId TEXT, FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE, FOREIGN KEY (skillId) REFERENCES skills (id) ON DELETE SET NULL)');
-            dbInstance.exec('INSERT INTO tasks_new(id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp) SELECT id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp FROM tasks');
-            dbInstance.exec('DROP TABLE tasks');
-            dbInstance.exec('ALTER TABLE tasks_new RENAME TO tasks');
-        })();
+    if (!hasMarkdownColumn) {
+        console.log("Migrating tasks table: adding 'markdown' column.");
+        try {
+            dbInstance.exec('ALTER TABLE tasks ADD COLUMN markdown TEXT');
+        } catch (e) {
+            console.error("Failed to add 'markdown' column, attempting table rebuild.", e);
+            dbInstance.transaction(() => {
+                dbInstance.exec(`CREATE TABLE tasks_new (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, completed BOOLEAN NOT NULL DEFAULT 0, xp INTEGER NOT NULL, tokens INTEGER NOT NULL DEFAULT 0, description TEXT, difficulty TEXT, dueDate TEXT, reminder INTEGER, skillId TEXT, focusDuration INTEGER DEFAULT 0, bonusXp INTEGER DEFAULT 0, projectId TEXT, markdown TEXT, FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE, FOREIGN KEY (skillId) REFERENCES skills (id) ON DELETE SET NULL)`);
+                dbInstance.exec('INSERT INTO tasks_new(id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp) SELECT id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp FROM tasks');
+                dbInstance.exec('DROP TABLE tasks');
+                dbInstance.exec('ALTER TABLE tasks_new RENAME TO tasks');
+            })();
+        }
     }
 
 

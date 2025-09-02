@@ -36,6 +36,7 @@ export interface Task {
   focusDuration?: number;
   bonusXp?: number;
   projectId?: string;
+  markdown?: string;
 }
 
 export interface Project {

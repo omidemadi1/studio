@@ -37,6 +37,7 @@ import {
   Check,
   Copy,
   Archive,
+  Expand,
 } from 'lucide-react';
 import type { Task, Difficulty, Project, Skill, Area } from '@/lib/types';
 import { z } from 'zod';
@@ -91,6 +92,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { GemIcon } from '@/components/icons/gem-icon';
+import { Label } from '@/components/ui/label';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -152,7 +154,7 @@ export default function AreaDetailPage() {
   const [editProjectState, setEditProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
   const [deleteProjectState, setDeleteProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; projectId: string | null }>({ open: false, projectId: null });
-  const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; projectId: string | null; taskId: string | null; }>({ open: false, projectId: null, taskId: null });
+  const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; projectId: string | null; taskId: string | null; isExpanded: boolean; }>({ open: false, projectId: null, taskId: null, isExpanded: false });
   const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
@@ -392,13 +394,15 @@ export default function AreaDetailPage() {
       setEditableTaskData({
         title: task.title,
         description: task.description || '',
+        markdown: task.markdown || '',
       });
     }
-    setTaskDetailState({
+    setTaskDetailState(prev => ({
+      ...prev,
       open: true,
       projectId,
       taskId,
-    });
+    }));
   }
   
   const { projectId, taskId } = taskDetailState;
@@ -1065,7 +1069,7 @@ export default function AreaDetailPage() {
         </Dialog>
       
       <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className={cn("sm:max-w-md", taskDetailState.isExpanded && "sm:max-w-3xl")}>
             {currentTask && (
               <>
                 <DialogHeader className="flex flex-row items-start justify-between gap-4">
@@ -1080,6 +1084,16 @@ export default function AreaDetailPage() {
                     />
                   <div className='flex items-center gap-2 flex-shrink-0'>
                     <TooltipProvider>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => setTaskDetailState(prev => ({ ...prev, isExpanded: !prev.isExpanded }))}>
+                                  <Expand className="h-5 w-5" />
+                              </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                          <p>Expand</p>
+                          </TooltipContent>
+                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
@@ -1131,8 +1145,8 @@ export default function AreaDetailPage() {
                     }}
                   />
 
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium pt-2 self-start"><AlignLeft className="h-4 w-4" /> Details</div>
-                  <div className="-mt-2 text-left">
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
+                  <div className="text-left -mt-2">
                     <Textarea
                         value={editableTaskData.description || ''}
                         onChange={(e) => handleTaskDataChange('description', e.target.value)}
@@ -1157,6 +1171,18 @@ export default function AreaDetailPage() {
                       </div>
                     </>
                   )}
+                </div>
+                <Separator />
+                <div>
+                  <Label htmlFor="markdown-editor" className="text-muted-foreground font-medium">Markdown Details</Label>
+                  <Textarea
+                    id="markdown-editor"
+                    value={editableTaskData.markdown || ''}
+                    onChange={(e) => handleTaskDataChange('markdown', e.target.value)}
+                    placeholder="Add detailed notes in Markdown..."
+                    className="mt-2"
+                    rows={taskDetailState.isExpanded ? 15 : 5}
+                  />
                 </div>
               </>
             )}
