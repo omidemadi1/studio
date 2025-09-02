@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -155,10 +154,8 @@ export default function AreaDetailPage() {
   const [editProjectState, setEditProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
   const [deleteProjectState, setDeleteProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; projectId: string | null }>({ open: false, projectId: null });
-  const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; projectId: string | null; taskId: string | null; isExpanded: boolean; }>({ open: false, projectId: null, taskId: null, isExpanded: false });
   const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
-  const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
   const [sortOption, setSortOption] = useState<SortOption>('name-asc');
   const [taskFilter, setTaskFilter] = useState<TaskFilterOption>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('projects');
@@ -388,34 +385,9 @@ export default function AreaDetailPage() {
   const totalTokens = completedTasks.reduce((sum, task) => sum + task.tokens, 0);
   const completionPercentage = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
-  function handleTaskClick(projectId: string, taskId: string) {
-    const project = area?.projects.find((p) => p.id === projectId);
-    const task = project?.tasks.find((t) => t.id === taskId);
-    if (task) {
-      setEditableTaskData({
-        title: task.title,
-        description: task.description || '',
-        markdown: task.markdown || '',
-      });
-    }
-    setTaskDetailState(prev => ({
-      ...prev,
-      open: true,
-      projectId,
-      taskId,
-    }));
+  function handleTaskClick(taskId: string) {
+    router.push(`/tasks/${taskId}`);
   }
-  
-  const { projectId, taskId } = taskDetailState;
-  const currentProject = area?.projects.find((p) => p.id === projectId);
-  const currentTask = currentProject?.tasks.find((t) => t.id === taskId);
-  const currentSkill = skills.find(s => s.id === currentTask?.skillId);
-
-  const handleTaskDataChange = (field: keyof Task, value: string | number | undefined) => {
-    setEditableTaskData(prev => ({ ...prev, [field]: value }));
-    if (!taskId) return;
-    updateTaskDetails(taskId, { [field]: value });
-  };
 
   const handleDeleteProject = () => {
     if (!deleteProjectState.project) return;
@@ -427,12 +399,6 @@ export default function AreaDetailPage() {
     if (!deleteTaskState.task) return;
     deleteTask(deleteTaskState.task.id);
     setDeleteTaskState({ open: false, task: null });
-  };
-
-  const handleFocusClick = () => {
-    if (!taskId) return;
-    setTaskDetailState(prev => ({ ...prev, open: false }));
-    router.push(`/focus?taskId=${taskId}`);
   };
 
   return (
@@ -671,7 +637,7 @@ export default function AreaDetailPage() {
                                 <li
                                     key={task.id}
                                     className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
-                                    onClick={() => handleTaskClick(project.id, task.id)}
+                                    onClick={() => handleTaskClick(task.id)}
                                 >
                                     <div onClick={(e) => e.stopPropagation()}>
                                     <Checkbox
@@ -750,7 +716,7 @@ export default function AreaDetailPage() {
                       <Card
                           key={task.id}
                           className="flex items-center gap-3 p-3 bg-card/80 hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => handleTaskClick(task.projectId || '', task.id)}
+                          onClick={() => handleTaskClick(task.id)}
                       >
                           <div onClick={(e) => e.stopPropagation()}>
                           <Checkbox
@@ -1069,128 +1035,6 @@ export default function AreaDetailPage() {
           </DialogContent>
         </Dialog>
       
-      <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
-          <DialogContent className={cn("sm:max-w-md transition-all", taskDetailState.isExpanded && "sm:max-w-[90vw] h-[90vh] flex flex-col")}>
-            {currentTask && (
-              <>
-                <DialogHeader className="flex flex-row items-start justify-between gap-4">
-                   <VisuallyHidden>
-                      <DialogTitle>{editableTaskData.title}</DialogTitle>
-                      <DialogDescription>Details for task: {editableTaskData.title}. You can edit the details below.</DialogDescription>
-                   </VisuallyHidden>
-                   <Input
-                      value={editableTaskData.title || ''}
-                      onChange={(e) => handleTaskDataChange('title', e.target.value)}
-                      className="text-xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                  <div className='flex items-center gap-2 flex-shrink-0'>
-                    <TooltipProvider>
-                      <Tooltip>
-                          <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => setTaskDetailState(prev => ({ ...prev, isExpanded: !prev.isExpanded }))}>
-                                  <Expand className="h-5 w-5" />
-                              </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                          <p>Expand</p>
-                          </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
-                              <Crosshair className="h-5 w-5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Focus on this task</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                     <Checkbox
-                          checked={currentTask.completed}
-                          onCheckedChange={(checked) =>
-                              updateTaskCompletion(currentTask.id, !!checked)
-                          }
-                          className="w-5 h-5"
-                      />
-                  </div>
-                </DialogHeader>
-                <div className={cn("flex-1", taskDetailState.isExpanded ? "overflow-y-auto -mr-6 pr-6" : "")}>
-                  <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
-                    
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
-                    <div className="font-semibold text-left">{area?.name}</div>
-
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
-                    <div className="font-semibold text-left">{currentProject?.name}</div>
-
-                    {currentSkill && (
-                      <>
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
-                        <div className="font-semibold text-left">{currentSkill.name}</div>
-                      </>
-                    )}
-
-                    {currentTask.difficulty && (
-                        <>
-                            <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
-                            <div className='text-left'><Badge variant="outline" className={cn(currentTask.difficulty ? difficultyColors[currentTask.difficulty] : '')}>{currentTask.difficulty}</Badge></div>
-                        </>
-                    )}
-                    
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium">Date</div>
-                    <DateTimePicker
-                      date={currentTask.dueDate ? new Date(currentTask.dueDate) : undefined}
-                      setDate={(date) => {
-                        if (!taskId) return;
-                        updateTaskDetails(taskId, { dueDate: date?.toISOString() });
-                      }}
-                    />
-
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
-                    <div className="text-left -mt-2">
-                      <Textarea
-                          value={editableTaskData.description || ''}
-                          onChange={(e) => handleTaskDataChange('description', e.target.value)}
-                          placeholder="Add a description..."
-                          className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 -ml-2"
-                          rows={2}
-                      />
-                    </div>
-
-
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                    <div className="font-semibold text-left">{currentTask.xp + (currentTask.bonusXp || 0)}</div>
-                    
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
-                    <div className="font-semibold text-left">{currentTask.tokens}</div>
-
-                    {currentTask.focusDuration && currentTask.focusDuration > 0 && (
-                      <>
-                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>
-                        <div className="font-semibold text-left">
-                          {`${Math.floor(currentTask.focusDuration / 3600)}h ${Math.floor((currentTask.focusDuration % 3600) / 60)}m`}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <Separator className="my-4"/>
-                  <div>
-                    <Label htmlFor="markdown-editor" className="text-muted-foreground font-medium">Markdown Details</Label>
-                    <Textarea
-                      id="markdown-editor"
-                      value={editableTaskData.markdown || ''}
-                      onChange={(e) => handleTaskDataChange('markdown', e.target.value)}
-                      placeholder="Add detailed notes in Markdown..."
-                      className="mt-2"
-                      rows={taskDetailState.isExpanded ? 15 : 5}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
       <Dialog open={addSkillOpen} onOpenChange={setAddSkillOpen}>
         <DialogContent>
           <DialogHeader>

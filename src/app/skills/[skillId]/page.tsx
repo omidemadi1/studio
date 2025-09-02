@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -151,9 +150,7 @@ export default function SkillDetailPage() {
     const [editSkillOpen, setEditSkillOpen] = useState(false);
     const [addSkillOpen, setAddSkillOpen] = useState(false);
     const [addTaskOpen, setAddTaskOpen] = useState(false);
-    const [taskDetailState, setTaskDetailState] = useState<{ open: boolean; taskId: string | null; isExpanded: boolean; }>({ open: false, taskId: null, isExpanded: false });
     const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
-    const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
     const [isCreatingTask, setIsCreatingTask] = useState(false);
     
     const selectableSkills = getFlattenedSkills(skills);
@@ -262,50 +259,13 @@ export default function SkillDetailPage() {
     };
 
     const handleTaskClick = (taskId: string) => {
-        const task = relatedTasks.find(t => t.id === taskId);
-        if (task) {
-          setEditableTaskData({
-            title: task.title ?? '',
-            description: task.description ?? '',
-            markdown: task.markdown ?? '',
-          });
-        }
-        setTaskDetailState(prev => ({ ...prev, open: true, taskId }));
+        router.push(`/tasks/${taskId}`);
     };
 
     const handleDeleteTask = () => {
         if (!deleteTaskState.task) return;
         deleteTask(deleteTaskState.task.id);
         setDeleteTaskState({ open: false, task: null });
-    };
-
-
-    const handleTaskDataChange = (field: keyof Task, value: string | number | undefined) => {
-        if (!taskDetailState.taskId) return;
-        setEditableTaskData(prev => ({ ...prev, [field]: value }));
-        updateTaskDetails(taskDetailState.taskId, { [field]: value });
-    };
-
-    const { taskId } = taskDetailState;
-    const currentTask = relatedTasks.find(t => t.id === taskId);
-    const { area, project } = useMemo(() => {
-        if (!currentTask?.projectId) return { area: null, project: null };
-        for (const a of areas) {
-            const p = a.projects.find(p => p.id === currentTask.projectId);
-            if (p) return { area: a, project: p };
-        }
-        return { area: null, project: null };
-    }, [currentTask, areas]);
-    
-    const currentTaskSkill = useMemo(() => {
-        if (!currentTask?.skillId) return null;
-        return findSkillRecursive(skills, currentTask.skillId);
-    }, [currentTask, skills]);
-
-    const handleFocusClick = () => {
-        if (!taskId) return;
-        setTaskDetailState(prev => ({ ...prev, open: false }));
-        router.push(`/focus?taskId=${taskId}`);
     };
     
     const backHref = skill.parentId ? `/skills/${skill.parentId}` : '/profile';
@@ -843,129 +803,6 @@ export default function SkillDetailPage() {
                             </DialogFooter>
                         </form>
                     </Form>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={taskDetailState.open} onOpenChange={(open) => setTaskDetailState(prev => ({ ...prev, open }))}>
-                <DialogContent className={cn("sm:max-w-md transition-all", taskDetailState.isExpanded && "sm:max-w-[90vw] h-[90vh] flex flex-col")}>
-                {currentTask && (
-                    <>
-                    <DialogHeader className="flex flex-row items-start justify-between gap-4">
-                        <VisuallyHidden>
-                            <DialogTitle>{editableTaskData.title || ''}</DialogTitle>
-                            <DialogDescription>Details for task: {editableTaskData.title || ''}. You can edit the details below.</DialogDescription>
-                        </VisuallyHidden>
-                        <Input
-                            value={editableTaskData.title || ''}
-                            onChange={(e) => handleTaskDataChange('title', e.target.value)}
-                            className="text-xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        />
-                        <div className='flex items-center gap-2 flex-shrink-0'>
-                          <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" onClick={() => setTaskDetailState(prev => ({ ...prev, isExpanded: !prev.isExpanded }))}>
-                                        <Expand className="h-5 w-5" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                <p>Expand</p>
-                                </TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={currentTask.completed}>
-                                    <Crosshair className="h-5 w-5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Focus on this task</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                            <Checkbox
-                                checked={currentTask.completed}
-                                onCheckedChange={(checked) =>
-                                    updateTaskCompletion(currentTask.id, !!checked)
-                                }
-                                className="w-5 h-5"
-                            />
-                        </div>
-                    </DialogHeader>
-                    <div className={cn("flex-1", taskDetailState.isExpanded ? "overflow-y-auto -mr-6 pr-6" : "")}>
-                        <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
-
-                            {area && project && (
-                                <>
-                                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
-                                    <div className="font-semibold text-left">{area?.name}</div>
-
-                                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
-                                    <div className="font-semibold text-left">{project?.name}</div>
-                                </>
-                            )}
-
-
-                            <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
-                            <div className="font-semibold text-left">{currentTaskSkill?.name}</div>
-                            
-                            {currentTask.difficulty && (
-                                <>
-                                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
-                                    <div className='text-left'><Badge variant="outline" className={cn(currentTask.difficulty ? difficultyColors[currentTask.difficulty] : '')}>{currentTask.difficulty}</Badge></div>
-                                </>
-                            )}
-                            
-                            <div className="flex items-center gap-2 text-muted-foreground font-medium">Date</div>
-                            <DateTimePicker
-                                date={currentTask.dueDate ? new Date(currentTask.dueDate) : undefined}
-                                setDate={(date) => {
-                                    if (!taskId) return;
-                                    updateTaskDetails(taskId, { dueDate: date?.toISOString() });
-                                }}
-                            />
-
-                            <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
-                            <div className="text-left -mt-2">
-                                <Textarea
-                                    value={editableTaskData.description || ''}
-                                    onChange={(e) => handleTaskDataChange('description', e.target.value)}
-                                    placeholder="Add a description..."
-                                    className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 -ml-2"
-                                    rows={2}
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                            <div className="font-semibold text-left">{currentTask.xp + (currentTask.bonusXp || 0)}</div>
-
-                            <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
-                            <div className="font-semibold text-left">{currentTask.tokens}</div>
-                            
-                            {currentTask.focusDuration && currentTask.focusDuration > 0 && (
-                            <>
-                                <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>
-                                <div className="font-semibold text-left">
-                                {`${Math.floor(currentTask.focusDuration / 3600)}h ${Math.floor((currentTask.focusDuration % 3600) / 60)}m`}
-                                </div>
-                            </>
-                            )}
-                        </div>
-                        <Separator className="my-4"/>
-                        <div>
-                            <Label htmlFor="markdown-editor" className="text-muted-foreground font-medium">Markdown Details</Label>
-                            <Textarea
-                                id="markdown-editor"
-                                value={editableTaskData.markdown || ''}
-                                onChange={(e) => handleTaskDataChange('markdown', e.target.value)}
-                                placeholder="Add detailed notes in Markdown..."
-                                className="mt-2"
-                                rows={taskDetailState.isExpanded ? 15 : 5}
-                            />
-                        </div>
-                    </div>
-                    </>
-                )}
                 </DialogContent>
             </Dialog>
 
