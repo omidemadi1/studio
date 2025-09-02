@@ -52,10 +52,18 @@ export default function QuestsPage() {
 
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [todaysTasks, setTodaysTasks] = useState<Task[]>([]);
+  const [isClient, setIsClient] = useState(false);
 
-  const todaysTasks = useMemo(() => {
-    return tasks.filter(task => task.dueDate && isToday(new Date(task.dueDate)) && !task.completed);
-  }, [tasks]);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  useEffect(() => {
+    if (isClient) {
+      setTodaysTasks(tasks.filter(task => task.dueDate && isToday(new Date(task.dueDate)) && !task.completed));
+    }
+  }, [tasks, isClient]);
 
   useEffect(() => {
     async function fetchMissions() {
