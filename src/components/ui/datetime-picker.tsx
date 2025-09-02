@@ -28,13 +28,18 @@ interface DateTimePickerProps {
 export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [includeTime, setIncludeTime] = React.useState(!!date && (date.getHours() !== 0 || date.getMinutes() !== 0));
+  const [formattedDate, setFormattedDate] = React.useState('');
 
   React.useEffect(() => {
     // When date is set from outside and has time, enable the switch
     if (date) {
       setIncludeTime(date.getHours() !== 0 || date.getMinutes() !== 0);
+      setFormattedDate(format(date, includeTime ? 'PPP p' : 'PPP'));
+    } else {
+      setFormattedDate('');
     }
-  }, [date]);
+  }, [date, includeTime]);
+
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) {
@@ -90,7 +95,7 @@ export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
         >
           {date ? (
             <div className='flex flex-col items-start'>
-                <span className='text-sm leading-tight'>{format(date, includeTime ? 'PPP p' : 'PPP')}</span>
+                <span className='text-sm leading-tight'>{formattedDate}</span>
             </div>
           )
           : (<span>Pick a date</span>)}
