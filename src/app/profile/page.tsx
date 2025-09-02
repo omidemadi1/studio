@@ -3,15 +3,12 @@
 import React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Pencil, Lightbulb, PlusCircle, Upload, Library, Wallet, Check, Settings, LogOut, Trash2, Bell, ChevronRight, ChevronDown, Archive } from 'lucide-react';
+import { Pencil, Upload, Library, Wallet, Settings, LogOut, Trash2, Bell, Archive } from 'lucide-react';
 import SkillRadar from '@/components/skill-radar';
 import { GemIcon } from '@/components/icons/gem-icon';
 import {
@@ -42,29 +39,12 @@ import {
     DropdownMenuTrigger,
     DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuestData } from '@/context/quest-context';
-import { iconMap } from '@/lib/icon-map';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
-import type { Skill } from '@/lib/types';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
-
-const skillSchema = z.object({
-  name: z.string().min(1, 'Skill name is required.'),
-  icon: z.string().min(1, 'An icon is required.'),
-});
 
 const defaultAvatars = [
     '/assets/avatars/archer.png',
@@ -78,19 +58,11 @@ const defaultAvatars = [
 ];
 
 export default function ProfilePage() {
-  const { user, skills, updateUser, addSkill, resetDatabase, updateSkill, deleteSkill, tasks } = useQuestData();
+  const { user, updateUser, resetDatabase, tasks } = useQuestData();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [deleteDataOpen, setDeleteDataOpen] = useState(false);
   const [name, setName] = useState(user.name);
   const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
-  const [addSkillOpen, setAddSkillOpen] = useState(false);
-  const [editSkillState, setEditSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
-  const [deleteSkillState, setDeleteSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
-
-  const skillForm = useForm<z.infer<typeof skillSchema>>({
-    resolver: zodResolver(skillSchema),
-    defaultValues: { name: '', icon: '' },
-  });
   
   const notifications = tasks.filter(task => task.reminder !== undefined && task.dueDate);
 
@@ -110,33 +82,6 @@ export default function ProfilePage() {
   const handleSaveChanges = () => {
     updateUser({ name, avatarUrl: avatarPreview });
     setEditProfileOpen(false);
-  };
-
-  const onAddSkill = (data: z.infer<typeof skillSchema>) => {
-    addSkill(data.name, data.icon);
-    skillForm.reset();
-    setAddSkillOpen(false);
-  };
-
-  const onEditSkill = (data: z.infer<typeof skillSchema>) => {
-    if (!editSkillState.skill) return;
-    updateSkill(editSkillState.skill.id, data.name, data.icon);
-    setEditSkillState({ open: false, skill: null });
-  };
-
-  const handleDeleteSkill = () => {
-    if (!deleteSkillState.skill) return;
-    deleteSkill(deleteSkillState.skill.id);
-    setDeleteSkillState({ open: false, skill: null });
-  };
-
-  const handleEditClick = (skill: Skill) => {
-    skillForm.reset({ name: skill.name, icon: skill.icon });
-    setEditSkillState({ open: true, skill });
-  };
-
-  const handleDeleteClick = (skill: Skill) => {
-    setDeleteSkillState({ open: true, skill });
   };
 
   const handleDeleteData = () => {
@@ -372,163 +317,6 @@ export default function ProfilePage() {
           <SkillRadar />
         </CardContent>
       </Card>
-
-      <section>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-headline font-semibold">
-            Skill Details
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setAddSkillOpen(true)}
-          >
-            <PlusCircle className="h-6 w-6 text-primary" />
-            <span className="sr-only">Add Skill</span>
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {skills.map((skill) => {
-            const SkillIcon = iconMap[skill.icon] || Lightbulb;
-            const progress = (skill.points / skill.maxPoints) * 100;
-            const circumference = 2 * Math.PI * 45; // 2 * pi * radius
-            const strokeDashoffset = circumference - (progress / 100) * circumference;
-
-            return (
-              <ContextMenu key={skill.id}>
-                <ContextMenuTrigger>
-                  <Card className="bg-card/80 overflow-hidden h-full flex items-center justify-center">
-                    <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                      <Link href={`/skills/${skill.id}`} className="relative w-40 h-40">
-                          <svg className="w-full h-full" viewBox="0 0 100 100">
-                              <circle
-                                  className="text-muted/20"
-                                  stroke="currentColor"
-                                  strokeWidth="8"
-                                  cx="50"
-                                  cy="50"
-                                  r="45"
-                                  fill="transparent"
-                              />
-                              <circle
-                                  className="text-primary"
-                                  stroke="currentColor"
-                                  strokeWidth="8"
-                                  strokeLinecap="round"
-                                  cx="50"
-                                  cy="50"
-                                  r="45"
-                                  fill="transparent"
-                                  strokeDasharray={circumference}
-                                  strokeDashoffset={strokeDashoffset}
-                                  transform="rotate(-90 50 50)"
-                              />
-                          </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
-                              <div className="relative mb-2">
-                                  <SkillIcon className="h-8 w-8 text-accent" />
-                                  <div className="absolute -top-1 -right-2 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold border-2 border-card">
-                                      {skill.level}
-                                  </div>
-                              </div>
-                              <p className="font-headline font-semibold mt-1 text-sm">{skill.name}</p>
-                              <p className="text-xs text-muted-foreground mt-1">{skill.points} / {skill.maxPoints} XP</p>
-                          </div>
-                      </Link>
-                    </CardContent>
-                  </Card>
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                  <ContextMenuItem onSelect={() => handleEditClick(skill)}>
-                    <Pencil className="h-4 w-4 mr-2" /> Edit Skill
-                  </ContextMenuItem>
-                  <ContextMenuItem onSelect={() => handleDeleteClick(skill)}>
-                    <Trash2 className="h-4 w-4 mr-2" /> Delete Skill
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-            );
-          })}
-        </div>
-      </section>
-
-      <Dialog open={addSkillOpen} onOpenChange={setAddSkillOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a New Skill</DialogTitle>
-            <DialogDescription>
-              Skills help you track progress in different areas of your life.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...skillForm}>
-            <form
-              onSubmit={skillForm.handleSubmit(onAddSkill)}
-              className="space-y-4 py-4"
-            >
-              <FormField
-                control={skillForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Skill Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Programming" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={skillForm.control}
-                name="icon"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Icon</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button variant="outline" className="w-full justify-start" type="button">
-                                    {field.value ? (
-                                        <>
-                                            {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
-                                            {field.value}
-                                        </>
-                                    ) : 'Select an icon'}
-                                </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-2 max-w-[240px] max-h-[200px] overflow-y-auto">
-                            <div className="grid grid-cols-6 gap-1">
-                                {Object.keys(iconMap).map((iconName) => {
-                                    const IconComponent = iconMap[iconName];
-                                    return (
-                                        <Button
-                                            key={iconName}
-                                            variant="ghost"
-                                            size="icon"
-                                            type="button"
-                                            onClick={() => field.onChange(iconName)}
-                                            className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
-                                        >
-                                            <IconComponent className="h-5 w-5" />
-                                            {field.value === iconName && <Check className="absolute bottom-0 right-0 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
-                                        </Button>
-                                    );
-                                })}
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="submit">Create Skill</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
     </div>
     <AlertDialog open={deleteDataOpen} onOpenChange={setDeleteDataOpen}>
         <AlertDialogContent>
@@ -542,101 +330,6 @@ export default function ProfilePage() {
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDeleteData}>Continue</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-
-     <Dialog open={editSkillState.open} onOpenChange={(open) => setEditSkillState({ open, skill: open ? editSkillState.skill : null })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Skill</DialogTitle>
-            <DialogDescription>
-              Update the details of your skill.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...skillForm}>
-            <form
-              onSubmit={skillForm.handleSubmit(onEditSkill)}
-              className="space-y-4 py-4"
-            >
-              <FormField
-                control={skillForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Skill Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Programming" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={skillForm.control}
-                name="icon"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Icon</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button variant="outline" className="w-full justify-start" type="button">
-                                    {field.value ? (
-                                        <>
-                                            {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
-                                            {field.value}
-                                        </>
-                                    ) : 'Select an icon'}
-                                </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-2 max-w-[240px] max-h-[200px] overflow-y-auto">
-                            <div className="grid grid-cols-6 gap-1">
-                                {Object.keys(iconMap).map((iconName) => {
-                                    const IconComponent = iconMap[iconName];
-                                    return (
-                                        <Button
-                                            key={iconName}
-                                            variant="ghost"
-                                            size="icon"
-                                            type="button"
-                                            onClick={() => field.onChange(iconName)}
-                                            className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
-                                        >
-                                            <IconComponent className="h-5 w-5" />
-                                            {field.value === iconName && <Check className="absolute bottom-0 right-0 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
-                                        </Button>
-                                    );
-                                })}
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                 <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
-                <Button type="submit">Save Changes</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-    <AlertDialog open={deleteSkillState.open} onOpenChange={(open) => setDeleteSkillState({ open, skill: open ? deleteSkillState.skill : null })}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the 
-                <span className="font-bold"> {deleteSkillState.skill?.name}</span> skill and all of its sub-skills.
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteSkillState({open: false, skill: null})}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteSkill}>Continue</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>

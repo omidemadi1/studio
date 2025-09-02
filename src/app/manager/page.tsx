@@ -75,6 +75,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Bell,
+  Lightbulb,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -179,6 +180,8 @@ export default function ManagerPage() {
     duplicateArea, 
     duplicateProject, 
     duplicateTask,
+    updateSkill,
+    deleteSkill
   } = useQuestData();
 
   const [addAreaOpen, setAddAreaOpen] = useState(false);
@@ -194,6 +197,9 @@ export default function ManagerPage() {
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [addSkillOpen, setAddSkillOpen] = useState(false);
+  const [editSkillState, setEditSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
+  const [deleteSkillState, setDeleteSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
+
 
   const selectableSkills = getFlattenedSkills(skills);
 
@@ -283,6 +289,28 @@ export default function ManagerPage() {
     skillForm.reset();
     setAddSkillOpen(false);
   };
+
+  const onEditSkill = (data: z.infer<typeof skillSchema>) => {
+    if (!editSkillState.skill) return;
+    updateSkill(editSkillState.skill.id, data.name, data.icon);
+    setEditSkillState({ open: false, skill: null });
+  };
+
+  const handleDeleteSkill = () => {
+    if (!deleteSkillState.skill) return;
+    deleteSkill(deleteSkillState.skill.id);
+    setDeleteSkillState({ open: false, skill: null });
+  };
+
+  const handleEditClick = (skill: Skill) => {
+    skillForm.reset({ name: skill.name, icon: skill.icon });
+    setEditSkillState({ open: true, skill });
+  };
+
+  const handleDeleteClick = (skill: Skill) => {
+    setDeleteSkillState({ open: true, skill });
+  };
+
 
   async function onAddTask(data: z.infer<typeof taskSchema>) {
     const areaId = data.areaId;
@@ -384,7 +412,7 @@ export default function ManagerPage() {
         <p className="text-muted-foreground">Oversee all your quests and projects.</p>
       </header>
       
-      <section>
+      <section className='mb-8'>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline font-semibold">Your Quests</h2>
             <div className="flex items-center gap-2">
@@ -549,6 +577,85 @@ export default function ManagerPage() {
         ) : (
           <CalendarView onAddTaskClick={(date) => setAddTaskState({ open: true, areaId: null, projectId: null, date })}/>
         )}
+      </section>
+
+      <section>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-headline font-semibold">
+            Skill Details
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setAddSkillOpen(true)}
+          >
+            <PlusCircle className="h-6 w-6 text-primary" />
+            <span className="sr-only">Add Skill</span>
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {skills.map((skill) => {
+            const SkillIcon = iconMap[skill.icon] || Lightbulb;
+            const progress = (skill.points / skill.maxPoints) * 100;
+            const circumference = 2 * Math.PI * 45; // 2 * pi * radius
+            const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+            return (
+              <ContextMenu key={skill.id}>
+                <ContextMenuTrigger>
+                  <Card className="bg-card/80 overflow-hidden h-full flex items-center justify-center">
+                    <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                      <Link href={`/skills/${skill.id}`} className="relative w-40 h-40">
+                          <svg className="w-full h-full" viewBox="0 0 100 100">
+                              <circle
+                                  className="text-muted/20"
+                                  stroke="currentColor"
+                                  strokeWidth="8"
+                                  cx="50"
+                                  cy="50"
+                                  r="45"
+                                  fill="transparent"
+                              />
+                              <circle
+                                  className="text-primary"
+                                  stroke="currentColor"
+                                  strokeWidth="8"
+                                  strokeLinecap="round"
+                                  cx="50"
+                                  cy="50"
+                                  r="45"
+                                  fill="transparent"
+                                  strokeDasharray={circumference}
+                                  strokeDashoffset={strokeDashoffset}
+                                  transform="rotate(-90 50 50)"
+                              />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+                              <div className="relative mb-2">
+                                  <SkillIcon className="h-8 w-8 text-accent" />
+                                  <div className="absolute -top-1 -right-2 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold border-2 border-card">
+                                      {skill.level}
+                                  </div>
+                              </div>
+                              <p className="font-headline font-semibold mt-1 text-sm">{skill.name}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{skill.points} / {skill.maxPoints} XP</p>
+                          </div>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem onSelect={() => handleEditClick(skill)}>
+                    <Pencil className="h-4 w-4 mr-2" /> Edit Skill
+                  </ContextMenuItem>
+                  <ContextMenuItem onSelect={() => handleDeleteClick(skill)}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete Skill
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
+            );
+          })}
+        </div>
       </section>
 
       <Dialog open={addAreaOpen} onOpenChange={setAddAreaOpen}>
@@ -1069,6 +1176,7 @@ export default function ManagerPage() {
           )}
         </DialogContent>
       </Dialog>
+
       <Dialog open={addSkillOpen} onOpenChange={setAddSkillOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1147,6 +1255,84 @@ export default function ManagerPage() {
           </Form>
         </DialogContent>
       </Dialog>
+      <Dialog open={editSkillState.open} onOpenChange={(open) => setEditSkillState({ open, skill: open ? editSkillState.skill : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Skill</DialogTitle>
+            <DialogDescription>
+              Update the details of your skill.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...skillForm}>
+            <form
+              onSubmit={skillForm.handleSubmit(onEditSkill)}
+              className="space-y-4 py-4"
+            >
+              <FormField
+                control={skillForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skill Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Programming" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={skillForm.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icon</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button variant="outline" className="w-full justify-start" type="button">
+                                    {field.value ? (
+                                        <>
+                                            {React.createElement(iconMap[field.value], { className: 'h-4 w-4 mr-2' })}
+                                            {field.value}
+                                        </>
+                                    ) : 'Select an icon'}
+                                </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2 max-w-[240px] max-h-[200px] overflow-y-auto">
+                            <div className="grid grid-cols-6 gap-1">
+                                {Object.keys(iconMap).map((iconName) => {
+                                    const IconComponent = iconMap[iconName];
+                                    return (
+                                        <Button
+                                            key={iconName}
+                                            variant="ghost"
+                                            size="icon"
+                                            type="button"
+                                            onClick={() => field.onChange(iconName)}
+                                            className={cn("relative", field.value === iconName && "bg-accent text-accent-foreground")}
+                                        >
+                                            <IconComponent className="h-5 w-5" />
+                                            {field.value === iconName && <Check className="absolute bottom-0 right-0 h-3 w-3 text-white bg-green-500 rounded-full p-0.5" />}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                 <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
        <AlertDialog open={deleteTaskState.open} onOpenChange={(open) => setDeleteTaskState({ open, task: open ? deleteTaskState.task : null })}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -1159,6 +1345,21 @@ export default function ManagerPage() {
             <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteTaskState({open: false, task: null})}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteTask}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={deleteSkillState.open} onOpenChange={(open) => setDeleteSkillState({ open, skill: open ? deleteSkillState.skill : null })}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the 
+                <span className="font-bold"> {deleteSkillState.skill?.name}</span> skill and all of its sub-skills.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteSkillState({open: false, skill: null})}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSkill}>Continue</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
