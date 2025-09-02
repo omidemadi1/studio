@@ -357,7 +357,6 @@ export default function ManagerPage() {
       setEditableTaskData({
         title: task.title,
         description: task.description || '',
-        reminder: task.reminder,
       });
     }
     setTaskDetailState({
@@ -1076,41 +1075,39 @@ export default function ManagerPage() {
                     />
                 </div>
               </DialogHeader>
-              <div className="grid grid-cols-[120px_1fr] items-start gap-y-4 gap-x-4 text-sm mt-4">
+              <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm mt-4">
                 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
-                <div className="font-semibold">{currentArea?.name}</div>
+                <div className="font-semibold text-left">{currentArea?.name}</div>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
-                <div className="font-semibold">{currentProject?.name}</div>
+                <div className="font-semibold text-left">{currentProject?.name}</div>
 
                 {currentSkill && (
                   <>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
-                    <div className="font-semibold">{currentSkill.name}</div>
+                    <div className="font-semibold text-left">{currentSkill.name}</div>
                   </>
                 )}
 
                 {currentTask.difficulty && (
                     <>
                         <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
-                        <div><Badge variant="outline" className={cn(currentTask.difficulty ? difficultyColors[currentTask.difficulty] : '')}>{currentTask.difficulty}</Badge></div>
+                        <div className='text-left'><Badge variant="outline" className={cn(currentTask.difficulty ? difficultyColors[currentTask.difficulty] : '')}>{currentTask.difficulty}</Badge></div>
                     </>
                 )}
-
-                <>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Date</div>
-                  <DateTimePicker
+                
+                <div className="flex items-center gap-2 text-muted-foreground font-medium">Date</div>
+                <DateTimePicker
                     date={currentTask.dueDate ? new Date(currentTask.dueDate) : undefined}
                     setDate={(date) => {
                       if (!taskId) return;
                       updateTaskDetails(taskId, { dueDate: date?.toISOString() });
                     }}
-                  />
-                </>
+                />
 
-                <div className="flex items-start gap-2 text-muted-foreground font-medium pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
-                <div className="-mt-2">
+                <div className="flex items-center gap-2 text-muted-foreground font-medium pt-2 self-start"><AlignLeft className="h-4 w-4" /> Details</div>
+                <div className="-mt-2 text-left">
                   <Textarea
                       value={editableTaskData.description || ''}
                       onChange={(e) => handleTaskDataChange('description', e.target.value)}
@@ -1120,17 +1117,16 @@ export default function ManagerPage() {
                   />
                 </div>
 
-
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
-                <div className="font-semibold">{currentTask.xp + (currentTask.bonusXp || 0)}</div>
+                <div className="font-semibold text-left">{currentTask.xp + (currentTask.bonusXp || 0)}</div>
 
                 <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
-                <div className="font-semibold">{currentTask.tokens}</div>
+                <div className="font-semibold text-left">{currentTask.tokens}</div>
                 
                 {currentTask.focusDuration && currentTask.focusDuration > 0 && (
                   <>
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>
-                    <div className="font-semibold">
+                    <div className="font-semibold text-left">
                       {`${Math.floor(currentTask.focusDuration / 3600)}h ${Math.floor((currentTask.focusDuration % 3600) / 60)}m`}
                     </div>
                   </>
