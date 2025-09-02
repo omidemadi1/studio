@@ -82,7 +82,7 @@ export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant={'outline'}
+          variant={'ghost'}
           className={cn(
             'w-full justify-start text-left font-normal h-10',
             !date && 'text-muted-foreground'
@@ -178,5 +178,3 @@ export function DateTimePicker({ date, setDate }: DateTimePickerProps) {
     </Popover>
   );
 }
-
-    
