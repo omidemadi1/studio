@@ -2,14 +2,17 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { isToday } from 'date-fns';
+import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { WeeklyMission } from '@/lib/types';
+import type { Task, WeeklyMission } from '@/lib/types';
 import {
   Sparkles,
+  Swords,
 } from 'lucide-react';
 import { useQuestData } from '@/context/quest-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,17 +23,24 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
+import { Button } from '@/components/ui/button';
 
 
 export default function QuestsPage() {
   const { 
     user, 
+    tasks,
     weeklyMissions,
+    updateTaskCompletion,
     updateWeeklyMissionCompletion,
     maybeGenerateWeeklyMissions,
   } = useQuestData();
 
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+
+  const todaysTasks = useMemo(() => {
+    return tasks.filter(task => task.dueDate && isToday(new Date(task.dueDate)) && !task.completed);
+  }, [tasks]);
 
   useEffect(() => {
     async function fetchMissions() {
@@ -121,8 +131,47 @@ export default function QuestsPage() {
              </Card>
         )}
       </section>
+
+      <section>
+        <h2 className="text-2xl font-headline font-semibold flex items-center gap-2 mb-4">
+            <Swords className="w-6 h-6 text-accent" />
+            Today's Quests
+        </h2>
+        <div className="space-y-3">
+            {todaysTasks.length > 0 ? (
+                todaysTasks.map((task: Task) => (
+                    <Card key={task.id} className="bg-card/80">
+                        <CardContent className="p-3 flex items-center gap-4">
+                            <Checkbox
+                                id={`task-${task.id}`}
+                                checked={task.completed}
+                                onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
+                                className="w-5 h-5"
+                            />
+                            <label
+                                htmlFor={`task-${task.id}`}
+                                className={cn("flex-1 text-sm font-medium leading-none", task.completed && "line-through text-muted-foreground")}
+                            >
+                                {task.title}
+                            </label>
+                            <span className="text-xs font-bold text-primary whitespace-nowrap">
+                                +{task.xp} XP
+                            </span>
+                        </CardContent>
+                    </Card>
+                ))
+            ) : (
+                <Card className="bg-card/80">
+                    <CardContent className="p-6 text-center">
+                        <p className="text-muted-foreground text-sm">No quests scheduled for today. Time for a side quest?</p>
+                        <Button variant="link" asChild className='mt-2'>
+                           <Link href="/manager">Go to Manager</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+        </div>
+      </section>
     </div>
   );
 }
-
-    
