@@ -41,6 +41,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { GemIcon } from '@/components/icons/gem-icon';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const difficultyColors: Record<Difficulty, string> = {
     Easy: 'text-green-400',
@@ -58,6 +59,22 @@ const findSkillRecursive = (skills: Skill[], skillId: string): Skill | undefined
         }
     }
     return undefined;
+};
+
+// Helper to flatten skills for the select dropdown
+const getFlattenedSkills = (skills: Skill[]): Skill[] => {
+    const flattened: Skill[] = [];
+    const traverse = (skill: Skill) => {
+        // A skill is selectable if it has no sub-skills
+        if (!skill.subSkills || skill.subSkills.length === 0) {
+            flattened.push(skill);
+        }
+        if (skill.subSkills) {
+            skill.subSkills.forEach(traverse);
+        }
+    };
+    skills.forEach(traverse);
+    return flattened;
 };
 
 
@@ -80,6 +97,8 @@ export default function TaskDetailPage() {
     
     const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
     const [isEditingMarkdown, setIsEditingMarkdown] = useState(false);
+
+    const selectableSkills = getFlattenedSkills(skills);
 
 
     useEffect(() => {
@@ -108,7 +127,7 @@ export default function TaskDetailPage() {
         return findSkillRecursive(skills, task.skillId);
     }, [task, skills]);
 
-    const handleTaskDataChange = (field: keyof Task, value: string | number | undefined) => {
+    const handleTaskDataChange = (field: keyof Task, value: string | number | undefined | null) => {
         setEditableTaskData(prev => ({ ...prev, [field]: value }));
     };
     
@@ -131,6 +150,21 @@ export default function TaskDetailPage() {
         deleteTask(task.id);
         router.back();
     };
+
+    const handleAreaChange = (newAreaId: string) => {
+        // Find the first project in the new area and assign it
+        const newArea = areas.find(a => a.id === newAreaId);
+        const newProjectId = newArea?.projects[0]?.id || null;
+        updateTaskDetails(task.id, { projectId: newProjectId });
+    };
+
+    const handleProjectChange = (newProjectId: string) => {
+        updateTaskDetails(task.id, { projectId: newProjectId });
+    }
+    
+    const handleSkillChange = (newSkillId: string) => {
+        updateTaskDetails(task.id, { skillId: newSkillId });
+    }
 
     return (
         <div className={cn(
@@ -205,26 +239,38 @@ export default function TaskDetailPage() {
 
                 <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm">
 
-                    {area && (
-                        <>
-                            <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
-                            <div className="font-semibold text-left">{area.name}</div>
-                        </>
-                    )}
-
-                    {project && (
-                         <>
-                            <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
-                            <div className="font-semibold text-left">{project.name}</div>
-                        </>
-                    )}
-
-                    {currentSkill && (
-                        <>
-                            <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
-                            <div className="font-semibold text-left">{currentSkill.name}</div>
-                        </>
-                    )}
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
+                    <Select value={area?.id || ''} onValueChange={handleAreaChange}>
+                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0">
+                            <SelectValue placeholder="Select an area" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {areas.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
+                    <Select value={project?.id || ''} onValueChange={handleProjectChange} disabled={!area}>
+                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0">
+                            <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {area?.projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
+                    <Select value={currentSkill?.id || ''} onValueChange={handleSkillChange}>
+                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0">
+                            <SelectValue placeholder="Select a skill" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {selectableSkills.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                             <SelectItem value="none">
+                                <span className="text-muted-foreground">None</span>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
 
                     {task.difficulty && (
                         <>
@@ -248,7 +294,7 @@ export default function TaskDetailPage() {
                             onChange={(e) => handleTaskDataChange('description', e.target.value)}
                             onBlur={() => handleDetailBlur('description')}
                             placeholder="Add a description..."
-                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent"
+                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent h-auto"
                         />
                     </div>
 
