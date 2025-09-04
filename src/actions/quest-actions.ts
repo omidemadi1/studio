@@ -288,8 +288,8 @@ export async function duplicateTask(taskId: string) {
 
         const newTaskId = `task-${Date.now()}`;
         const newTask = { ...task, id: newTaskId, title: `${task.title} (copy)` };
-        db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, markdown) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.tokens, newTask.description, newTask.difficulty, newTask.dueDate, newTask.reminder, newTask.skillId, newTask.focusDuration || 0, task.projectId, newTask.markdown);
+        db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp, markdown) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.tokens, newTask.description, newTask.difficulty, newTask.dueDate, newTask.reminder, newTask.skillId, newTask.focusDuration || 0, newTask.projectId, newTask.bonusXp, newTask.markdown);
     });
     transaction();
     revalidatePath('/');
