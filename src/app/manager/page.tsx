@@ -540,7 +540,7 @@ export default function ManagerPage() {
         </div>
 
         {viewMode === 'list' ? (
-          <Accordion type="multiple" defaultValue={areas.map(a => a.id)} className="w-full">
+          <Accordion type="multiple" className="w-full">
             {areas.map((area) => {
               const AreaIcon = iconMap[area.icon] || Briefcase;
               return (
@@ -554,7 +554,7 @@ export default function ManagerPage() {
                       </Link>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <Accordion type="multiple" defaultValue={area.projects.map(p => p.id)} className="w-full pl-4 border-l-2 border-primary/20">
+                      <Accordion type="multiple" className="w-full pl-4 border-l-2 border-primary/20">
                         {area.projects.map((project) => (
                           <ContextMenu key={project.id}>
                             <ContextMenuTrigger>
