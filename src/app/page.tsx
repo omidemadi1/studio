@@ -657,7 +657,7 @@ export default function QuestsPage() {
           <div className="grid gap-2">
               <Button
                 variant="outline"
-                className="w-full justify-center gap-2 border-dashed hover:bg-muted/50"
+                className="w-full justify-start gap-2 border-dashed hover:bg-muted/50"
                 onClick={() => setAddTaskOpen(true)}
               >
                   <PlusCircle className="h-4 w-4 text-muted-foreground" />
