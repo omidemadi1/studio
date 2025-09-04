@@ -360,43 +360,56 @@ export default function SkillDetailPage() {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <span tabIndex={0}>
-                                        <Button variant="outline" size="sm" disabled>
-                                            <Sparkles className="h-4 w-4 mr-2" /> AI Upgrade
+                                        <Button variant="outline" size="icon" disabled>
+                                            <Sparkles className="h-4 w-4" />
                                         </Button>
                                     </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p>Coming soon</p>
+                                    <p>AI Upgrade (Coming soon)</p>
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="outline" size="icon" onClick={() => {
+                                        skillForm.reset({ name: skill.name, icon: skill.icon });
+                                        setEditSkillOpen(true);
+                                    }}>
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Edit Skill</p>
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="icon">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the
+                                                <span className="font-bold"> {skill.name}</span> skill and all its sub-skills.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={onDeleteSkill}>Continue</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Delete Skill</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                        <Button variant="outline" size="sm" onClick={() => {
-                            skillForm.reset({ name: skill.name, icon: skill.icon });
-                            setEditSkillOpen(true);
-                        }}>
-                            <Pencil className="h-4 w-4 mr-2" /> Edit
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                             <Button variant="destructive" size="sm">
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the
-                                <span className="font-bold"> {skill.name}</span> skill and all its sub-skills.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={onDeleteSkill}>Continue</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-
                     </div>
                 </header>
                 
