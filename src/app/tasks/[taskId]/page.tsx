@@ -227,12 +227,11 @@ export default function TaskDetailPage() {
 
                     <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
                     <div className="text-left -mt-2">
-                        <Textarea
+                        <Input
                             value={editableTaskData.description || ''}
                             onChange={(e) => handleTaskDataChange('description', e.target.value)}
                             placeholder="Add a description..."
-                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 -ml-2 bg-transparent"
-                            rows={2}
+                            className="text-sm h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
                         />
                     </div>
 
