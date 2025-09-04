@@ -194,7 +194,7 @@ function FocusPageContents() {
               onClick={handleStopwatchFinish}
               variant="destructive"
               size="lg"
-              disabled={!isActive}
+              disabled={timeElapsed === 0}
             >
               <StopCircle className="h-5 w-5 mr-2" />
               Finish
