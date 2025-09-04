@@ -1313,7 +1313,7 @@ export default function ManagerPage() {
                     </div>
                 </header>
 
-                <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-6 text-sm">
+                <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-20 text-sm">
 
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
                     <Select value={dialogArea?.id || ''} onValueChange={handleAreaChange}>
