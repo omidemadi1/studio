@@ -442,10 +442,6 @@ export default function ManagerPage() {
   return (
     <>
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
-      <header className="mb-6">
-        <h1 className="text-3xl font-headline font-bold">Manager</h1>
-        <p className="text-muted-foreground">Oversee all your quests and projects.</p>
-      </header>
       
       <section className='mb-8'>
         <div className="flex justify-between items-center mb-4">
