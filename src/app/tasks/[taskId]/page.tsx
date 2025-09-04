@@ -237,11 +237,11 @@ export default function TaskDetailPage() {
                     </div>
                 </header>
 
-                <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-4 text-sm">
+                <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-6 text-sm">
 
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
                     <Select value={area?.id || ''} onValueChange={handleAreaChange}>
-                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0">
+                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
                             <SelectValue placeholder="Select an area" />
                         </SelectTrigger>
                         <SelectContent>
@@ -251,7 +251,7 @@ export default function TaskDetailPage() {
                     
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
                     <Select value={project?.id || ''} onValueChange={handleProjectChange} disabled={!area}>
-                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0">
+                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
                             <SelectValue placeholder="Select a project" />
                         </SelectTrigger>
                         <SelectContent>
@@ -261,7 +261,7 @@ export default function TaskDetailPage() {
                     
                     <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
                     <Select value={currentSkill?.id || ''} onValueChange={handleSkillChange}>
-                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0">
+                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
                             <SelectValue placeholder="Select a skill" />
                         </SelectTrigger>
                         <SelectContent>
