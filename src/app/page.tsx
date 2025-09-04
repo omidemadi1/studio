@@ -34,6 +34,7 @@ import {
   Expand,
   Loader2,
   PlusCircle,
+  Copy,
 } from 'lucide-react';
 import { useQuestData } from '@/context/quest-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -49,6 +50,22 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -138,6 +155,7 @@ export default function QuestsPage() {
     addTask,
     addSkill,
     deleteTask,
+    duplicateTask,
   } = useQuestData();
 
   const router = useRouter();
@@ -155,6 +173,8 @@ export default function QuestsPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
   const [isEditingMarkdown, setIsEditingMarkdown] = useState(false);
+  const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
+
 
   const selectableSkills = getFlattenedSkills(skills);
 
@@ -436,10 +456,10 @@ export default function QuestsPage() {
         }
     };
      const handleDeleteTask = () => {
-        if (selectedTask) {
-            deleteTask(selectedTask.id);
-            setSelectedTask(null);
-        }
+        if (!deleteTaskState.task) return;
+        deleteTask(deleteTaskState.task.id);
+        setDeleteTaskState({ open: false, task: null });
+        setSelectedTask(null);
     };
 
     const handleAreaChange = (newAreaId: string) => {
@@ -629,34 +649,49 @@ export default function QuestsPage() {
                   filteredAndSortedTasks.map((task: Task) => {
                       const details = taskDetailsMap.get(task.id);
                       return (
-                      <Card key={task.id} className="bg-card/80 cursor-pointer hover:bg-muted/50" onClick={() => handleTaskClick(task)}>
-                          <CardContent className="p-3 flex items-center gap-4">
-                                <div onClick={(e) => e.stopPropagation()}>
-                                    <Checkbox
-                                        id={`task-list-${task.id}`}
-                                        checked={task.completed}
-                                        onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
-                                        className="w-5 h-5"
-                                    />
-                                </div>
-                              <div className="flex-1">
-                                  <label
-                                      htmlFor={`task-list-${task.id}`}
-                                      className={cn("text-sm font-medium leading-none cursor-pointer", task.completed && "line-through text-muted-foreground")}
-                                  >
-                                      {task.title}
-                                  </label>
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                      {details?.area && <div className="flex items-center gap-1"><Command className="h-3 w-3" />{details.area.name}</div>}
-                                      {details?.project && <div className="flex items-center gap-1"><Folder className="h-3 w-3" />{details.project.name}</div>}
-                                      {details?.skill && <div className="flex items-center gap-1"><Tag className="h-3 w-3" />{details.skill.name}</div>}
-                                  </div>
-                              </div>
-                              <span className="text-xs font-bold text-primary whitespace-nowrap">
-                                  +{task.xp} XP
-                              </span>
-                          </CardContent>
-                      </Card>
+                        <ContextMenu key={task.id}>
+                          <ContextMenuTrigger>
+                            <Card className="bg-card/80 cursor-pointer hover:bg-muted/50" onClick={() => handleTaskClick(task)}>
+                                <CardContent className="p-3 flex items-center gap-4">
+                                      <div onClick={(e) => e.stopPropagation()}>
+                                          <Checkbox
+                                              id={`task-list-${task.id}`}
+                                              checked={task.completed}
+                                              onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
+                                              className="w-5 h-5"
+                                          />
+                                      </div>
+                                    <div className="flex-1">
+                                        <label
+                                            htmlFor={`task-list-${task.id}`}
+                                            className={cn("text-sm font-medium leading-none cursor-pointer", task.completed && "line-through text-muted-foreground")}
+                                        >
+                                            {task.title}
+                                        </label>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                            {details?.area && <div className="flex items-center gap-1"><Command className="h-3 w-3" />{details.area.name}</div>}
+                                            {details?.project && <div className="flex items-center gap-1"><Folder className="h-3 w-3" />{details.project.name}</div>}
+                                            {details?.skill && <div className="flex items-center gap-1"><Tag className="h-3 w-3" />{details.skill.name}</div>}
+                                        </div>
+                                    </div>
+                                    <span className="text-xs font-bold text-primary whitespace-nowrap">
+                                        +{task.xp} XP
+                                    </span>
+                                </CardContent>
+                            </Card>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                              <ContextMenuItem onSelect={() => handleTaskClick(task)}>
+                                  <Pencil className="h-4 w-4 mr-2" /> Edit
+                              </ContextMenuItem>
+                              <ContextMenuItem onSelect={() => duplicateTask(task.id)}>
+                                  <Copy className="h-4 w-4 mr-2" /> Duplicate
+                              </ContextMenuItem>
+                              <ContextMenuItem onSelect={() => setDeleteTaskState({ open: true, task })}>
+                                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              </ContextMenuItem>
+                          </ContextMenuContent>
+                        </ContextMenu>
                       )
                   })
               ) : (
@@ -905,7 +940,7 @@ export default function QuestsPage() {
     </Dialog>
     <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
         <DialogContent className="max-w-2xl">
-            <DialogHeader>
+           <DialogHeader>
                 <VisuallyHidden>
                     <DialogTitle>Task Details</DialogTitle>
                     <DialogDescription>View and edit the details of your selected task.</DialogDescription>
@@ -1049,6 +1084,21 @@ export default function QuestsPage() {
            )}
         </DialogContent>
     </Dialog>
+     <AlertDialog open={deleteTaskState.open} onOpenChange={(open) => setDeleteTaskState({ open, task: open ? deleteTaskState.task : null })}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the 
+                <span className="font-bold"> {deleteTaskState.task?.title}</span> task.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteTaskState({open: false, task: null})}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTask}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
