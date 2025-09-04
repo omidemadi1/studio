@@ -120,7 +120,7 @@ export default function TaskDetailPage() {
     return (
         <div className={cn(
             "container mx-auto p-4 sm:p-6 transition-all duration-300",
-            isFullScreen ? "max-w-full" : "max-w-4xl"
+            isFullScreen ? "max-w-full" : "max-w-2xl"
         )}>
             <div className="bg-card/80 p-6 rounded-lg">
                 <header className="flex items-start justify-between gap-4 mb-6">
