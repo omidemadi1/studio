@@ -79,6 +79,8 @@ export default function TaskDetailPage() {
     const taskData = useMemo(() => getTask(taskId as string), [taskId, getTask]);
     
     const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
+    const [isEditingMarkdown, setIsEditingMarkdown] = useState(false);
+
 
     useEffect(() => {
         if (taskData) {
@@ -108,8 +110,18 @@ export default function TaskDetailPage() {
 
     const handleTaskDataChange = (field: keyof Task, value: string | number | undefined) => {
         setEditableTaskData(prev => ({ ...prev, [field]: value }));
-        updateTaskDetails(task.id, { [field]: value });
     };
+    
+    const handleDetailBlur = (field: keyof Task) => {
+        updateTaskDetails(task.id, { [field]: editableTaskData[field] });
+    }
+
+    const handleMarkdownBlur = () => {
+        setIsEditingMarkdown(false);
+        if (editableTaskData.markdown !== task.markdown) {
+            updateTaskDetails(task.id, { markdown: editableTaskData.markdown });
+        }
+    }
 
     const handleFocusClick = () => {
         router.push(`/focus?taskId=${task.id}`);
@@ -134,6 +146,7 @@ export default function TaskDetailPage() {
                         <Input
                             value={editableTaskData.title || ''}
                             onChange={(e) => handleTaskDataChange('title', e.target.value)}
+                            onBlur={() => handleDetailBlur('title')}
                             className="text-2xl lg:text-3xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
                         />
                     </div>
@@ -233,8 +246,9 @@ export default function TaskDetailPage() {
                         <Input
                             value={editableTaskData.description || ''}
                             onChange={(e) => handleTaskDataChange('description', e.target.value)}
+                            onBlur={() => handleDetailBlur('description')}
                             placeholder="Add a description..."
-                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 -ml-2 bg-transparent"
+                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent"
                         />
                     </div>
 
@@ -256,21 +270,25 @@ export default function TaskDetailPage() {
 
                 <Separator className="my-6"/>
 
-                <div className={cn("grid gap-4", isFullScreen ? "grid-cols-2" : "grid-cols-1")}>
-                    <div className={cn("transition-all", isFullScreen ? "h-[60vh]" : "")}>
+                <div className="transition-all">
+                    {isEditingMarkdown ? (
                         <Textarea
+                            autoFocus
                             id="markdown-editor"
                             value={editableTaskData.markdown || ''}
                             onChange={(e) => handleTaskDataChange('markdown', e.target.value)}
-                            placeholder="Write your note..."
-                            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-full"
+                            onBlur={handleMarkdownBlur}
+                            placeholder="Write your note using Markdown..."
+                            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[120px] text-base"
                             rows={isFullScreen ? 25 : 8}
                         />
-                    </div>
-                    {isFullScreen && (
-                        <div className="prose dark:prose-invert h-[60vh] overflow-y-auto rounded-lg border bg-muted/30 p-4">
-                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {editableTaskData.markdown || 'Preview will appear here...'}
+                    ) : (
+                        <div
+                            onClick={() => setIsEditingMarkdown(true)}
+                            className="prose dark:prose-invert min-h-[120px] w-full max-w-none rounded-lg p-2 cursor-text"
+                        >
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {editableTaskData.markdown || '*Click to add notes...*'}
                             </ReactMarkdown>
                         </div>
                     )}
