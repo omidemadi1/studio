@@ -254,13 +254,12 @@ export default function TaskDetailPage() {
                 <Separator className="my-6"/>
 
                 <div className={cn("transition-all", isFullScreen ? "h-[60vh]" : "")}>
-                    <Label htmlFor="markdown-editor" className="text-muted-foreground font-medium">Markdown Details</Label>
                     <Textarea
                         id="markdown-editor"
                         value={editableTaskData.markdown || ''}
                         onChange={(e) => handleTaskDataChange('markdown', e.target.value)}
-                        placeholder="Add detailed notes in Markdown..."
-                        className="mt-2"
+                        placeholder="Write your note..."
+                        className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-full"
                         rows={isFullScreen ? 25 : 8}
                     />
                 </div>
