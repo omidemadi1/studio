@@ -413,7 +413,7 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
                 )}
 
                 <>
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Due Date</div>
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Date</div>
                   <DateTimePicker
                     date={selectedTask.dueDate ? new Date(selectedTask.dueDate) : undefined}
                     setDate={(date) => {

@@ -217,7 +217,7 @@ export default function TaskDetailPage() {
                         </>
                     )}
                     
-                    <div className="flex items-center gap-2 text-muted-foreground font-medium">Date</div>
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Date</div>
                     <DateTimePicker
                         date={task.dueDate ? new Date(task.dueDate) : undefined}
                         setDate={(date) => {
