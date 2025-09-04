@@ -268,5 +268,4 @@ export default function TaskDetailPage() {
             </div>
         </div>
     );
-
-    
+}
