@@ -636,7 +636,7 @@ export default function QuestsPage() {
         </Tabs>
 
         {(viewMode === 'list' || timeRange === 'today') ? (
-          <div className="space-y-3">
+          <div className="grid gap-2">
               <Button
                 variant="outline"
                 className="w-full justify-center gap-2 border-dashed hover:bg-muted/50"
@@ -940,7 +940,7 @@ export default function QuestsPage() {
     </Dialog>
     <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
         <DialogContent className="max-w-2xl">
-           <DialogHeader>
+            <DialogHeader>
                 <VisuallyHidden>
                     <DialogTitle>Task Details</DialogTitle>
                     <DialogDescription>View and edit the details of your selected task.</DialogDescription>
