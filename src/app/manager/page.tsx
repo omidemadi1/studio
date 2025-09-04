@@ -461,52 +461,52 @@ export default function ManagerPage() {
             <span className="sr-only">Add Skill</span>
           </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {skills.map((skill) => {
             const SkillIcon = iconMap[skill.icon] || Lightbulb;
             const progress = (skill.points / skill.maxPoints) * 100;
-            const circumference = 2 * Math.PI * 45; // 2 * pi * radius
+            const circumference = 2 * Math.PI * 35; // 2 * pi * radius (reduced from 45)
             const strokeDashoffset = circumference - (progress / 100) * circumference;
 
             return (
               <ContextMenu key={skill.id}>
                 <ContextMenuTrigger>
                   <Card className="bg-card/80 overflow-hidden h-full flex items-center justify-center">
-                    <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                      <Link href={`/skills/${skill.id}`} className="relative w-40 h-40">
-                          <svg className="w-full h-full" viewBox="0 0 100 100">
+                    <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+                      <Link href={`/skills/${skill.id}`} className="relative w-28 h-28">
+                          <svg className="w-full h-full" viewBox="0 0 80 80">
                               <circle
                                   className="text-muted/20"
                                   stroke="currentColor"
-                                  strokeWidth="8"
-                                  cx="50"
-                                  cy="50"
-                                  r="45"
+                                  strokeWidth="6"
+                                  cx="40"
+                                  cy="40"
+                                  r="35"
                                   fill="transparent"
                               />
                               <circle
                                   className="text-primary"
                                   stroke="currentColor"
-                                  strokeWidth="8"
+                                  strokeWidth="6"
                                   strokeLinecap="round"
-                                  cx="50"
-                                  cy="50"
-                                  r="45"
+                                  cx="40"
+                                  cy="40"
+                                  r="35"
                                   fill="transparent"
                                   strokeDasharray={circumference}
                                   strokeDashoffset={strokeDashoffset}
-                                  transform="rotate(-90 50 50)"
+                                  transform="rotate(-90 40 40)"
                               />
                           </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
-                              <div className="relative mb-2">
-                                  <SkillIcon className="h-8 w-8 text-accent" />
-                                  <div className="absolute -top-1 -right-2 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold border-2 border-card">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-1">
+                              <div className="relative mb-1">
+                                  <SkillIcon className="h-6 w-6 text-accent" />
+                                  <div className="absolute -top-1 -right-2 bg-primary text-primary-foreground rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold border border-card">
                                       {skill.level}
                                   </div>
                               </div>
-                              <p className="font-headline font-semibold mt-1 text-sm">{skill.name}</p>
-                              <p className="text-xs text-muted-foreground mt-1">{skill.points} / {skill.maxPoints} XP</p>
+                              <p className="font-headline font-semibold mt-1 text-xs">{skill.name}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{skill.points} / {skill.maxPoints}</p>
                           </div>
                       </Link>
                     </CardContent>
