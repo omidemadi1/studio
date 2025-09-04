@@ -48,7 +48,7 @@ export async function updateProject(id: string, name: string) {
 
 export async function addTask(task: Task, areaId?: string) {
     db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp, markdown) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.difficulty, task.dueDate, task.reminder, task.skillId, task.focusDuration || 0, task.projectId || null, task.bonusXp || 0, task.markdown || '');
+      .run(task.id, task.title, task.completed ? 1 : 0, task.xp, task.tokens, task.description, task.difficulty, task.dueDate, task.reminder, task.skillId, task.focusDuration || 0, task.projectId || null, task.bonusXp || 0, task.markdown || null);
     
     if (areaId) {
       revalidatePath(`/areas/${areaId}`);
@@ -408,3 +408,5 @@ export async function updateWeeklyMissionCompletion(missionId: string, completed
     revalidatePath('/profile');
     return result;
 }
+
+    

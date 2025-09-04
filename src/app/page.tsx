@@ -74,8 +74,8 @@ const taskSchema = z.object({
   description: z.string().optional(),
   dueDate: z.date().optional(),
   skillId: z.string().optional(),
-  areaId: z.string({ required_error: 'Please select an area.'}),
-  projectId: z.string({ required_error: 'Please select a project.'}),
+  areaId: z.string().optional(),
+  projectId: z.string().optional(),
 });
 
 const difficultyColors: Record<Difficulty, string> = {
@@ -166,8 +166,6 @@ export default function QuestsPage() {
     const areaId = data.areaId;
     const projectId = data.projectId;
 
-    if (!areaId || !projectId) return;
-
     setIsCreatingTask(true);
     try {
         const area = areas.find(a => a.id === areaId);
@@ -178,6 +176,11 @@ export default function QuestsPage() {
         const xp = result.xp;
         const tokens = result.tokens;
 
+        let dueDate = data.dueDate;
+        if (!areaId && !projectId && !dueDate) {
+            dueDate = new Date();
+        }
+
         const newTask: Task = {
             id: `task-${Date.now()}`,
             title: data.title,
@@ -186,7 +189,7 @@ export default function QuestsPage() {
             tokens: tokens,
             description: data.description || '',
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
-            dueDate: data.dueDate?.toISOString(),
+            dueDate: dueDate?.toISOString(),
             reminder: undefined,
             skillId: data.skillId,
             projectId: projectId,
@@ -827,3 +830,6 @@ export default function QuestsPage() {
   );
 }
 
+
+
+    
