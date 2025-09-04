@@ -74,8 +74,8 @@ const taskSchema = z.object({
   description: z.string().optional(),
   dueDate: z.date().optional(),
   skillId: z.string().optional(),
-  areaId: z.string().optional(),
-  projectId: z.string().optional(),
+  areaId: z.string({ required_error: 'Please select an area.'}),
+  projectId: z.string({ required_error: 'Please select a project.'}),
 });
 
 const difficultyColors: Record<Difficulty, string> = {
@@ -132,6 +132,7 @@ export default function QuestsPage() {
     maybeGenerateWeeklyMissions,
     updateTaskDetails,
     addTask,
+    addSkill,
   } = useQuestData();
 
   const router = useRouter();
@@ -143,11 +144,84 @@ export default function QuestsPage() {
   const [sortOption, setSortOption] = useState<SortOption>('date-asc');
   const [taskFilter, setTaskFilter] = useState<TaskFilterOption>('incomplete');
   const [isClient, setIsClient] = useState(false);
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [addSkillOpen, setAddSkillOpen] = useState(false);
+
+  const selectableSkills = getFlattenedSkills(skills);
 
   const taskForm = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: { title: '', description: '' },
   });
+
+  const selectedAreaIdForTask = taskForm.watch('areaId');
+  const availableProjectsForTask = areas.find(a => a.id === selectedAreaIdForTask)?.projects || [];
+  
+  useEffect(() => {
+    taskForm.setValue('projectId', '');
+  }, [selectedAreaIdForTask, taskForm]);
+
+  async function onAddTask(data: z.infer<typeof taskSchema>) {
+    const areaId = data.areaId;
+    const projectId = data.projectId;
+
+    if (!areaId || !projectId) return;
+
+    setIsCreatingTask(true);
+    try {
+        const area = areas.find(a => a.id === areaId);
+        const project = area?.projects.find(p => p.id === projectId);
+        const projectName = project ? project.name : '';
+
+        const result = await suggestXpValue({ title: data.title, projectContext: projectName });
+        const xp = result.xp;
+        const tokens = result.tokens;
+
+        const newTask: Task = {
+            id: `task-${Date.now()}`,
+            title: data.title,
+            completed: false,
+            xp: xp,
+            tokens: tokens,
+            description: data.description || '',
+            difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
+            dueDate: data.dueDate?.toISOString(),
+            reminder: undefined,
+            skillId: data.skillId,
+            projectId: projectId,
+        };
+        
+        addTask(newTask, areaId);
+        
+        taskForm.reset();
+        setAddTaskOpen(false);
+    } catch (error) {
+        console.error("Failed to suggest XP value:", error);
+        toast({
+            variant: "destructive",
+            title: "AI Error",
+            description: "Could not determine XP value. Please try again."
+        });
+    } finally {
+        setIsCreatingTask(false);
+    }
+  }
+  
+  const skillForm = useForm<{name: string, icon: string}>({
+      resolver: zodResolver(z.object({
+          name: z.string().min(1, 'Skill name is required.'),
+          icon: z.string().min(1, 'An icon is required.')
+      })),
+      defaultValues: { name: '', icon: '' },
+  });
+
+  const onAddSkill = (data: {name: string, icon: string}) => {
+    addSkill(data.name, data.icon);
+    skillForm.reset();
+    setAddSkillOpen(false);
+  };
+
 
   useEffect(() => {
     setIsClient(true);
@@ -463,6 +537,14 @@ export default function QuestsPage() {
 
         {(viewMode === 'list' || timeRange === 'today') ? (
           <div className="space-y-3">
+              <Button
+                variant="outline"
+                className="w-full justify-center gap-2 border-dashed hover:bg-muted/50"
+                onClick={() => setAddTaskOpen(true)}
+              >
+                  <PlusCircle className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Create New Quest</span>
+              </Button>
               {filteredAndSortedTasks.length > 0 ? (
                   filteredAndSortedTasks.map((task: Task) => {
                       const details = taskDetailsMap.get(task.id);
@@ -532,6 +614,216 @@ export default function QuestsPage() {
         )}
       </section>
     </div>
+    <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create a New Quest</DialogTitle>
+            <DialogDescription>
+              Add a new quest. The AI will assign a fair XP value.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...taskForm}>
+            <form onSubmit={taskForm.handleSubmit(onAddTask)} className="space-y-4">
+               <FormField
+                control={taskForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Task Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Run 5km" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                  control={taskForm.control}
+                  name="areaId"
+                  render={({ field }) => (
+                      <FormItem>
+                      <FormLabel>Area</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Select an area" />
+                          </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                          {areas.map(area => (
+                              <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                          ))}
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+                  />
+                  <FormField
+                  control={taskForm.control}
+                  name="projectId"
+                  render={({ field }) => (
+                      <FormItem>
+                      <FormLabel>Project</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedAreaIdForTask}>
+                          <FormControl>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Select a project" />
+                          </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                          {availableProjectsForTask.map(project => (
+                              <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                          ))}
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+                  />
+              </div>
+
+              <FormField
+                control={taskForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Add a description..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                  control={taskForm.control}
+                  name="skillId"
+                  render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Skill Category</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a skill" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {selectableSkills.map(skill => (
+                            <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
+                          ))}
+                            <Separator />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start opacity-70"
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setAddTaskOpen(false);
+                                    setAddSkillOpen(true);
+                                }}
+                            >
+                                <PlusCircle className="h-4 w-4 mr-2" /> Add new skill...
+                            </Button>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={taskForm.control}
+                  name="dueDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Date</FormLabel>
+                      <FormControl>
+                        <DateTimePicker 
+                            date={field.value} 
+                            setDate={field.onChange}
+                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
+                <Button type="submit" disabled={isCreatingTask}>
+                    {isCreatingTask ? <Loader2 className="animate-spin" /> : "Create Task" }
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={addSkillOpen} onOpenChange={setAddSkillOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Create a New Skill</DialogTitle>
+                <DialogDescription>
+                    Skills help you track progress in different areas of your life.
+                </DialogDescription>
+            </DialogHeader>
+            <Form {...skillForm}>
+                <form
+                    onSubmit={skillForm.handleSubmit(onAddSkill)}
+                    className="space-y-4 py-4"
+                >
+                    <FormField
+                        control={skillForm.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Skill Name</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g., Programming" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={skillForm.control}
+                        name="icon"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Icon</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select an icon" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {Object.keys(iconMap).map((iconName) => (
+                                            <SelectItem key={iconName} value={iconName}>
+                                                {iconName}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <DialogFooter>
+                        <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
+                        <Button type="submit">Create Skill</Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    </Dialog>
     </>
   );
 }
+
