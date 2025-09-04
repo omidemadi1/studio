@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -87,6 +87,8 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { GemIcon } from '@/components/icons/gem-icon';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 
 const areaSchema = z.object({
@@ -115,10 +117,10 @@ const skillSchema = z.object({
 
 
 const difficultyColors: Record<Difficulty, string> = {
-    Easy: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30',
-    Medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30',
-    Hard: 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30',
-    'Very Hard': 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30',
+    Easy: 'text-green-400',
+    Medium: 'text-yellow-400',
+    Hard: 'text-orange-400',
+    'Very Hard': 'text-red-400',
 };
 
 type ViewMode = 'list' | 'calendar';
@@ -138,6 +140,18 @@ const getFlattenedSkills = (skills: Skill[]): Skill[] => {
     skills.forEach(traverse);
     return flattened;
 };
+
+const findSkillRecursive = (skills: Skill[], skillId: string): Skill | undefined => {
+    for (const skill of skills) {
+        if (skill.id === skillId) return skill;
+        if (skill.subSkills) {
+            const found = findSkillRecursive(skill.subSkills, skillId);
+            if (found) return found;
+        }
+    }
+    return undefined;
+};
+
 
 // Component to prevent hydration errors from date formatting
 const ClientFormattedDate = ({ dateString, formatString }: { dateString: string; formatString: string }) => {
@@ -193,6 +207,9 @@ export default function ManagerPage() {
   const [addSkillOpen, setAddSkillOpen] = useState(false);
   const [editSkillState, setEditSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
   const [deleteSkillState, setDeleteSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
+  const [isEditingMarkdown, setIsEditingMarkdown] = useState(false);
 
 
   const selectableSkills = getFlattenedSkills(skills);
@@ -232,6 +249,12 @@ export default function ManagerPage() {
       if (addTaskState.date) taskForm.setValue('dueDate', addTaskState.date);
     }
   }, [addTaskState, taskForm]);
+
+  useEffect(() => {
+    if (selectedTask) {
+        setEditableTaskData(selectedTask);
+    }
+  }, [selectedTask]);
 
   const selectedAreaIdForTask = taskForm.watch('areaId');
   const availableProjects = areas.find(a => a.id === selectedAreaIdForTask)?.projects || [];
@@ -350,17 +373,74 @@ export default function ManagerPage() {
     }
   }
 
-  function handleTaskClick(taskId: string) {
-    router.push(`/tasks/${taskId}`);
+  function handleTaskClick(task: Task) {
+    setSelectedTask(task);
   }
 
   const handleDeleteTask = () => {
-    if (!deleteTaskState.task) return;
-    deleteTask(deleteTaskState.task.id);
-    setDeleteTaskState({ open: false, task: null });
+    if (!selectedTask) return;
+    deleteTask(selectedTask.id);
+    setSelectedTask(null);
   };
+    
+    const { dialogArea, dialogProject } = useMemo(() => {
+        if (!selectedTask) return { dialogArea: null, dialogProject: null };
+        for (const a of areas) {
+            const p = a.projects.find(p => p.id === selectedTask.projectId);
+            if (p) return { dialogArea: a, dialogProject: p };
+        }
+        return { dialogArea: null, dialogProject: null };
+    }, [selectedTask, areas]);
+    
+    const dialogSkill = useMemo(() => {
+        if (!selectedTask?.skillId) return null;
+        return findSkillRecursive(skills, selectedTask.skillId);
+    }, [selectedTask, skills]);
+    
+     const handleTaskDataChange = (field: keyof Task, value: string | number | undefined | null) => {
+        setEditableTaskData(prev => ({ ...prev, [field]: value }));
+    };
+    
+    const handleDetailBlur = (field: keyof Task) => {
+        if(selectedTask) {
+            updateTaskDetails(selectedTask.id, { [field]: editableTaskData[field] });
+        }
+    }
+
+    const handleMarkdownBlur = () => {
+        setIsEditingMarkdown(false);
+        if (selectedTask && editableTaskData.markdown !== selectedTask.markdown) {
+            updateTaskDetails(selectedTask.id, { markdown: editableTaskData.markdown });
+        }
+    }
+
+    const handleFocusClick = () => {
+        if (selectedTask) {
+            router.push(`/focus?taskId=${selectedTask.id}`);
+        }
+    };
+
+    const handleAreaChange = (newAreaId: string) => {
+        if (!selectedTask) return;
+        const newArea = areas.find(a => a.id === newAreaId);
+        const newProjectId = newArea?.projects[0]?.id || null;
+        updateTaskDetails(selectedTask.id, { projectId: newProjectId });
+    };
+
+    const handleProjectChange = (newProjectId: string) => {
+        if (selectedTask) {
+            updateTaskDetails(selectedTask.id, { projectId: newProjectId });
+        }
+    }
+    
+    const handleSkillChange = (newSkillId: string) => {
+        if (selectedTask) {
+            updateTaskDetails(selectedTask.id, { skillId: newSkillId });
+        }
+    }
 
   return (
+    <>
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
       <header className="mb-6">
         <h1 className="text-3xl font-headline font-bold">Manager</h1>
@@ -493,7 +573,7 @@ export default function ManagerPage() {
                                         <ContextMenuTrigger>
                                             <li
                                                 className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer"
-                                                onClick={() => handleTaskClick(task.id)}
+                                                onClick={() => handleTaskClick(task)}
                                             >
                                                 <div onClick={(e) => e.stopPropagation()}>
                                                     <Checkbox
@@ -545,7 +625,7 @@ export default function ManagerPage() {
                                             </li>
                                         </ContextMenuTrigger>
                                         <ContextMenuContent>
-                                          <ContextMenuItem onSelect={() => handleTaskClick(task.id)}>
+                                          <ContextMenuItem onSelect={() => handleTaskClick(task)}>
                                             <Pencil className="h-4 w-4 mr-2" /> Edit
                                           </ContextMenuItem>
                                           <ContextMenuItem onSelect={() => duplicateTask(task.id)}>
@@ -612,6 +692,7 @@ export default function ManagerPage() {
           <CalendarView onAddTaskClick={(date) => setAddTaskState({ open: true, areaId: null, projectId: null, date })}/>
         )}
       </section>
+      </div>
 
       <Dialog open={addAreaOpen} onOpenChange={setAddAreaOpen}>
         <DialogContent>
@@ -1194,6 +1275,152 @@ export default function ManagerPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-    </div>
+    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+        <DialogContent className="max-w-2xl">
+            <DialogHeader>
+                <VisuallyHidden>
+                    <DialogTitle>Task Details</DialogTitle>
+                    <DialogDescription>View and edit the details of your selected task.</DialogDescription>
+                </VisuallyHidden>
+            </DialogHeader>
+           {selectedTask && (
+             <div className="bg-card/80 p-6 rounded-lg">
+                <header className="flex items-start justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-4">
+                        <Input
+                            value={editableTaskData.title || ''}
+                            onChange={(e) => handleTaskDataChange('title', e.target.value)}
+                            onBlur={() => handleDetailBlur('title')}
+                            className="text-2xl lg:text-3xl font-bold font-headline h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
+                        />
+                    </div>
+                    <div className='flex items-center gap-2 flex-shrink-0'>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={handleFocusClick} disabled={selectedTask.completed}>
+                                    <Crosshair className="h-5 w-5" />
+                                </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                <p>Focus on this task</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <Checkbox
+                            checked={selectedTask.completed}
+                            onCheckedChange={(checked) =>
+                                updateTaskCompletion(selectedTask.id, !!checked)
+                            }
+                            className="w-5 h-5"
+                        />
+                    </div>
+                </header>
+
+                <div className="grid grid-cols-[120px_1fr] items-center gap-y-4 gap-x-6 text-sm">
+
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Command className="h-4 w-4" /> Area</div>
+                    <Select value={dialogArea?.id || ''} onValueChange={handleAreaChange}>
+                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
+                            <SelectValue placeholder="Select an area" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {areas.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Folder className="h-4 w-4" /> Project</div>
+                    <Select value={dialogProject?.id || ''} onValueChange={handleProjectChange} disabled={!dialogArea}>
+                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
+                            <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {dialogArea?.projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><Tag className="h-4 w-4" /> Skill Category</div>
+                    <Select value={dialogSkill?.id || ''} onValueChange={handleSkillChange}>
+                        <SelectTrigger className="font-semibold border-0 bg-transparent p-0 h-auto focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
+                            <SelectValue placeholder="Select a skill" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {selectableSkills.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                             <SelectItem value="none">
+                                <span className="text-muted-foreground">None</span>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    {selectedTask.difficulty && (
+                        <>
+                            <div className="flex items-center gap-2 text-muted-foreground font-medium"><Flame className="h-4 w-4" /> Difficulty</div>
+                            <div className="text-left"><Badge variant="outline" className={cn(selectedTask.difficulty ? difficultyColors[selectedTask.difficulty] : '')}>{selectedTask.difficulty}</Badge></div>
+                        </>
+                    )}
+                    
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><CalendarIcon className="h-4 w-4" /> Date</div>
+                    <DateTimePicker
+                        date={selectedTask.dueDate ? new Date(selectedTask.dueDate) : undefined}
+                        setDate={(date) => {
+                            updateTaskDetails(selectedTask.id, { dueDate: date?.toISOString() });
+                        }}
+                    />
+
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium self-start pt-2"><AlignLeft className="h-4 w-4" /> Details</div>
+                    <div className="text-left -mt-2">
+                        <Input
+                            value={editableTaskData.description || ''}
+                            onChange={(e) => handleTaskDataChange('description', e.target.value)}
+                            onBlur={() => handleDetailBlur('description')}
+                            placeholder="Add a description..."
+                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent h-auto"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><ArrowUp className="h-4 w-4" /> XP</div>
+                    <div className="font-semibold text-left">{selectedTask.xp + (selectedTask.bonusXp || 0)}</div>
+                    
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium"><GemIcon className="h-4 w-4" /> Tokens</div>
+                    <div className="font-semibold text-left">{selectedTask.tokens}</div>
+
+                    {selectedTask.focusDuration && selectedTask.focusDuration > 0 && (
+                        <>
+                        <div className="flex items-center gap-2 text-muted-foreground font-medium"><Clock className="h-4 w-4" /> Total Hours</div>
+                        <div className="font-semibold text-left">
+                            {`${Math.floor(selectedTask.focusDuration / 3600)}h ${Math.floor((selectedTask.focusDuration % 3600) / 60)}m`}
+                        </div>
+                        </>
+                    )}
+                </div>
+
+                <Separator className="my-6"/>
+
+                <div
+                    onClick={() => setIsEditingMarkdown(true)}
+                    className="prose dark:prose-invert min-h-[120px] w-full max-w-none rounded-lg p-2 cursor-text"
+                >
+                    {isEditingMarkdown ? (
+                        <Textarea
+                            autoFocus
+                            id="markdown-editor"
+                            value={editableTaskData.markdown || ''}
+                            onChange={(e) => handleTaskDataChange('markdown', e.target.value)}
+                            onBlur={handleMarkdownBlur}
+                            placeholder="Write your note using Markdown..."
+                            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[120px] text-base"
+                            rows={8}
+                        />
+                    ) : (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {editableTaskData.markdown || '*Click to add notes...*'}
+                        </ReactMarkdown>
+                    )}
+                </div>
+            </div>
+           )}
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
