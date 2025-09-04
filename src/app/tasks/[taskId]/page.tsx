@@ -231,7 +231,7 @@ export default function TaskDetailPage() {
                             value={editableTaskData.description || ''}
                             onChange={(e) => handleTaskDataChange('description', e.target.value)}
                             placeholder="Add a description..."
-                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 -ml-2"
+                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 -ml-2 bg-transparent"
                             rows={2}
                         />
                     </div>
@@ -268,4 +268,5 @@ export default function TaskDetailPage() {
             </div>
         </div>
     );
-}
+
+    
