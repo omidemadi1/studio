@@ -616,14 +616,32 @@ export default function QuestsPage() {
                             <p>Sort tasks</p>
                         </TooltipContent>
                     </Tooltip>
+                    
+                    <Tooltip>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    {viewMode === 'list' ? <LayoutList className="h-4 w-4" /> : <CalendarIcon className="h-4 w-4" />}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuRadioGroup value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                                    <DropdownMenuRadioItem value="list">
+                                        <LayoutList className="mr-2 h-4 w-4" />
+                                        <span>List</span>
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="calendar">
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        <span>Calendar</span>
+                                    </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <TooltipContent>
+                            <p>View mode</p>
+                        </TooltipContent>
+                    </Tooltip>
                  </TooltipProvider>
-
-                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-                    <TabsList className='hidden sm:inline-flex'>
-                        <TabsTrigger value="list"><LayoutList className="h-4 w-4" /></TabsTrigger>
-                        <TabsTrigger value="calendar"><CalendarIcon className="h-4 w-4" /></TabsTrigger>
-                    </TabsList>
-                </Tabs>
             </div>
         </div>
 
