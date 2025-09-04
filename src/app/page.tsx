@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -904,6 +905,12 @@ export default function QuestsPage() {
     </Dialog>
     <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
         <DialogContent className="max-w-2xl">
+            <DialogHeader>
+                <VisuallyHidden>
+                    <DialogTitle>Task Details</DialogTitle>
+                    <DialogDescription>View and edit the details of your selected task.</DialogDescription>
+                </VisuallyHidden>
+            </DialogHeader>
            {selectedTask && (
              <div className="bg-card/80 p-6 rounded-lg">
                 <header className="flex items-start justify-between gap-4 mb-6">
@@ -1017,7 +1024,10 @@ export default function QuestsPage() {
 
                 <Separator className="my-6"/>
 
-                <div className="transition-all">
+                <div
+                    onClick={() => setIsEditingMarkdown(true)}
+                    className="prose dark:prose-invert min-h-[120px] w-full max-w-none rounded-lg p-2 cursor-text"
+                >
                     {isEditingMarkdown ? (
                         <Textarea
                             autoFocus
@@ -1030,14 +1040,9 @@ export default function QuestsPage() {
                             rows={8}
                         />
                     ) : (
-                        <div
-                            onClick={() => setIsEditingMarkdown(true)}
-                            className="prose dark:prose-invert min-h-[120px] w-full max-w-none rounded-lg p-2 cursor-text"
-                        >
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {editableTaskData.markdown || '*Click to add notes...*'}
-                            </ReactMarkdown>
-                        </div>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {editableTaskData.markdown || '*Click to add notes...*'}
+                        </ReactMarkdown>
                     )}
                 </div>
             </div>
@@ -1047,5 +1052,3 @@ export default function QuestsPage() {
     </>
   );
 }
-
-    

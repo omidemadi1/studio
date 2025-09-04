@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -909,10 +910,10 @@ export default function AreaDetailPage() {
       <Dialog open={addTaskState.open} onOpenChange={(open) => setAddTaskState({ open, projectId: open ? addTaskState.projectId : null })}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create a New Task</DialogTitle>
-              <DialogDescription>
-                Add a new quest to your project. The AI will assign a fair XP value.
-              </DialogDescription>
+                <VisuallyHidden>
+                    <DialogTitle>Task Details</DialogTitle>
+                    <DialogDescription>View and edit the details of your selected task.</DialogDescription>
+                </VisuallyHidden>
             </DialogHeader>
             <Form {...taskForm}>
               <form onSubmit={taskForm.handleSubmit(onAddTask)} className="space-y-4">
