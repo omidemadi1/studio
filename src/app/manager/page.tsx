@@ -1284,7 +1284,7 @@ export default function ManagerPage() {
                 </VisuallyHidden>
             </DialogHeader>
            {selectedTask && (
-             <div className="bg-card/80 p-6 rounded-lg">
+             <div className="p-6 rounded-lg">
                 <header className="flex items-start justify-between gap-4 mb-6">
                     <div className="flex items-center gap-4">
                         <Input
