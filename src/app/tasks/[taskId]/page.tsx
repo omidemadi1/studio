@@ -9,6 +9,9 @@ import { iconMap } from '@/lib/icon-map';
 import { cn } from '@/lib/utils';
 import type { Task, Difficulty, Skill, Area, Project } from '@/lib/types';
 import { format } from 'date-fns';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 
 import {
     ArrowLeft, Lightbulb, Pencil, Trash2, Folder, Check,
@@ -231,7 +234,7 @@ export default function TaskDetailPage() {
                             value={editableTaskData.description || ''}
                             onChange={(e) => handleTaskDataChange('description', e.target.value)}
                             placeholder="Add a description..."
-                            className="text-sm h-auto p-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
+                            className="text-sm border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 -ml-2 bg-transparent"
                         />
                     </div>
 
@@ -253,15 +256,24 @@ export default function TaskDetailPage() {
 
                 <Separator className="my-6"/>
 
-                <div className={cn("transition-all", isFullScreen ? "h-[60vh]" : "")}>
-                    <Textarea
-                        id="markdown-editor"
-                        value={editableTaskData.markdown || ''}
-                        onChange={(e) => handleTaskDataChange('markdown', e.target.value)}
-                        placeholder="Write your note..."
-                        className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-full"
-                        rows={isFullScreen ? 25 : 8}
-                    />
+                <div className={cn("grid gap-4", isFullScreen ? "grid-cols-2" : "grid-cols-1")}>
+                    <div className={cn("transition-all", isFullScreen ? "h-[60vh]" : "")}>
+                        <Textarea
+                            id="markdown-editor"
+                            value={editableTaskData.markdown || ''}
+                            onChange={(e) => handleTaskDataChange('markdown', e.target.value)}
+                            placeholder="Write your note..."
+                            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-full"
+                            rows={isFullScreen ? 25 : 8}
+                        />
+                    </div>
+                    {isFullScreen && (
+                        <div className="prose dark:prose-invert h-[60vh] overflow-y-auto rounded-lg border bg-muted/30 p-4">
+                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {editableTaskData.markdown || 'Preview will appear here...'}
+                            </ReactMarkdown>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
