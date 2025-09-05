@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Swords, Store, User, Crosshair, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useQuestData } from '@/context/quest-context';
 
 const navItems = [
-  { href: '/', label: 'Quests', icon: Swords },
+  { href: '/dashboard', label: 'Quests', icon: Swords },
   { href: '/manager', label: 'Manager', icon: Briefcase },
   { href: '/focus', label: 'Focus', icon: Crosshair },
   { href: '/market', label: 'Market', icon: Store },
@@ -17,11 +18,16 @@ const navItems = [
 export default function BottomNav() {
   const pathname = usePathname();
 
+  // Hide nav on the landing page
+  if (pathname === '/') {
+    return null;
+  }
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto grid h-16 max-w-md grid-cols-5">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard');
           return (
             <Link
               key={item.href}

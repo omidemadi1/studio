@@ -313,7 +313,7 @@ export default function AreaDetailPage() {
     archiveArea(area.id, true);
     setArchiveAreaOpen(false);
     toast({ title: "Area Archived", description: `The area "${area.name}" has been archived.` });
-    router.push('/');
+    router.push('/dashboard');
   };
   
   const onDeleteArea = () => {
@@ -321,7 +321,7 @@ export default function AreaDetailPage() {
       deleteArea(area.id);
       setDeleteAreaOpen(false);
       toast({ title: "Area Deleted", description: `The area "${area.name}" has been removed.`, variant: "destructive" });
-      router.push('/');
+      router.push('/dashboard');
   };
 
 
@@ -408,7 +408,7 @@ export default function AreaDetailPage() {
         <header className="mb-6 flex items-center justify-between gap-4">
           <div className='flex items-center gap-4'>
               <Button variant="ghost" size="icon" asChild>
-              <Link href="/">
+              <Link href="/dashboard">
                   <ArrowLeft />
               </Link>
               </Button>
