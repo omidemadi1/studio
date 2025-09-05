@@ -90,10 +90,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { GemIcon } from '@/components/icons/gem-icon';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { TaskDetails } from '@/components/task-details';
 
 const areaSchema = z.object({
   name: z.string().min(1, 'Area name is required.'),
@@ -149,7 +147,7 @@ export default function AreaDetailPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { areaId } = useParams();
-  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, areas, updateTaskCompletion, updateTaskDetails, deleteProject, updateProject, addSkill, duplicateProject, deleteTask, updateArea, deleteArea, archiveArea } = useQuestData();
+  const { getAreaById, getTasksByAreaId, addProject, addTask, skills, updateTaskCompletion, deleteProject, updateProject, addSkill, duplicateProject, deleteTask, updateArea, deleteArea, archiveArea } = useQuestData();
 
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [editProjectState, setEditProjectState] = useState<{ open: boolean, project: Project | null }>({ open: false, project: null });
@@ -164,6 +162,7 @@ export default function AreaDetailPage() {
   const [editAreaOpen, setEditAreaOpen] = useState(false);
   const [deleteAreaOpen, setDeleteAreaOpen] = useState(false);
   const [archiveAreaOpen, setArchiveAreaOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
 
   const selectableSkills = getFlattenedSkills(skills);
@@ -387,7 +386,8 @@ export default function AreaDetailPage() {
   const completionPercentage = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
   function handleTaskClick(taskId: string) {
-    router.push(`/tasks/${taskId}`);
+    const task = tasks.find(t => t.id === taskId);
+    if(task) setSelectedTask(task);
   }
 
   const handleDeleteProject = () => {
@@ -910,10 +910,8 @@ export default function AreaDetailPage() {
       <Dialog open={addTaskState.open} onOpenChange={(open) => setAddTaskState({ open, projectId: open ? addTaskState.projectId : null })}>
           <DialogContent>
             <DialogHeader>
-                <VisuallyHidden>
-                    <DialogTitle>Task Details</DialogTitle>
-                    <DialogDescription>View and edit the details of your selected task.</DialogDescription>
-                </VisuallyHidden>
+                <DialogTitle>Create New Task</DialogTitle>
+                <DialogDescription>Add the details for your new quest.</DialogDescription>
             </DialogHeader>
             <Form {...taskForm}>
               <form onSubmit={taskForm.handleSubmit(onAddTask)} className="space-y-4">
@@ -1129,6 +1127,9 @@ export default function AreaDetailPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+        <TaskDetails task={selectedTask} onClose={() => setSelectedTask(null)} />
+    </Dialog>
     </>
   );
 }
