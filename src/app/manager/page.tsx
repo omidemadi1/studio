@@ -49,7 +49,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Task, Difficulty, Area, Project, WeeklyMission, Skill } from '@/lib/types';
-import { iconMap } from '@/lib/icon-map';
+import { iconMap, type LucideIcon } from '@/lib/icon-map';
 import {
   Swords,
   PlusCircle,
@@ -72,6 +72,13 @@ import {
   Copy,
   Lightbulb,
   Expand,
+  GraduationCap,
+  Home,
+  Hammer,
+  Sprout,
+  Star,
+  Award,
+  Flag,
 } from 'lucide-react';
 import { suggestXpValue } from '@/ai/flows/suggest-xp-value';
 import { useQuestData } from '@/context/quest-context';
@@ -438,11 +445,6 @@ export default function ManagerPage() {
   return (
     <>
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
-      <header className="mb-6">
-        <h1 className="text-3xl font-headline font-bold">Manager</h1>
-        <p className="text-muted-foreground">Oversee all your areas, projects, and skills.</p>
-      </header>
-
       <section className='mb-8'>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline font-semibold">
@@ -531,7 +533,7 @@ export default function ManagerPage() {
           </Button>
         </div>
 
-        <Accordion type="multiple" className="w-full" defaultValue={areas.length > 0 ? [areas[0].id] : []}>
+        <Accordion type="multiple" className="w-full">
             {areas.map((area) => {
               const AreaIcon = iconMap[area.icon] || Briefcase;
               return (
@@ -545,7 +547,7 @@ export default function ManagerPage() {
                       </Link>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <Accordion type="multiple" className="w-full pl-4 border-l-2 border-primary/20" defaultValue={area.projects.length > 0 ? [area.projects[0].id] : []}>
+                      <Accordion type="multiple" className="w-full pl-4 border-l-2 border-primary/20">
                         {area.projects.map((project) => (
                           <ContextMenu key={project.id}>
                             <ContextMenuTrigger>
