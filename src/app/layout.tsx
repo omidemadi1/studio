@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -33,14 +34,18 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?display=swap&family=MedievalSharp&family=IM+Fell+English&family=Space+Grotesk:wght@400;500;700"
           rel="stylesheet"
+        />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" 
+          rel="stylesheet" 
         />
         <meta name="theme-color" content="#F0D932" />
       </head>
       <body
         className={cn(
-          "font-body antialiased",
+          "font-sans antialiased",
           "bg-background"
         )}
       >

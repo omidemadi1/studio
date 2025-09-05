@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -57,6 +58,15 @@
     @apply bg-background text-foreground;
     -webkit-tap-highlight-color: transparent;
   }
+  .font-title {
+    font-family: 'MedievalSharp', cursive;
+  }
+  .font-body {
+      font-family: 'IM Fell English', serif;
+  }
+  .font-sans {
+    font-family: 'Space Grotesk', sans-serif;
+  }
   .prose {
     --tw-prose-body: hsl(var(--foreground));
     --tw-prose-headings: hsl(var(--foreground));
@@ -115,6 +125,17 @@
     right: 40%;
     animation-duration: 35s;
     animation-delay: -15s;
+  }
+  .btn {
+      @apply inline-flex items-center justify-center font-bold transition-all duration-300;
+  }
+  .btn-primary {
+      @apply bg-transparent border-2 border-amber-400 text-amber-400 px-6 py-3 rounded-sm shadow-[0_0_15px_rgba(251,191,36,0.5)] hover:bg-amber-400 hover:text-gray-900 hover:shadow-[0_0_25px_rgba(251,191,36,0.8)] transform hover:-translate-y-1;
+      clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
+  }
+  .btn-secondary {
+      @apply bg-transparent border-2 border-gray-500 text-gray-300 px-6 py-3 rounded-sm hover:bg-gray-500 hover:text-white transform hover:-translate-y-1;
+      clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
   }
 }
 

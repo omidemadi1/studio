@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -17,8 +18,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Space Grotesk', 'sans-serif'],
+        sans: ['Space Grotesk', 'sans-serif'],
+        body: ['IM Fell English', 'serif'],
+        title: ['MedievalSharp', 'cursive'],
       },
       colors: {
         border: 'hsl(var(--border))',
