@@ -83,6 +83,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { iconMap } from '@/lib/icon-map';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import CalendarView from '@/components/calendar-view';
 
 
 type ViewMode = 'list' | 'calendar';
@@ -131,14 +132,6 @@ const getFlattenedSkills = (skills: Skill[]): Skill[] => {
     };
     skills.forEach(traverse);
     return flattened;
-};
-
-const MiniTaskCard = ({ task }: { task: Task }) => {
-    return (
-        <Card className={cn("p-2 text-xs rounded-md mb-1 shadow-sm", task.completed ? 'bg-muted/50' : 'bg-background/50')}>
-            <p className={cn("font-semibold truncate", task.completed && "line-through text-muted-foreground")}>{task.title}</p>
-        </Card>
-    );
 };
 
 export default function QuestsPage() {
@@ -389,32 +382,6 @@ export default function QuestsPage() {
     return filteredTasks;
   }, [tasks, isClient, timeRange, taskFilter, sortOption, taskDetailsMap]);
 
-
-  const weekDays = useMemo(() => {
-    if (!isClient) return [];
-    const start = startOfWeek(new Date());
-    const end = endOfWeek(new Date());
-    return eachDayOfInterval({ start, end });
-  }, [isClient]);
-
-  const monthDays = useMemo(() => {
-    if (!isClient) return [];
-    const start = startOfWeek(startOfMonth(new Date()));
-    const end = endOfWeek(endOfMonth(new Date()));
-    return eachDayOfInterval({ start, end });
-  }, [isClient]);
-  
-
-  const getTasksForDay = useCallback((day: Date) => {
-    return tasks.filter(task => task.dueDate && isSameDay(new Date(task.dueDate), day));
-  }, [tasks]);
-
-  const calendarDays = useMemo(() => {
-    if (timeRange === 'week') return weekDays;
-    if (timeRange === 'month') return monthDays;
-    return [];
-  }, [timeRange, weekDays, monthDays]);
-
     const handleTaskClick = (task: Task) => {
         setSelectedTask(task);
     };
@@ -653,7 +620,7 @@ export default function QuestsPage() {
             </TabsList>
         </Tabs>
 
-        {(viewMode === 'list' || timeRange === 'today') ? (
+        {viewMode === 'list' || timeRange === 'today' ? (
           <div className="grid gap-2">
               <Button
                 variant="outline"
@@ -724,26 +691,7 @@ export default function QuestsPage() {
               )}
           </div>
         ) : (
-            <div className="grid grid-cols-7 border-t border-l">
-                {calendarDays.map(day => {
-                    const tasksForDay = getTasksForDay(day);
-                    const isCurrentDay = isToday(day);
-                    const isCurrentMonth = timeRange === 'month' ? isSameDay(startOfMonth(new Date()), startOfMonth(day)) : true;
-                    return (
-                        <div key={day.toISOString()} className={cn("border-r border-b p-2 min-h-[100px]", isCurrentDay && "bg-muted/30", !isCurrentMonth && "bg-muted/10")}>
-                            <div className={cn("text-center text-xs font-semibold mb-2", isCurrentDay && "text-primary", !isCurrentMonth && "text-muted-foreground")}>
-                                <div>{format(day, 'EEE')}</div>
-                                <div>{format(day, 'd')}</div>
-                            </div>
-                            <div className="space-y-1">
-                                {tasksForDay.map(task => (
-                                    <MiniTaskCard key={task.id} task={task} />
-                                ))}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+          <CalendarView onAddTaskClick={(date) => setAddTaskOpen(true)} />
         )}
       </section>
     </div>

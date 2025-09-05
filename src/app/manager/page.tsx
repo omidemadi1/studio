@@ -79,7 +79,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CalendarView from '@/components/calendar-view';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
@@ -122,8 +121,6 @@ const difficultyColors: Record<Difficulty, string> = {
     Hard: 'text-orange-400',
     'Very Hard': 'text-red-400',
 };
-
-type ViewMode = 'list' | 'calendar';
 
 // Helper to flatten skills for the select dropdown
 const getFlattenedSkills = (skills: Skill[]): Skill[] => {
@@ -203,7 +200,6 @@ export default function ManagerPage() {
   const [addTaskState, setAddTaskState] = useState<{ open: boolean; areaId: string | null; projectId: string | null; date?: Date }>({ open: false, areaId: null, projectId: null });
   const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [addSkillOpen, setAddSkillOpen] = useState(false);
   const [editSkillState, setEditSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
   const [deleteSkillState, setDeleteSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
@@ -442,7 +438,11 @@ export default function ManagerPage() {
   return (
     <>
     <div className="container mx-auto max-w-4xl p-4 sm:p-6">
-      
+      <header className="mb-6">
+        <h1 className="text-3xl font-headline font-bold">Manager</h1>
+        <p className="text-muted-foreground">Oversee all your areas, projects, and skills.</p>
+      </header>
+
       <section className='mb-8'>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline font-semibold">
@@ -525,22 +525,13 @@ export default function ManagerPage() {
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline font-semibold">Your Quests</h2>
-            <div className="flex items-center gap-2">
-              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-                  <TabsList>
-                      <TabsTrigger value="list"><LayoutList className="h-4 w-4" /></TabsTrigger>
-                      <TabsTrigger value="calendar"><CalendarIcon className="h-4 w-4" /></TabsTrigger>
-                  </TabsList>
-              </Tabs>
-              <Button variant="ghost" size="icon" onClick={() => setAddAreaOpen(true)}>
-                  <PlusCircle className="h-6 h-6 text-primary" />
-                  <span className="sr-only">Add Area</span>
-              </Button>
-            </div>
+          <Button variant="ghost" size="icon" onClick={() => setAddAreaOpen(true)}>
+              <PlusCircle className="h-6 h-6 text-primary" />
+              <span className="sr-only">Add Area</span>
+          </Button>
         </div>
 
-        {viewMode === 'list' ? (
-          <Accordion type="multiple" className="w-full">
+        <Accordion type="multiple" className="w-full" defaultValue={areas.length > 0 ? [areas[0].id] : []}>
             {areas.map((area) => {
               const AreaIcon = iconMap[area.icon] || Briefcase;
               return (
@@ -554,7 +545,7 @@ export default function ManagerPage() {
                       </Link>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <Accordion type="multiple" className="w-full pl-4 border-l-2 border-primary/20">
+                      <Accordion type="multiple" className="w-full pl-4 border-l-2 border-primary/20" defaultValue={area.projects.length > 0 ? [area.projects[0].id] : []}>
                         {area.projects.map((project) => (
                           <ContextMenu key={project.id}>
                             <ContextMenuTrigger>
@@ -684,9 +675,6 @@ export default function ManagerPage() {
               </ContextMenu>
             )})}
           </Accordion>
-        ) : (
-          <CalendarView onAddTaskClick={(date) => setAddTaskState({ open: true, areaId: null, projectId: null, date })}/>
-        )}
       </section>
       </div>
 
