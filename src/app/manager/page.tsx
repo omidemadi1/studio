@@ -49,7 +49,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Task, Difficulty, Area, Project, WeeklyMission, Skill } from '@/lib/types';
-import { iconMap, type LucideIcon } from '@/lib/icon-map';
+import { iconMap } from '@/lib/icon-map';
 import {
   Swords,
   PlusCircle,
@@ -95,6 +95,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { LucideIcon } from 'lucide-react';
 
 
 const areaSchema = z.object({
@@ -381,9 +382,13 @@ export default function ManagerPage() {
   }
 
   const handleDeleteTask = () => {
-    if (!selectedTask) return;
-    deleteTask(selectedTask.id);
-    setSelectedTask(null);
+    if (deleteTaskState.task) {
+      deleteTask(deleteTaskState.task.id);
+      setDeleteTaskState({ open: false, task: null });
+    } else if (selectedTask) {
+      deleteTask(selectedTask.id);
+      setSelectedTask(null);
+    }
   };
     
     const { dialogArea, dialogProject } = useMemo(() => {
