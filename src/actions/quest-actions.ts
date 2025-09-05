@@ -6,44 +6,52 @@ import type { Task, User, Skill, Project, Area, WeeklyMission } from '@/lib/type
 import { revalidatePath } from 'next/cache'
 import { getWeek } from 'date-fns';
 import { suggestWeeklyMissions } from '@/ai/flows/suggest-weekly-missions';
+import { getAreas, getSkills, getAllTasks, getUser } from '@/lib/data';
+
 
 export async function addArea(name: string, icon: string) {
   const id = `area-${Date.now()}`
   db.prepare('INSERT INTO areas (id, name, icon) VALUES (?, ?, ?)').run(id, name, icon)
-  revalidatePath('/')
-  revalidatePath('/areas')
+  revalidatePath('/manager')
+  return getAreas();
 }
 
 export async function updateArea(id: string, name: string, icon: string) {
   db.prepare('UPDATE areas SET name = ?, icon = ? WHERE id = ?').run(name, icon, id);
-  revalidatePath('/');
+  revalidatePath('/manager');
   revalidatePath(`/areas/${id}`);
+  return getAreas();
 }
 
 export async function archiveArea(id: string, archived: boolean) {
   db.prepare('UPDATE areas SET archived = ? WHERE id = ?').run(archived ? 1 : 0, id);
-  revalidatePath('/');
+  revalidatePath('/manager');
   revalidatePath(`/areas/${id}`);
+  revalidatePath('/profile/archived');
+  return getAreas();
 }
 
 export async function deleteArea(id: string) {
     db.prepare('DELETE FROM areas WHERE id = ?').run(id);
-    revalidatePath('/');
+    revalidatePath('/manager');
+    return getAreas();
 }
 
 export async function addProject(areaId: string, name: string) {
   const id = `proj-${Date.now()}`
   db.prepare('INSERT INTO projects (id, name, areaId) VALUES (?, ?, ?)').run(id, name, areaId)
   revalidatePath(`/areas/${areaId}`)
-  revalidatePath('/')
+  revalidatePath('/manager')
+  return getAreas();
 }
 
 export async function updateProject(id: string, name: string) {
     db.prepare('UPDATE projects SET name = ? WHERE id = ?').run(name, id);
-    revalidatePath('/');
-    // We don't know the areaId here, so we can't revalidate the specific area page.
-    // A full revalidation might be needed, or the areaId needs to be passed.
-    // For now, revalidating the home page should be sufficient.
+    revalidatePath('/manager');
+    // Revalidating all areas as we don't know which one was affected.
+    const areas = getAreas();
+    areas.forEach(area => revalidatePath(`/areas/${area.id}`));
+    return areas;
 }
 
 export async function addTask(task: Task, areaId?: string) {
@@ -56,12 +64,22 @@ export async function addTask(task: Task, areaId?: string) {
     if (task.skillId) {
       revalidatePath(`/skills/${task.skillId}`);
     }
-    revalidatePath('/');
+    revalidatePath('/manager');
+    revalidatePath('/dashboard');
+
+    return { tasks: getAllTasks(), areas: getAreas() };
 }
 
-export async function deleteTask(id: string) {
+export async function deleteTask(id: string): Promise<{ tasks: Task[], areas: Area[] }> {
     db.prepare('DELETE FROM tasks WHERE id = ?').run(id);
-    revalidatePath('/');
+    revalidatePath('/manager');
+    revalidatePath('/dashboard');
+    // Revalidate all skill and area pages as we don't know what was affected
+    const skills = getSkills();
+    skills.forEach(skill => revalidatePath(`/skills/${skill.id}`));
+    const areas = getAreas();
+    areas.forEach(area => revalidatePath(`/areas/${area.id}`));
+    return { tasks: getAllTasks(), areas: getAreas() };
 }
 
 export async function addSkill(name: string, icon: string, parentId?: string) {
@@ -70,8 +88,9 @@ export async function addSkill(name: string, icon: string, parentId?: string) {
     'INSERT INTO skills (id, name, level, points, maxPoints, icon, parentId) VALUES (?, ?, ?, ?, ?, ?, ?)'
   ).run(id, name, 1, 0, 1000, icon, parentId || null);
   revalidatePath('/profile');
+  revalidatePath('/manager');
   if (parentId) revalidatePath(`/skills/${parentId}`);
-  revalidatePath('/');
+  return getSkills();
 }
 
 const updateSkillAndParents = (skillId: string, xpChange: number, completed: boolean): { skillId: string, skillLeveledUp: boolean } | null => {
@@ -107,6 +126,8 @@ const updateSkillAndParents = (skillId: string, xpChange: number, completed: boo
 
 
 export async function updateTaskCompletion(taskId: string, completed: boolean, focusDuration?: number, bonusXp?: number) {
+    let result: { skillId?: string, skillLeveledUp: boolean, bonusXp: number } | null = null;
+    
     const transaction = db.transaction(() => {
         let skillIdToRevalidate: string | undefined;
         let skillLeveledUp = false;
@@ -131,7 +152,6 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
             const xpChange = completed ? (task.xp + (bonusXp || 0)) : -(task.xp + (bonusXp || 0));
             const tokenChange = completed ? task.tokens : -task.tokens;
             
-            // Update user XP and level
             const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
             if (user) {
                 const newXp = user.xp + xpChange;
@@ -148,44 +168,41 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
                 db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ?, tokens = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp, newTokens);
             }
 
-            // Update skill points and level (recursively)
             if (task.skillId) {
-                const result = updateSkillAndParents(task.skillId, xpChange, completed);
-                if (result) {
-                    skillIdToRevalidate = result.skillId;
-                    skillLeveledUp = result.skillLeveledUp;
+                const skillUpdateResult = updateSkillAndParents(task.skillId, xpChange, completed);
+                if (skillUpdateResult) {
+                    skillIdToRevalidate = skillUpdateResult.skillId;
+                    skillLeveledUp = skillUpdateResult.skillLeveledUp;
                 }
             }
         }
-        return { skillId: skillIdToRevalidate, skillLeveledUp, bonusXp: bonusXp || 0 };
+        result = { skillId: skillIdToRevalidate, skillLeveledUp, bonusXp: bonusXp || 0 };
     });
     
-    const result = transaction();
+    transaction();
 
     revalidatePath('/')
+    revalidatePath('/dashboard');
     revalidatePath('/profile');
     revalidatePath('/focus');
-    if (result && result.skillId) {
-        // Need to find the root parent to revalidate the correct skill page
-        let currentSkillId: string | null = result.skillId;
-        let rootSkillId = result.skillId;
-        while(currentSkillId) {
-            const skill = db.prepare('SELECT id, parentId FROM skills WHERE id = ?').get(currentSkillId) as {id: string, parentId: string | null};
-            if(skill && skill.parentId) {
-                rootSkillId = skill.parentId;
-                currentSkillId = skill.parentId;
-            } else {
-                currentSkillId = null;
-            }
-        }
-        revalidatePath(`/skills/${rootSkillId}`);
-    }
+    revalidatePath('/manager');
+    
+    const skills = getSkills();
+    const areas = getAreas();
+    skills.forEach(s => revalidatePath(`/skills/${s.id}`));
+    areas.forEach(a => revalidatePath(`/areas/${a.id}`));
 
-    return result;
+    return {
+      ...result,
+      tasks: getAllTasks(),
+      user: getUser(),
+      skills: getSkills(),
+      areas: getAreas()
+    };
 }
 
 export async function updateTaskDetails(taskId: string, details: Partial<Task>) {
-  const { title, description, dueDate, skillId, reminder, markdown } = details;
+  const { title, description, dueDate, skillId, reminder, markdown, projectId } = details;
   const oldTask = db.prepare('SELECT skillId FROM tasks WHERE id = ?').get(taskId) as Task;
   
   const updates: string[] = [];
@@ -207,6 +224,10 @@ export async function updateTaskDetails(taskId: string, details: Partial<Task>) 
     updates.push('skillId = ?');
     params.push(skillId);
   }
+    if (projectId !== undefined) {
+    updates.push('projectId = ?');
+    params.push(projectId);
+  }
   if (reminder !== undefined) {
     updates.push('reminder = ?');
     params.push(reminder);
@@ -223,33 +244,42 @@ export async function updateTaskDetails(taskId: string, details: Partial<Task>) 
   }
   
   revalidatePath('/');
+  revalidatePath('/dashboard');
+  revalidatePath('/manager');
   if (oldTask?.skillId) revalidatePath(`/skills/${oldTask.skillId}`);
   if (skillId && skillId !== oldTask?.skillId) revalidatePath(`/skills/${skillId}`);
+
+  return { tasks: getAllTasks(), areas: getAreas() };
 }
 
 export async function updateUser(newUserData: Partial<User>) {
     const { name, avatarUrl } = newUserData;
     db.prepare('UPDATE users SET name = ?, avatarUrl = ? WHERE id = 1').run(name, avatarUrl);
     revalidatePath('/profile');
+    return getUser();
 }
 
 export async function updateSkill(id: string, name: string, icon: string) {
     db.prepare('UPDATE skills SET name = ?, icon = ? WHERE id = ?').run(name, icon, id);
     revalidatePath('/profile');
     revalidatePath(`/skills/${id}`);
+    revalidatePath('/manager');
+    return getSkills();
 }
 
 export async function deleteSkill(id: string) {
     // This will also delete sub-skills due to ON DELETE CASCADE
     db.prepare('DELETE FROM skills WHERE id = ?').run(id);
     revalidatePath('/profile');
-    revalidatePath('/');
+    revalidatePath('/manager');
+    return getSkills();
 }
 
 export async function deleteProject(id: string, areaId: string) {
     db.prepare('DELETE FROM projects WHERE id = ?').run(id);
     revalidatePath(`/areas/${areaId}`);
-    revalidatePath('/');
+    revalidatePath('/manager');
+    return getAreas();
 }
 
 
@@ -274,56 +304,61 @@ export async function addXp(xp: number, tokens?: number) {
     transaction();
     revalidatePath('/profile');
     revalidatePath('/focus');
+    return getUser();
 }
 
 export async function resetDatabase() {
     resetDbFile();
     revalidatePath('/');
+    return {
+        user: getUser(),
+        skills: getSkills(),
+        tasks: getAllTasks(),
+        areas: getAreas(),
+        weeklyMissions: []
+    }
 }
 
-export async function duplicateTask(taskId: string) {
-    const transaction = db.transaction(() => {
-        const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as Task;
-        if (!task) return;
-
+export async function duplicateTask(taskId: string): Promise<{ tasks: Task[], areas: Area[] }> {
+    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as Task;
+    if (task) {
         const newTaskId = `task-${Date.now()}`;
         const newTask = { ...task, id: newTaskId, title: `${task.title} (copy)` };
         db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp, markdown) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
             .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.tokens, newTask.description, newTask.difficulty, newTask.dueDate, newTask.reminder, newTask.skillId, newTask.focusDuration || 0, newTask.projectId, newTask.bonusXp, newTask.markdown);
-    });
-    transaction();
-    revalidatePath('/');
+    }
+    revalidatePath('/manager');
+    revalidatePath('/dashboard');
+    return { tasks: getAllTasks(), areas: getAreas() };
 }
 
 
-const duplicateProjectTransaction = db.transaction((project: Project, newAreaId: string) => {
+const duplicateProjectTransaction = (project: Project, newAreaId: string) => {
     const newProjectId = `proj-${Date.now()}`;
     const newProject = { ...project, id: newProjectId, areaId: newAreaId, name: `${project.name} (copy)` };
     db.prepare('INSERT INTO projects (id, name, areaId) VALUES (?, ?, ?)').run(newProject.id, newProject.name, newProject.areaId);
 
     const tasks = db.prepare('SELECT * FROM tasks WHERE projectId = ?').all(project.id) as Task[];
     for (const task of tasks) {
-        const taskToDuplicate = { ...task, projectId: newProjectId }; // This is needed to get TS to agree with the shape
-        duplicateTask(taskToDuplicate.id);
+        const newTaskId = `task-${Date.now()}`;
+        const newTask = { ...task, id: newTaskId, title: `${task.title}`, projectId: newProjectId };
+        db.prepare('INSERT INTO tasks (id, title, completed, xp, tokens, description, difficulty, dueDate, reminder, skillId, focusDuration, projectId, bonusXp, markdown) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          .run(newTask.id, newTask.title, newTask.completed ? 1 : 0, newTask.xp, newTask.tokens, newTask.description, newTask.difficulty, newTask.dueDate, newTask.reminder, newTask.skillId, newTask.focusDuration || 0, newTask.projectId, newTask.bonusXp, newTask.markdown);
     }
-});
+};
 
 export async function duplicateProject(projectId: string) {
-    const transaction = db.transaction(() => {
-        const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(projectId) as Project;
-        if (!project) return;
+    const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(projectId) as Project;
+    if (project) {
         duplicateProjectTransaction(project, project.areaId);
-    });
-
-    transaction();
-    revalidatePath('/');
+    }
+    revalidatePath('/manager');
+    return getAreas();
 }
 
 export async function duplicateArea(areaId: string) {
-    const transaction = db.transaction(() => {
-        const area = db.prepare('SELECT * FROM areas WHERE id = ?').get(areaId) as Area;
-        if (!area) return;
-
+    const area = db.prepare('SELECT * FROM areas WHERE id = ?').get(areaId) as Area;
+    if (area) {
         const newAreaId = `area-${Date.now()}`;
         const newAreaName = `${area.name} (copy)`;
         db.prepare('INSERT INTO areas (id, name, icon) VALUES (?, ?, ?)').run(newAreaId, newAreaName, area.icon);
@@ -332,10 +367,9 @@ export async function duplicateArea(areaId: string) {
         for (const project of projects) {
             duplicateProjectTransaction(project, newAreaId);
         }
-    });
-
-    transaction();
-    revalidatePath('/');
+    }
+    revalidatePath('/manager');
+    return getAreas();
 }
 
 // Weekly Missions
@@ -344,7 +378,7 @@ export async function maybeGenerateWeeklyMissions(): Promise<WeeklyMission[]> {
     const week = getWeek(new Date());
     const weekIdentifier = `${year}-${week}`;
 
-    const existingMissions = db.prepare('SELECT * FROM weekly_missions WHERE weekIdentifier = ?').all(weekIdentifier) as WeeklyMission[];
+    let existingMissions = db.prepare('SELECT * FROM weekly_missions WHERE weekIdentifier = ?').all(weekIdentifier) as WeeklyMission[];
 
     if (existingMissions.length > 0) {
         return existingMissions;
@@ -353,11 +387,21 @@ export async function maybeGenerateWeeklyMissions(): Promise<WeeklyMission[]> {
     const skills = db.prepare('SELECT * FROM skills').all() as Skill[];
     const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
     
+    if (!user) {
+        console.error("No user found, cannot generate weekly missions.");
+        return [];
+    }
+    
     const result = await suggestWeeklyMissions({
         currentSkills: skills.map(s => `${s.name} (Lvl ${s.level})`).join(', '),
         userLevel: user.level,
     });
     
+    if (!result || !result.missions) {
+        console.error("AI did not return missions.");
+        return [];
+    }
+
     const insert = db.prepare('INSERT INTO weekly_missions (id, title, description, xp, tokens, completed, weekIdentifier) VALUES (?, ?, ?, ?, ?, ?, ?)');
 
     const transaction = db.transaction((missions: any[]) => {
@@ -368,8 +412,9 @@ export async function maybeGenerateWeeklyMissions(): Promise<WeeklyMission[]> {
 
     try {
         transaction(result.missions);
-        revalidatePath('/');
-        return db.prepare('SELECT * FROM weekly_missions WHERE weekIdentifier = ?').all(weekIdentifier) as WeeklyMission[];
+        revalidatePath('/dashboard');
+        existingMissions = db.prepare('SELECT * FROM weekly_missions WHERE weekIdentifier = ?').all(weekIdentifier) as WeeklyMission[];
+        return existingMissions;
     } catch(e) {
         console.error("Failed to generate weekly missions:", e);
         return [];
@@ -377,6 +422,7 @@ export async function maybeGenerateWeeklyMissions(): Promise<WeeklyMission[]> {
 }
 
 export async function updateWeeklyMissionCompletion(missionId: string, completed: boolean) {
+    let result: { xp: number, tokens: number, leveledUp: boolean, user: User } | null = null;
     const transaction = db.transaction(() => {
         db.prepare('UPDATE weekly_missions SET completed = ? WHERE id = ?').run(completed ? 1 : 0, missionId);
         
@@ -397,16 +443,15 @@ export async function updateWeeklyMissionCompletion(missionId: string, completed
                 
                 db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ?, tokens = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp, newTokens);
                 
-                return { xp: mission.xp, tokens: mission.tokens, leveledUp: newLevel > user.level };
+                const updatedUser = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
+                result = { xp: mission.xp, tokens: mission.tokens, leveledUp: newLevel > user.level, user: updatedUser };
             }
         }
-        return null;
     });
 
-    const result = transaction();
+    transaction();
     revalidatePath('/');
     revalidatePath('/profile');
+    revalidatePath('/dashboard');
     return result;
 }
-
-    
