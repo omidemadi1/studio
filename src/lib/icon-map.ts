@@ -1,5 +1,11 @@
-import { Briefcase, Heart, Dumbbell, Wallet, BookOpen, Lightbulb, BrainCircuit, Target, PencilRuler, LineChart, Code, Palette, Music, Clapperboard, Gamepad2, Plane, Utensils, MessageCircle, Users, GitBranch, Archive, MapOff } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { 
+    Briefcase, Heart, Dumbbell, Wallet, BookOpen, Lightbulb, BrainCircuit, 
+    Target, PencilRuler, LineChart, Code, Palette, Music, Clapperboard, 
+    Gamepad2, Plane, Utensils, MessageCircle, Users, GitBranch, Archive, 
+    MapOff, GraduationCap, Home, Hammer, Sprout, Star, Award, Flag,
+    Component, ClipboardList, Settings, Shield, Trophy, Bike, Car, FileText,
+    Camera, type LucideIcon 
+} from 'lucide-react';
 
 export const iconMap: { [key: string]: LucideIcon } = {
   Briefcase,
@@ -24,4 +30,20 @@ export const iconMap: { [key: string]: LucideIcon } = {
   GitBranch,
   Archive,
   MapOff,
+  GraduationCap,
+  Home,
+  Hammer,
+  Sprout,
+  Star,
+  Award,
+  Flag,
+  Component,
+  ClipboardList,
+  Settings,
+  Shield,
+  Trophy,
+  Bike,
+  Car,
+  FileText,
+  Camera,
 };
