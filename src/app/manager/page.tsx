@@ -384,10 +384,10 @@ export default function ManagerPage() {
   const handleDeleteTask = () => {
     if (deleteTaskState.task) {
       deleteTask(deleteTaskState.task.id);
+      if (selectedTask?.id === deleteTaskState.task.id) {
+          setSelectedTask(null);
+      }
       setDeleteTaskState({ open: false, task: null });
-    } else if (selectedTask) {
-      deleteTask(selectedTask.id);
-      setSelectedTask(null);
     }
   };
     
@@ -1415,4 +1415,3 @@ export default function ManagerPage() {
     </>
   );
 }
-

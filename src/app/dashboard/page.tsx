@@ -424,8 +424,10 @@ export default function DashboardPage() {
      const handleDeleteTask = () => {
         if (!deleteTaskState.task) return;
         deleteTask(deleteTaskState.task.id);
+        if (selectedTask?.id === deleteTaskState.task.id) {
+            setSelectedTask(null);
+        }
         setDeleteTaskState({ open: false, task: null });
-        setSelectedTask(null);
     };
 
     const handleAreaChange = (newAreaId: string) => {
