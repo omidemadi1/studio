@@ -612,15 +612,17 @@ export default function QuestsPage() {
             </div>
         </div>
 
-        <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)} className='mb-4'>
-            <TabsList className='w-full'>
-                <TabsTrigger value="today" className='flex-1'>Today</TabsTrigger>
-                <TabsTrigger value="week" className='flex-1'>This Week</TabsTrigger>
-                <TabsTrigger value="month" className='flex-1'>This Month</TabsTrigger>
-            </TabsList>
-        </Tabs>
+        {viewMode === 'list' && (
+            <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)} className='mb-4'>
+                <TabsList className='w-full'>
+                    <TabsTrigger value="today" className='flex-1'>Today</TabsTrigger>
+                    <TabsTrigger value="week" className='flex-1'>This Week</TabsTrigger>
+                    <TabsTrigger value="month" className='flex-1'>This Month</TabsTrigger>
+                </TabsList>
+            </Tabs>
+        )}
 
-        {viewMode === 'list' || timeRange === 'today' ? (
+        {viewMode === 'list' ? (
           <div className="grid gap-2">
               <Button
                 variant="outline"
