@@ -224,7 +224,7 @@ By following these comprehensive steps, your Next.js application will be success
 ## Creating an Android Application from this Web App
 The `docs/blueprint.md` file indicates that the original plan for an Android version of this application was to build a **native mobile app using Flutter**. However, if you wish to leverage the existing Next.js web codebase to create an Android app, here are a few approaches:
 
-### 1. Rebuilding Natively (Flutter, Kotlin/Java) - As per Blueprint
+### Rebuilding Natively (Flutter, Kotlin/Java) - As per Blueprint
 This approach provides the most robust native experience but requires rewriting the frontend.
 
 *   **How it works:** You develop a new Android application (using Flutter, Kotlin for native Android, or Java) that consumes your web application's backend API. The current Next.js application's server actions (`src/actions`) and database logic (`src/lib/db.ts`) would need to be exposed through a dedicated REST API layer for the native app to consume.
@@ -234,61 +234,3 @@ This approach provides the most robust native experience but requires rewriting 
     3.  **API Integration:** Create a dedicated REST API layer (e.g., using Node.js/Express, or Next.js API routes) to expose data and business logic from your existing backend to the native app.
     4.  **Database/Blockchain:** Integrate directly with local storage (if needed for offline capabilities) and the Polygon blockchain via their respective SDKs (e.g., `moralis-sdk`).
     5.  **Build and Deploy:** Build the APK/AAB and publish it to the Google Play Store.
-
-### 2. Progressive Web App (PWA) - Leveraging Existing Web Code
-Your Next.js app already contains PWA-related files (`public/manifest.json`, `public/sw.js`, `public/workbox-e43f5367.js`), suggesting that PWA capabilities are either in place or planned. A PWA can be "installed" on an Android device, providing an app-like experience without needing an app store.
-
-*   **How it works:** Users visit your web app in their browser, and the browser prompts them to "Add to Home Screen." Once installed, it behaves much like a native app:
-    *   It gets its own icon on the home screen.
-    *   Can run in full-screen mode without browser UI.
-    *   Can work offline (if the service worker is properly configured).
-    *   Can send push notifications.
-*   **Steps:**
-    1.  **Ensure PWA readiness:**
-        *   Verify `public/manifest.json` is correctly configured with your app name, icons, start URL, and display mode (`"standalone"`).
-        *   Ensure `public/sw.js` (service worker) effectively caches assets for offline use. You may need to enhance its caching strategies.
-    2.  **Optimize for Mobile:** Ensure your existing Next.js app is highly responsive and optimized for touch interactions on smaller screens.
-    3.  **Deploy:** Host your web app on a server (as described in the "Publishing on Your Own Server" section). Users can then visit the URL and install it from their browser.
-
-### 3. Hybrid App (Wrapping with Tools like Capacitor or Cordova)
-This approach wraps your existing web application inside a native shell (a WebView), allowing you to publish it to app stores while reusing most of your web codebase.
-
-*   **How it works:** Tools like Capacitor or Cordova provide native "containers" for your web content. Your Next.js application runs inside a WebView within this native container, granting access to some native device features (camera, GPS, etc.) via plugins.
-*   **Steps (using Capacitor as an example):**
-    1.  **Build your Next.js app for production:**
-        ```bash
-        npm run build # or yarn build
-        ```
-        *Note: If you plan to use `next export` to generate static HTML, configure `next.config.ts` accordingly and export to a directory like `out` or `build`.*
-    2.  **Install Capacitor CLI:**
-        ```bash
-        npm install -g @capacitor/cli
-        ```
-    3.  **Initialize Capacitor in your project:**
-        ```bash
-        npx cap init [app-name] [app-id]
-        # Example: npx cap init "Questify App" com.yourcompany.questify
-        ```
-        Configure `capacitor.config.json` to point `webDir` to your Next.js build output directory (e.g., `out` or `.next`).
-    4.  **Add Android platform:**
-        ```bash
-        npx cap add android
-        ```
-        This creates an `android` directory containing an Android Studio project.
-    5.  **Copy your web assets:** After every Next.js build, you need to copy the built web assets into the Capacitor `webDir`.
-        ```bash
-        npx cap copy
-        ```
-    6.  **Open in Android Studio:**
-        ```bash
-        npx cap open android
-        ```
-        From Android Studio, you can run your app on an emulator or a physical device, build release APKs, and integrate native plugins.
-    7.  **Implement Native Features (Optional):** Use Capacitor plugins to access device-specific APIs (e.g., camera, push notifications).
-    8.  **Build and Deploy:** Build the APK/AAB from Android Studio and publish it to the Google Play Store.
-
-**Recommendation Summary:**
-
-*   For the best native performance and full mobile integration: **Rebuild with Flutter** (as per the blueprint).
-*   For a quick app-like experience with minimal code changes: **Enhance PWA capabilities**.
-*   To publish to the Google Play Store while reusing most of your web UI code: Use a **hybrid wrapper like Capacitor**.
