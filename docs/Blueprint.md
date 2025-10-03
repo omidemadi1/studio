@@ -205,7 +205,7 @@ Questify is a hybrid mobile and web application designed to help users manage th
 ## 8. Color Scheme
 The existing color scheme seems to be a modern, clean design. We can maintain this or opt for a slightly more vibrant, quest-themed palette, for example:
 *   **Primary**: #4CAF50 (Green - representing growth/completion)
-*   **Secondary**: #FFC107 (Amber - representing rewards/energy)
+*   **Secondary**: #ffc107ff (Amber - representing rewards/energy)
 *   **Accent**: #2196F3 (Blue - representing focus/knowledge)
 *   **Background**: #121212 (Dark for dark mode) / #FFFFFF (Light for light mode)
 
