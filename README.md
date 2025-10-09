@@ -1,85 +1,40 @@
-## Application Structure
-This project follows a typical Next.js application structure, with several key directories and files:
+## File Structure
+The project is organized as follows:
 
--   **`src/app`**: Contains the Next.js application routes and pages. Each folder within `app` typically represents a route segment, and `page.tsx` within a segment defines the UI for that route.
-    -   `src/app/layout.tsx`: The root layout of the application.
-    -   `src/app/page.tsx`: The home page of the application.
-    -   `src/app/focus/page.tsx`, `src/app/market/page.tsx`, `src/app/profile/page.tsx`, `src/app/suggest/page.tsx`: Specific feature pages.
-    -   `src/app/areas/[areaId]/page.tsx`, `src/app/skills/[skillId]/page.tsx`: Dynamic route pages for displaying details of a specific area or skill.
--   **`src/actions`**: Houses server actions used for data mutations and other server-side operations, such as `quest-actions.ts`.
--   **`src/ai`**: Dedicated to AI-related functionalities, including Genkit configurations and flows.
-    -   `src/ai/dev.ts`, `src/ai/genkit.ts`: Configuration and setup for Genkit.
-    -   `src/ai/flows`: Contains specific AI flows like `suggest-smart-tasks.ts` and `suggest-xp-value.ts`.
--   **`src/components`**: Reusable UI components used throughout the application.
-    -   `src/components/ui`: Shadcn/UI components (e.g., `button.tsx`, `dialog.tsx`, `input.tsx`).
-    -   `src/components/icons`: Custom icon components.
-    -   `src/components/bottom-nav.tsx`, `src/components/calendar-view.tsx`, `src/components/skill-radar.tsx`, `src/components/theme-toggle.tsx`: Application-specific components.
--   **`src/context`**: Provides React context for global state management, such as `quest-context.tsx`.
--   **`src/hooks`**: Custom React hooks for encapsulating reusable logic, like `use-toast.ts`.
--   **`src/lib`**: Contains utility functions, data definitions, database connections, and types.
-    -   `src/lib/db.ts`: Sets up and initializes the local SQLite database (`app.db`) for storing user data, skills, tasks, etc.
-    -   `src/lib/data.ts`, `src/lib/mock-data.ts`: Data management and mock data.
-    -   `src/lib/types.ts`: TypeScript type definitions.
-    -   `src/lib/utils.ts`: General utility functions.
-    -   `src/lib/icon-map.ts`: Mapping for icons.
--   **`public`**: Static assets served directly by Next.js.
-    -   `public/manifest.json`: Web App Manifest for PWA features.
-    -   `public/sw.js`, `public/workbox-e43f5367.js`: Service Worker and Workbox related files for offline capabilities.
-    -   `public/icon-*.png`: Application icons.
--   **`docs`**: Documentation files for the project, such as `blueprint.md`.
--   **`next.config.ts`**: Next.js configuration file.
--   **`tailwind.config.ts`**, **`postcss.config.mjs`**: Configuration files for Tailwind CSS and PostCSS.
--   **`package.json`**: Defines project metadata and dependencies.
--   **`tsconfig.json`**: TypeScript configuration.
--   **`apphosting.yaml`**: Configuration for application hosting (likely Google Cloud App Hosting).
+```
+questify-web/
+├── docs/                  # Project documentation (e.g., blueprint.md)
+├── public/                # Static assets (icons, manifest, service worker, etc.)
+├── src/
+│   ├── actions/           # Server actions for data mutations and server-side logic
+│   ├── ai/                # AI features, Genkit configs, and flows
+│   ├── app/               # Next.js App Router: routes, layouts, and pages
+│   ├── components/        # Reusable UI components
+│   │   ├── ui/            # Shadcn/UI components
+│   │   └── icons/         # Custom icon components
+│   ├── context/           # React context for global state management
+│   ├── hooks/             # Custom React hooks
+│   └── lib/               # Utilities, types, database, and data definitions
+├── apphosting.yaml        # App hosting configuration
+├── docker-compose.yml     # Docker Compose setup (if present)
+├── next.config.ts         # Next.js configuration
+├── package.json           # Project metadata and dependencies
+├── postcss.config.mjs     # PostCSS configuration
+├── tailwind.config.ts     # Tailwind CSS configuration
+├── tsconfig.json          # TypeScript configuration
+└── README.md              # Project overview and instructions
+```
 
-## Current Application Architecture
-
-The application currently utilizes a **Full-stack Next.js Architecture**, which can be characterized as a **Modular Monolith**. This means:
-
-*   **Frontend & Backend Integration**: Next.js provides a unified framework for both the user interface (React) and server-side logic (API Routes, Server Actions), all within a single codebase.
-*   **Technologies**:
-    *   **Frontend**: React, TypeScript, Tailwind CSS for a modern, responsive user experience.
-    *   **Backend**: Next.js server actions and API routes, likely interacting with a lightweight database.
-    *   **Database**: A local SQLite database (`app.db`) is used for managing application data (users, quests, skills, tasks).
-    *   **Artificial Intelligence (AI)**: Integrated using Google Genkit, with specific AI flows (`src/ai/flows`) for features like smart task suggestions.
-    *   **PWA Capabilities**: Files in the `public` directory (e.g., `manifest.json`, `sw.js`) indicate support for Progressive Web App features, enabling an app-like experience.
-
-This architecture is effective for rapid development and deployment, keeping the entire application within a single, coherent deployment unit.
-
-## Future Architectural Roadmap: Microservices
-
-To enhance scalability, allow for independent development teams, and provide technological flexibility for specific, complex domains (like AI and Blockchain), the application is planned to evolve towards a microservices architecture. This transition will be iterative, focusing on decoupling key functionalities into independent services.
-
-**Candidates for Microservices:**
-
-1.  **AI Services Microservice:**
-    *   **Rationale**: AI functionalities, especially those involving complex models or heavy computational loads (e.g., Genkit flows for task suggestions, XP value calculation), often benefit from independent scaling and specialized environments. Decoupling this allows for dedicated resource allocation and potentially different technology stacks better suited for machine learning.
-    *   **Scope**: This microservice would encapsulate all AI-related logic found in `src/ai`. The main Next.js application would interact with this service via a well-defined API (e.g., REST or gRPC).
-    *   **Data Management**: This service would manage its own data (e.g., AI model configurations, training data, or historical prediction logs) in its dedicated data store.
-
-2.  **Blockchain Integration Microservice:**
-    *   **Rationale**: Given the plan to incorporate blockchain technology, creating a dedicated microservice for this domain is crucial. Blockchain interactions (e.g., managing wallets, sending transactions, interacting with smart contracts, querying on-chain data) can be complex, often involve external dependencies, and require high security. Isolating this logic protects the core application and allows for specialized development and monitoring.
-    *   **Scope**: This microservice would handle all interactions with the blockchain (e.g., Polygon). It would expose a simplified API for the Next.js application to perform blockchain-related operations without needing to understand the underlying complexities.
-    *   **Data Management**: This service would maintain its own data, which might include off-chain caches of blockchain data, transaction statuses, or user-specific blockchain credentials (in a secure manner).
-
-**Core Application (Next.js Monolith as a Client/Gateway):**
-
-The existing Next.js application would evolve to act as a **client or API Gateway** to these new microservices. It would continue to manage:
-
-*   **User Interface (UI)**: Presenting the frontend to users.
-*   **Core Business Logic**: Managing quests, skills, user profiles, and other functionalities that remain central to the application's primary purpose.
-*   **Internal Database**: It would retain its own dedicated database (e.g., the current SQLite database, potentially migrating to a more robust relational database like PostgreSQL for production) to manage its core domain data (users, quests, skills, tasks). This adheres to the "Database per Service" principle where each service owns its data.
-
-**Key Considerations for the Transition:**
-
-*   **Inter-service Communication**: Define clear APIs (REST, gRPC, Message Queues) for how the Next.js application will communicate with the new AI and Blockchain microservices.
-*   **Data Consistency**: Implement strategies to maintain data consistency across services, especially if data needs to be replicated or synchronized.
-*   **Observability**: Establish robust logging, monitoring, and tracing across all services to understand system behavior and troubleshoot issues.
-*   **Deployment & Operations**: Microservices introduce increased operational complexity. Tools for orchestration (e.g., Kubernetes), continuous integration/continuous deployment (CI/CD), and infrastructure as code will become vital.
-
-This roadmap outlines a strategic move towards a more distributed and scalable architecture, allowing the application to grow and adapt more effectively to future demands and new feature integrations.
-
+### Key Directories
+- **src/app/**: App routes, layouts, and pages (Next.js App Router)
+- **src/components/**: UI and icon components
+- **src/actions/**: Server actions for backend logic
+- **src/ai/**: AI flows and Genkit configuration
+- **src/context/**: Global state management
+- **src/hooks/**: Custom hooks
+- **src/lib/**: Utilities, types, and database setup
+- **public/**: Static assets and PWA files
+- **docs/**: Project documentation
 
 ## Publishing on Your Own Server (Self-Hosting)
 This section details the steps to deploy this Next.js application on your own server, rather than using cloud-specific hosting solutions. This involves building the application, running it with Node.js, and using a reverse proxy for robust production serving.
