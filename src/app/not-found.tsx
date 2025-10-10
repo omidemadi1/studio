@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapOff, Search } from 'lucide-react';
+import { Map, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export default function NotFound() {
@@ -11,7 +11,7 @@ export default function NotFound() {
     <div className="bg-[#4a413a] flex items-center justify-center min-h-screen text-white font-body">
       <div className="bg-[#2a2522] p-12 rounded-lg shadow-2xl max-w-md w-full text-center">
         <div className="mb-6">
-          <MapOff className="h-16 w-16 mx-auto text-yellow-500" />
+          <Map className="h-16 w-16 mx-auto text-yellow-500" />
         </div>
         <h1 className="text-4xl font-bold font-headline mb-4">404 - Path Lost</h1>
         <p className="text-gray-300 mb-8">
