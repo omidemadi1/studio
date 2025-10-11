@@ -174,18 +174,3 @@ A reverse proxy (e.g., Nginx or Caddy) is critical for:
     Follow the interactive prompts. Certbot will automatically configure Nginx to use HTTPS and handle certificate renewals.
 
 By following these comprehensive steps, your Next.js application will be successfully deployed and accessible on your own server, running securely with HTTPS.
-
-
-## Creating an Android Application from this Web App
-The `docs/blueprint.md` file indicates that the original plan for an Android version of this application was to build a **native mobile app using Flutter**. However, if you wish to leverage the existing Next.js web codebase to create an Android app, here are a few approaches:
-
-### Rebuilding Natively (Flutter, Kotlin/Java) - As per Blueprint
-This approach provides the most robust native experience but requires rewriting the frontend.
-
-*   **How it works:** You develop a new Android application (using Flutter, Kotlin for native Android, or Java) that consumes your web application's backend API. The current Next.js application's server actions (`src/actions`) and database logic (`src/lib/db.ts`) would need to be exposed through a dedicated REST API layer for the native app to consume.
-*   **Steps:**
-    1.  **Set up Flutter/Android Studio:** Install the necessary SDKs and development environment.
-    2.  **Design and Develop:** Re-implement the UI and user experience using Flutter, Kotlin, or Java.
-    3.  **API Integration:** Create a dedicated REST API layer (e.g., using Node.js/Express, or Next.js API routes) to expose data and business logic from your existing backend to the native app.
-    4.  **Database/Blockchain:** Integrate directly with local storage (if needed for offline capabilities) and the Polygon blockchain via their respective SDKs (e.g., `moralis-sdk`).
-    5.  **Build and Deploy:** Build the APK/AAB and publish it to the Google Play Store.
