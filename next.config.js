@@ -4,9 +4,9 @@
  */
 
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
+  // Note: `experimental.appDir` is no longer required in newer Next.js versions
+  // and causes an "Unrecognized key(s)" warning. Keep config minimal and
+  // rely on the project's routing setup instead.
   webpack: (config, { isServer }) => {
     // Prevent server-only modules from being bundled for the client
     if (!isServer) {

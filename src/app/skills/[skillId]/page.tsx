@@ -324,7 +324,7 @@ export default function SkillDetailPage() {
     const handleAreaChange = (newAreaId: string) => {
         if (!selectedTask) return;
         const newArea = areas.find(a => a.id === newAreaId);
-        const newProjectId = newArea?.projects[0]?.id || null;
+        const newProjectId = newArea?.projects[0]?.id || undefined;
         updateTaskDetails(selectedTask.id, { projectId: newProjectId });
     };
 

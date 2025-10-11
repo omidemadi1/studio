@@ -19,7 +19,7 @@ const formSchema = z.object({
 
 export default function SuggestPage() {
   const [loading, setLoading] = useState(false);
-  const [suggestion, setSuggestion] = useState('');
+  const [suggestion, setSuggestion] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -32,13 +32,13 @@ export default function SuggestPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
-    setSuggestion('');
+    setSuggestion([]);
     try {
       const result = await suggestSmartTasks(values);
       setSuggestion(result.suggestedTasks);
     } catch (error) {
       console.error('Error getting suggestions:', error);
-      setSuggestion('Sorry, I was unable to get suggestions at this time. Please try again later.');
+      setSuggestion(['Sorry, I was unable to get suggestions at this time. Please try again later.']);
     } finally {
       setLoading(false);
     }
@@ -113,7 +113,7 @@ export default function SuggestPage() {
         </CardContent>
       </Card>
       
-      {suggestion && (
+      {suggestion.length > 0 && (
         <Card className="mt-6 bg-card/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -122,9 +122,11 @@ export default function SuggestPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-              {suggestion}
-            </div>
+            <ul className="prose prose-sm dark:prose-invert max-w-none list-disc pl-5">
+              {suggestion.map((task, index) => (
+                <li key={index}>{task}</li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
       )}

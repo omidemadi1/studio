@@ -270,7 +270,7 @@ export const QuestProvider = ({
   }, []);
 
   const updateWeeklyMissionCompletion = useCallback(async (missionId: string, completed: boolean) => {
-      const result = await QuestActions.updateWeeklyMissionCompletion(missionId, completed);
+      const result: { xp: number, tokens: number, leveledUp: boolean, user: User } | null = await QuestActions.updateWeeklyMissionCompletion(missionId, completed);
       if (result) {
           setUser(result.user);
           const updatedMissions = weeklyMissions.map(m => m.id === missionId ? { ...m, completed } : m);

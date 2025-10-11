@@ -3,8 +3,13 @@
 
 import { Paintbrush } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import type { MarketItem } from '@/lib/types';
 
-export default function MarketPageClient() {
+interface MarketPageClientProps {
+  marketItems: MarketItem[];
+}
+
+export default function MarketPageClient({ marketItems }: MarketPageClientProps) {
   return (
     <div className="container mx-auto max-w-4xl p-4 sm:p-6 flex flex-col h-[calc(100vh-8rem)] items-center justify-center">
       <header className="mb-6 text-center">

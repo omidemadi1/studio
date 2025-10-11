@@ -128,7 +128,7 @@ export function TaskDetails({ task, onClose }: TaskDetailsProps) {
     const handleAreaChange = (newAreaId: string) => {
         if (!task) return;
         const newArea = areas.find(a => a.id === newAreaId);
-        const newProjectId = newArea?.projects[0]?.id || null;
+        const newProjectId = newArea?.projects[0]?.id || undefined;
         updateTaskDetails(task.id, { projectId: newProjectId });
     };
 

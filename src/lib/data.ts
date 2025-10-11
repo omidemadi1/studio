@@ -49,7 +49,7 @@ export function getSkills(): Skill[] {
 
 export function getAllTasks(): Task[] {
     return withErrorHandling(() => {
-        return db.prepare('SELECT * FROM tasks').all().map(t => ({...t, completed: !!(t as any).completed})) as Task[];
+        return db.prepare('SELECT * FROM tasks').all().map((t: any) => ({...t, completed: !!t.completed})) as Task[];
     }, []);
 }
 
@@ -64,7 +64,7 @@ export function getAreas(): Area[] {
         return areas.map(area => {
             const projects = projectsStmt.all(area.id) as Project[];
             const projectsWithTasks = projects.map(project => {
-                const tasks = tasksStmt.all(project.id).map(t => ({...t, completed: !!(t as any).completed})) as Task[];
+                const tasks = tasksStmt.all(project.id).map((t: any) => ({...t, completed: !!t.completed})) as Task[];
                 return { ...project, tasks };
             });
             return { ...area, projects: projectsWithTasks };
@@ -82,7 +82,7 @@ export function getArchivedAreas(): Area[] {
         return areas.map(area => {
             const projects = projectsStmt.all(area.id) as Project[];
             const projectsWithTasks = projects.map(project => {
-                const tasks = tasksStmt.all(project.id).map(t => ({...t, completed: !!(t as any).completed})) as Task[];
+                const tasks = tasksStmt.all(project.id).map((t: any) => ({...t, completed: !!t.completed})) as Task[];
                 return { ...project, tasks };
             });
             return { ...area, projects: projectsWithTasks };

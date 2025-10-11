@@ -192,13 +192,16 @@ export async function updateTaskCompletion(taskId: string, completed: boolean, f
     skills.forEach(s => revalidatePath(`/skills/${s.id}`));
     areas.forEach(a => revalidatePath(`/areas/${a.id}`));
 
-    return {
-      ...result,
-      tasks: getAllTasks(),
-      user: getUser(),
-      skills: getSkills(),
-      areas: getAreas()
-    };
+        // result may be null (if no skill/user updates happened). Use a safe default
+        // so spreading is always done from an object type to avoid TS errors.
+        const safeResult = result ?? { skillId: undefined, skillLeveledUp: false, bonusXp: 0 };
+        return {
+            ...safeResult,
+            tasks: getAllTasks(),
+            user: getUser(),
+            skills: getSkills(),
+            areas: getAreas()
+        };
 }
 
 export async function updateTaskDetails(taskId: string, details: Partial<Task>) {
@@ -422,36 +425,34 @@ export async function maybeGenerateWeeklyMissions(): Promise<WeeklyMission[]> {
 }
 
 export async function updateWeeklyMissionCompletion(missionId: string, completed: boolean) {
-    let result: { xp: number, tokens: number, leveledUp: boolean, user: User } | null = null;
-    const transaction = db.transaction(() => {
-        db.prepare('UPDATE weekly_missions SET completed = ? WHERE id = ?').run(completed ? 1 : 0, missionId);
-        
-        if (completed) {
-            const mission = db.prepare('SELECT * FROM weekly_missions WHERE id = ?').get(missionId) as WeeklyMission;
-            if (mission) {
-                const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
-                
-                const newXp = user.xp + mission.xp;
-                const newTokens = user.tokens + mission.tokens;
-                let newLevel = user.level;
-                let newNextLevelXp = user.nextLevelXp;
+    db.prepare('UPDATE weekly_missions SET completed = ? WHERE id = ?').run(completed ? 1 : 0, missionId);
+    
+    if (completed) {
+        const mission = db.prepare('SELECT * FROM weekly_missions WHERE id = ?').get(missionId) as WeeklyMission;
+        if (mission) {
+            const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
+            
+            const newXp = user.xp + mission.xp;
+            const newTokens = user.tokens + mission.tokens;
+            let newLevel = user.level;
+            let newNextLevelXp = user.nextLevelXp;
 
-                if (newXp >= user.nextLevelXp) {
-                    newLevel = user.level + 1;
-                    newNextLevelXp = user.nextLevelXp * 2;
-                }
-                
-                db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ?, tokens = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp, newTokens);
-                
-                const updatedUser = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
-                result = { xp: mission.xp, tokens: mission.tokens, leveledUp: newLevel > user.level, user: updatedUser };
+            if (newXp >= user.nextLevelXp) {
+                newLevel = user.level + 1;
+                newNextLevelXp = user.nextLevelXp * 2;
             }
+            
+            db.prepare('UPDATE users SET xp = ?, level = ?, nextLevelXp = ?, tokens = ? WHERE id = 1').run(newXp, newLevel, newNextLevelXp, newTokens);
+            
+            const updatedUser = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
+            revalidatePath('/');
+            revalidatePath('/profile');
+            revalidatePath('/dashboard');
+            return { xp: mission.xp, tokens: mission.tokens, leveledUp: newLevel > user.level, user: updatedUser };
         }
-    });
-
-    transaction();
+    }
     revalidatePath('/');
     revalidatePath('/profile');
     revalidatePath('/dashboard');
-    return result;
+    return null;
 }

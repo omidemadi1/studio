@@ -3,7 +3,7 @@
 import React from 'react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { isToday, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { isToday, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, format, startOfMonth, endOfMonth, isWithinInterval, Interval } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -443,7 +443,7 @@ export default function QuestsPage() {
     const handleAreaChange = (newAreaId: string) => {
         if (!selectedTask) return;
         const newArea = areas.find(a => a.id === newAreaId);
-        const newProjectId = newArea?.projects[0]?.id || null;
+        const newProjectId = newArea?.projects[0]?.id || undefined;
         updateTaskDetails(selectedTask.id, { projectId: newProjectId });
     };
 
