@@ -1,109 +1,50 @@
 import 'server-only';
-import { db } from './db';
 import type { User, Area, Project, Task, Skill, MarketItem, WeeklyMission } from './types';
 import { getWeek } from 'date-fns';
 
-function withErrorHandling<T>(fn: () => T, fallback: T): T {
-    try {
-        return fn();
-    } catch (error) {
-        console.error("Database operation failed:", error);
-        return fallback;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:4000';
+
+async function apiGet<T>(path: string): Promise<T> {
+    const res = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
+    if (!res.ok) {
+        console.error('API GET failed', path, await res.text());
+        return Promise.reject(new Error(`API GET ${path} failed`));
     }
+    return res.json();
 }
 
-export function getUser(): User {
-    return withErrorHandling(() => {
-        const user = db.prepare('SELECT * FROM users WHERE id = 1').get() as User;
-        return user;
-    }, { 
-        id: 1, 
-        name: 'Error User', 
-        level: 1, 
-        xp: 0, 
-        nextLevelXp: 100, 
-        tokens: 0, 
-        avatarUrl: '' 
-    });
+export async function getUser(): Promise<User> {
+    return apiGet<User>('/api/users/me');
 }
 
-export function getSkills(): Skill[] {
-    return withErrorHandling(() => {
-        const allSkills = db.prepare('SELECT * FROM skills').all() as Skill[];
-        const skillMap = new Map(allSkills.map(s => [s.id, { ...s, subSkills: [] as Skill[] }]));
-
-        const rootSkills: Skill[] = [];
-
-        for (const skill of allSkills) {
-            if (skill.parentId && skillMap.has(skill.parentId)) {
-                const parent = skillMap.get(skill.parentId)!;
-                parent.subSkills.push(skillMap.get(skill.id)!);
-            } else {
-                rootSkills.push(skillMap.get(skill.id)!);
-            }
-        }
-        
-        return rootSkills;
-    }, []);
+export async function getSkills(): Promise<Skill[]> {
+    return apiGet<Skill[]>('/api/skills');
 }
 
-export function getAllTasks(): Task[] {
-    return withErrorHandling(() => {
-        return db.prepare('SELECT * FROM tasks').all().map((t: any) => ({...t, completed: !!t.completed})) as Task[];
-    }, []);
+export async function getAllTasks(): Promise<Task[]> {
+    return apiGet<Task[]>('/api/tasks');
 }
 
-
-export function getAreas(): Area[] {
-    return withErrorHandling(() => {
-        const areas = db.prepare('SELECT * FROM areas WHERE archived = 0').all() as Area[];
-        
-        const projectsStmt = db.prepare('SELECT * FROM projects WHERE areaId = ?');
-        const tasksStmt = db.prepare('SELECT * FROM tasks WHERE projectId = ?');
-
-        return areas.map(area => {
-            const projects = projectsStmt.all(area.id) as Project[];
-            const projectsWithTasks = projects.map(project => {
-                const tasks = tasksStmt.all(project.id).map((t: any) => ({...t, completed: !!t.completed})) as Task[];
-                return { ...project, tasks };
-            });
-            return { ...area, projects: projectsWithTasks };
-        });
-    }, []);
+export async function getAreas(): Promise<Area[]> {
+    return apiGet<Area[]>('/api/areas');
 }
 
-export function getArchivedAreas(): Area[] {
-    return withErrorHandling(() => {
-        const areas = db.prepare('SELECT * FROM areas WHERE archived = 1').all() as Area[];
-        
-        const projectsStmt = db.prepare('SELECT * FROM projects WHERE areaId = ?');
-        const tasksStmt = db.prepare('SELECT * FROM tasks WHERE projectId = ?');
-
-        return areas.map(area => {
-            const projects = projectsStmt.all(area.id) as Project[];
-            const projectsWithTasks = projects.map(project => {
-                const tasks = tasksStmt.all(project.id).map((t: any) => ({...t, completed: !!t.completed})) as Task[];
-                return { ...project, tasks };
-            });
-            return { ...area, projects: projectsWithTasks };
-        });
-    }, []);
+export async function getArchivedAreas(): Promise<Area[]> {
+    // API doesn't have a dedicated archived list endpoint; filter client-side
+    const all = await getAreas();
+    return all.filter(a => a.archived);
 }
 
-export function getMarketItems(): MarketItem[] {
-    return withErrorHandling(() => {
-        return db.prepare('SELECT * FROM market_items').all() as MarketItem[];
-    }, []);
+export async function getMarketItems(): Promise<MarketItem[]> {
+    return apiGet<MarketItem[]>('/api/market');
 }
 
-export function getWeeklyMissions(): WeeklyMission[] {
+export async function getWeeklyMissions(): Promise<WeeklyMission[]> {
     const year = new Date().getFullYear();
     const week = getWeek(new Date());
     const weekIdentifier = `${year}-${week}`;
-
-    return withErrorHandling(() => {
-        return db.prepare('SELECT * FROM weekly_missions WHERE weekIdentifier = ?').all(weekIdentifier) as WeeklyMission[];
-    }, []);
+    // Try to call the API endpoint for missions
+    return apiGet<WeeklyMission[]>('/api/missions');
 }
+export function getAllTasks(): Task[] {
 
-    
