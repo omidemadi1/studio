@@ -4,7 +4,8 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import type { Area, Task, Project, User, Skill, WeeklyMission } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import * as QuestActions from '@/actions/quest-actions';
+import { apiClient } from '@/lib/api-client';
+import { useAuth } from '@/context/auth-context';
 
 interface QuestContextType {
   areas: Area[];
@@ -12,6 +13,8 @@ interface QuestContextType {
   skills: Skill[];
   tasks: Task[];
   weeklyMissions: WeeklyMission[];
+  isLoading: boolean;
+  refreshData: () => Promise<void>;
   maybeGenerateWeeklyMissions: () => Promise<void>;
   updateWeeklyMissionCompletion: (missionId: string, completed: boolean) => Promise<void>;
   updateTaskCompletion: (taskId: string, completed: boolean, focusDuration?: number, bonusXp?: number) => Promise<void>;
@@ -41,55 +44,60 @@ interface QuestContextType {
 
 const QuestContext = createContext<QuestContextType | undefined>(undefined);
 
-export const QuestProvider = ({ 
-    children,
-    initialAreas,
-    initialUser,
-    initialSkills,
-    initialWeeklyMissions,
-    initialTasks
-}: { 
-    children: ReactNode,
-    initialAreas: Area[],
-    initialUser: User,
-    initialSkills: Skill[],
-    initialWeeklyMissions: WeeklyMission[],
-    initialTasks: Task[],
-}) => {
-  const [areas, setAreas] = useState<Area[]>(initialAreas);
-  const [user, setUser] = useState<User>(initialUser);
-  const [skills, setSkills] = useState<Skill[]>(initialSkills);
-  const [weeklyMissions, setWeeklyMissions] = useState<WeeklyMission[]>(initialWeeklyMissions);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+export const QuestProvider = ({ children }: { children: ReactNode }) => {
+  const { user: authUser, isAuthenticated } = useAuth();
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [weeklyMissions, setWeeklyMissions] = useState<WeeklyMission[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => setAreas(initialAreas), [initialAreas]);
-  useEffect(() => setUser(initialUser), [initialUser]);
-  useEffect(() => setSkills(initialSkills), [initialSkills]);
-  useEffect(() => setWeeklyMissions(initialWeeklyMissions), [initialWeeklyMissions]);
-  useEffect(() => setTasks(initialTasks), [initialTasks]);
-
-  const addXp = useCallback(async (xp: number, message?: string) => {
-    const oldUser = user;
-    const isLevelUp = oldUser.xp + xp >= oldUser.nextLevelXp;
-    
-    const updatedUser = await QuestActions.addXp(xp);
-    setUser(updatedUser);
-    
-    if (message) {
-        toast({ title: "XP Gained!", description: message });
+  // Fetch all data from API
+  const refreshData = useCallback(async () => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
     }
-    if (isLevelUp) {
-        toast({ title: "Level Up!", description: `Congratulations, you've reached level ${oldUser.level + 1}!` });
-    }
-  }, [user, toast]);
 
+    setIsLoading(true);
+    try {
+      const [areasData, skillsData, tasksData, userData] = await Promise.all([
+        apiClient.getAreas(),
+        apiClient.getSkills(),
+        apiClient.getTasks(),
+        apiClient.getUser(),
+      ]);
+
+      setAreas(areasData);
+      setSkills(skillsData);
+      setTasks(tasksData);
+      setUser(userData);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load data. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, toast]);
+
+  // Load data on mount and when auth changes
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+  // Helper functions for local state
   const getTask = useCallback((taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return null;
     if (task.projectId) {
       for (const area of areas) {
-        const project = area.projects.find(p => p.id === task.projectId);
+        const project = area.projects?.find(p => p.id === task.projectId);
         if (project) {
           return { task, areaId: area.id, projectId: project.id };
         }
@@ -105,195 +113,226 @@ export const QuestProvider = ({
   const getTasksByAreaId = useCallback((areaId: string) => {
     const area = areas.find(a => a.id === areaId);
     if (!area) return [];
-    return area.projects.flatMap(p => p.tasks);
+    return area.projects?.flatMap(p => p.tasks || []) || [];
   }, [areas]);
 
-  const updateTaskCompletion = useCallback(async (taskId: string, completed: boolean, focusDuration?: number, bonusXp?: number) => {
-    const taskData = getTask(taskId);
-    if (!taskData) return;
-
-    const result = await QuestActions.updateTaskCompletion(taskId, completed, focusDuration, bonusXp);
+  // API methods
+  const addXp = useCallback(async (xp: number, message?: string) => {
+    if (!user) return;
+    const oldUser = user;
+    const isLevelUp = oldUser.xp + xp >= oldUser.nextLevelXp;
     
-    if(result) {
-        setUser(result.user);
-        setTasks(result.tasks);
-        setSkills(result.skills);
-        setAreas(result.areas);
+    // This would need a backend endpoint - for now just show toast
+    if (message) {
+        toast({ title: "XP Gained!", description: message });
+    }
+    if (isLevelUp) {
+        toast({ title: "Level Up!", description: `Congratulations, you've reached level ${oldUser.level + 1}!` });
+    }
+  }, [user, toast]);
 
+  const updateTaskCompletion = useCallback(async (taskId: string, completed: boolean, focusDuration?: number, bonusXp?: number) => {
+    try {
+      await apiClient.updateTask(taskId, { completed });
+      await refreshData();
+      
+      const taskData = getTask(taskId);
+      if (taskData) {
         const totalXpEarned = taskData.task.xp + (bonusXp || 0);
         toast({
-            title: completed ? 'Quest Complete!' : 'Quest Updated',
-            description: completed ? `You earned ${totalXpEarned} XP for "${taskData.task.title}"!` : 'Quest marked as incomplete.',
+          title: completed ? 'Quest Complete!' : 'Quest Updated',
+          description: completed ? `You earned ${totalXpEarned} XP!` : 'Quest marked as incomplete.',
         });
-        
-        const findSkill = (skillList: Skill[], skillId: string | undefined): Skill | undefined => {
-            if (!skillId) return undefined;
-            for (const s of skillList) {
-                if (s.id === skillId) return s;
-                if (s.subSkills) {
-                    const found = findSkill(s.subSkills, skillId);
-                    if (found) return found;
-                }
-            }
-            return undefined;
-        }
-
-        if (result.skillLeveledUp) {
-            const skill = findSkill(skills, result.skillId);
-            const updatedSkill = findSkill(result.skills, result.skillId);
-            if (skill && updatedSkill) {
-                toast({
-                    title: "Skill Level Up!",
-                    description: `${skill.name} has reached level ${updatedSkill.level}!`
-                });
-            }
-        }
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update task',
+        variant: 'destructive',
+      });
     }
-  }, [getTask, toast, skills]);
+  }, [getTask, toast, refreshData]);
   
   const addArea = async (name: string, icon: string) => {
-    const updatedAreas = await QuestActions.addArea(name, icon);
-    setAreas(updatedAreas);
-    toast({ title: 'Area Created', description: `New area "${name}" has been added.`});
+    try {
+      await apiClient.createArea({ name, icon });
+      await refreshData();
+      toast({ title: 'Area Created', description: `New area "${name}" has been added.`});
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to create area', variant: 'destructive' });
+    }
   };
 
   const updateArea = async (id: string, name: string, icon: string) => {
-    const updatedAreas = await QuestActions.updateArea(id, name, icon);
-    setAreas(updatedAreas);
-    toast({ title: 'Area Updated' });
+    try {
+      await apiClient.updateArea(id, { name, icon });
+      await refreshData();
+      toast({ title: 'Area Updated' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update area', variant: 'destructive' });
+    }
   };
   
   const archiveArea = async (id: string, archived: boolean) => {
-    const updatedAreas = await QuestActions.archiveArea(id, archived);
-    setAreas(updatedAreas);
-    toast({ title: archived ? 'Area Archived' : 'Area Unarchived' });
+    try {
+      await apiClient.updateArea(id, { archived });
+      await refreshData();
+      toast({ title: archived ? 'Area Archived' : 'Area Unarchived' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to archive area', variant: 'destructive' });
+    }
   };
 
   const deleteArea = async (id: string) => {
-    const updatedAreas = await QuestActions.deleteArea(id);
-    setAreas(updatedAreas);
-    toast({ title: 'Area Deleted', variant: "destructive" });
+    try {
+      await apiClient.deleteArea(id);
+      await refreshData();
+      toast({ title: 'Area Deleted', variant: "destructive" });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete area', variant: 'destructive' });
+    }
   };
 
   const addProject = async (areaId: string, name: string) => {
-    const updatedAreas = await QuestActions.addProject(areaId, name);
-    setAreas(updatedAreas);
-    toast({ title: 'Project Created', description: `New project "${name}" has been added.`});
+    try {
+      await apiClient.createProject({ name, areaId });
+      await refreshData();
+      toast({ title: 'Project Created', description: `New project "${name}" has been added.`});
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to create project', variant: 'destructive' });
+    }
   };
 
   const updateProject = async (id: string, name: string) => {
-    const updatedAreas = await QuestActions.updateProject(id, name);
-    setAreas(updatedAreas);
-    toast({ title: 'Project Updated' });
+    try {
+      await apiClient.updateProject(id, { name });
+      await refreshData();
+      toast({ title: 'Project Updated' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update project', variant: 'destructive' });
+    }
   };
   
   const deleteProject = async (id: string, areaId: string) => {
-    const updatedAreas = await QuestActions.deleteProject(id, areaId);
-    setAreas(updatedAreas);
-    toast({ title: 'Project Deleted' });
+    try {
+      await apiClient.deleteProject(id);
+      await refreshData();
+      toast({ title: 'Project Deleted' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete project', variant: 'destructive' });
+    }
   };
 
   const addTask = async (task: Task, areaId?: string) => {
-    const { tasks: updatedTasks, areas: updatedAreas } = await QuestActions.addTask(task, areaId);
-    setTasks(updatedTasks);
-    setAreas(updatedAreas);
-    toast({ title: "Quest Created!", description: `AI has assigned ${task.xp} XP to your new quest.` });
+    try {
+      await apiClient.createTask(task);
+      await refreshData();
+      toast({ title: "Quest Created!", description: `AI has assigned ${task.xp} XP to your new quest.` });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to create task', variant: 'destructive' });
+    }
   };
 
   const deleteTask = async (id: string) => {
-    const { tasks: updatedTasks, areas: updatedAreas } = await QuestActions.deleteTask(id);
-    setTasks(updatedTasks);
-    setAreas(updatedAreas);
-    toast({ title: 'Task Deleted', variant: "destructive" });
+    try {
+      await apiClient.deleteTask(id);
+      await refreshData();
+      toast({ title: 'Task Deleted', variant: "destructive" });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete task', variant: 'destructive' });
+    }
   };
   
   const updateTaskDetails = async (taskId: string, details: Partial<Task>) => {
-    const { tasks: updatedTasks, areas: updatedAreas } = await QuestActions.updateTaskDetails(taskId, details);
-    setTasks(updatedTasks);
-    setAreas(updatedAreas);
+    try {
+      await apiClient.updateTask(taskId, details);
+      await refreshData();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update task', variant: 'destructive' });
+    }
   };
   
   const updateUser = async (newUserData: Partial<User>) => {
-      const updatedUser = await QuestActions.updateUser(newUserData);
-      setUser(updatedUser);
+    try {
+      await apiClient.updateUser(newUserData);
+      await refreshData();
       toast({ title: 'Profile Updated', description: 'Your changes have been saved successfully.' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update profile', variant: 'destructive' });
+    }
   };
 
   const addSkill = async (name: string, icon: string, parentId?: string) => {
-    const updatedSkills = await QuestActions.addSkill(name, icon, parentId);
-    setSkills(updatedSkills);
-    toast({ title: 'Skill Added', description: `New skill "${name}" is now ready to level up.` });
+    try {
+      await apiClient.createSkill({ name, icon, parentId, level: 1, points: 0, maxPoints: 1000 });
+      await refreshData();
+      toast({ title: 'Skill Added', description: `New skill "${name}" is now ready to level up.` });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to create skill', variant: 'destructive' });
+    }
   };
 
   const updateSkill = async (id: string, name: string, icon: string) => {
-    const updatedSkills = await QuestActions.updateSkill(id, name, icon);
-    setSkills(updatedSkills);
+    try {
+      await apiClient.updateSkill(id, { name, icon });
+      await refreshData();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update skill', variant: 'destructive' });
+    }
   }
 
   const deleteSkill = async (id: string) => {
-    const updatedSkills = await QuestActions.deleteSkill(id);
-    setSkills(updatedSkills);
+    try {
+      await apiClient.deleteSkill(id);
+      await refreshData();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete skill', variant: 'destructive' });
+    }
   }
 
   const resetDatabase = async () => {
-    const result = await QuestActions.resetDatabase();
-    setUser(result.user);
-    setSkills(result.skills);
-    setTasks(result.tasks);
-    setAreas(result.areas);
-    setWeeklyMissions(result.weeklyMissions);
-    toast({ title: 'Data Reset', description: 'All your data has been wiped clean.' });
+    toast({ title: 'Not Implemented', description: 'Reset database is not available in API mode.' });
   }
 
   const duplicateArea = async (areaId: string) => {
-    const updatedAreas = await QuestActions.duplicateArea(areaId);
-    setAreas(updatedAreas);
-    toast({ title: 'Area Duplicated' });
+    toast({ title: 'Not Implemented', description: 'Duplicate area is not yet implemented.' });
   }
 
   const duplicateProject = async (projectId: string) => {
-    const updatedAreas = await QuestActions.duplicateProject(projectId);
-    setAreas(updatedAreas);
-    toast({ title: 'Project Duplicated' });
+    toast({ title: 'Not Implemented', description: 'Duplicate project is not yet implemented.' });
   }
 
   const duplicateTask = async (taskId: string) => {
-    const { tasks: updatedTasks, areas: updatedAreas } = await QuestActions.duplicateTask(taskId);
-    setTasks(updatedTasks);
-    setAreas(updatedAreas);
-    toast({ title: 'Task Duplicated' });
+    toast({ title: 'Not Implemented', description: 'Duplicate task is not yet implemented.' });
   }
 
   const maybeGenerateWeeklyMissions = useCallback(async () => {
-    const newMissions = await QuestActions.maybeGenerateWeeklyMissions();
-    setWeeklyMissions(newMissions);
-  }, []);
+    // Weekly missions would need backend support
+    toast({ title: 'Not Implemented', description: 'Weekly missions are not yet implemented.' });
+  }, [toast]);
 
   const updateWeeklyMissionCompletion = useCallback(async (missionId: string, completed: boolean) => {
-      const result: { xp: number, tokens: number, leveledUp: boolean, user: User } | null = await QuestActions.updateWeeklyMissionCompletion(missionId, completed);
-      if (result) {
-          setUser(result.user);
-          const updatedMissions = weeklyMissions.map(m => m.id === missionId ? { ...m, completed } : m);
-          setWeeklyMissions(updatedMissions);
-          toast({
-              title: "Mission Complete!",
-              description: `You earned ${result.xp} XP and ${result.tokens} tokens!`
-          });
-          if (result.leveledUp) {
-              toast({
-                  title: "Level Up!",
-                  description: `Congratulations, you've reached a new level!`
-              });
-          }
-      }
-  }, [toast, weeklyMissions]);
+    // Weekly missions would need backend support
+    toast({ title: 'Not Implemented', description: 'Weekly missions are not yet implemented.' });
+  }, [toast]);
 
   const value = { 
     areas, 
-    user, 
+    user: user || {
+      id: 0,
+      name: 'Loading...',
+      email: '',
+      level: 1,
+      xp: 0,
+      nextLevelXp: 100,
+      tokens: 0,
+      avatarUrl: '',
+    }, 
     skills, 
     tasks,
     weeklyMissions,
+    isLoading,
+    refreshData,
     maybeGenerateWeeklyMissions,
     updateWeeklyMissionCompletion,
     updateTaskCompletion, 
