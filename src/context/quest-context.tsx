@@ -155,8 +155,8 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
   
   const addArea = async (name: string, icon: string) => {
     try {
-      await apiClient.createArea({ name, icon });
-      await refreshData();
+      const created = await apiClient.createArea({ name, icon });
+      setAreas(prev => [...prev, created]);
       toast({ title: 'Area Created', description: `New area "${name}" has been added.`});
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to create area', variant: 'destructive' });
@@ -195,8 +195,12 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
 
   const addProject = async (areaId: string, name: string) => {
     try {
-      await apiClient.createProject({ name, areaId });
-      await refreshData();
+      const created = await apiClient.createProject({ name, areaId });
+      setAreas(prev => prev.map(area => {
+        if (area.id !== areaId) return area;
+        const projects = [...(area.projects ?? []), created];
+        return { ...area, projects };
+      }));
       toast({ title: 'Project Created', description: `New project "${name}" has been added.`});
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to create project', variant: 'destructive' });
@@ -225,8 +229,36 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
 
   const addTask = async (task: Task, areaId?: string) => {
     try {
-      await apiClient.createTask(task);
-      await refreshData();
+      const { title, description, completed, xp, tokens, difficulty, dueDate, reminder, skillId, focusDuration, bonusXp, projectId, markdown } = task;
+      const created = await apiClient.createTask({
+        title,
+        description,
+        completed,
+        xp,
+        tokens,
+        difficulty,
+        dueDate,
+        reminder,
+        skillId,
+        focusDuration,
+        bonusXp,
+        projectId,
+        markdown,
+      });
+
+      setTasks(prev => [...prev, created]);
+      if (created.projectId) {
+        setAreas(prev => prev.map(area => {
+          if (!area.projects || area.projects.length === 0) return area;
+          const projects = area.projects.map(project => {
+            if (project.id !== created.projectId) return project;
+            const tasks = [...(project.tasks ?? []), created];
+            return { ...project, tasks };
+          });
+          return { ...area, projects };
+        }));
+      }
+
       toast({ title: "Quest Created!", description: `AI has assigned ${task.xp} XP to your new quest.` });
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to create task', variant: 'destructive' });
@@ -264,8 +296,27 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
 
   const addSkill = async (name: string, icon: string, parentId?: string) => {
     try {
-      await apiClient.createSkill({ name, icon, parentId, level: 1, points: 0, maxPoints: 1000 });
-      await refreshData();
+      const created = await apiClient.createSkill({ name, icon, parentId });
+      setSkills(prev => {
+        if (!parentId) return [...prev, created];
+
+        const attachToParent = (list: Skill[]): Skill[] =>
+          list.map(skill => {
+            if (skill.id === parentId) {
+              const subSkills = [...(skill.subSkills ?? []), created];
+              return { ...skill, subSkills };
+            }
+            if (skill.subSkills && skill.subSkills.length > 0) {
+              return { ...skill, subSkills: attachToParent(skill.subSkills) };
+            }
+            return skill;
+          });
+
+        const updated = attachToParent(prev);
+        // If parent not found, append at root so the new skill is visible
+        const parentExists = updated.some(skill => skill.id === parentId);
+        return parentExists ? updated : [...updated, created];
+      });
       toast({ title: 'Skill Added', description: `New skill "${name}" is now ready to level up.` });
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to create skill', variant: 'destructive' });
