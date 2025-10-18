@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   DndContext,
   useDraggable,
@@ -148,8 +148,13 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
   const { tasks, areas, skills, updateTaskCompletion, updateTaskDetails } = useQuestData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewMode>('monthly');
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
+
+  const selectedTask = useMemo(() => {
+    if (!selectedTaskId) return null;
+    return tasks.find(task => task.id === selectedTaskId) ?? null;
+  }, [selectedTaskId, tasks]);
 
 
   const sensors = useSensors(
@@ -185,12 +190,23 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
   };
   
   const handleTaskClick = (task: Task) => {
-    setSelectedTask(task);
+    setSelectedTaskId(task.id);
     setEditableTaskData({
         title: task.title,
         description: task.description || '',
     });
   };
+
+  useEffect(() => {
+    if (selectedTask) {
+      setEditableTaskData({
+        title: selectedTask.title,
+        description: selectedTask.description || '',
+      });
+    } else {
+      setEditableTaskData({});
+    }
+  }, [selectedTask]);
 
   const handleTaskDataChange = (field: keyof Task, value: string) => {
     if (!selectedTask) return;
@@ -200,7 +216,7 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
   
   const handleFocusClick = () => {
     if (!selectedTask) return;
-    setSelectedTask(null);
+    setSelectedTaskId(null);
     router.push(`/focus?taskId=${selectedTask.id}`);
   };
 
@@ -352,7 +368,7 @@ export default function CalendarView({ onAddTaskClick }: CalendarViewProps) {
             </div>
         </div>
     </DndContext>
-    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+  <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTaskId(null)}>
         <DialogContent className="sm:max-w-xl">
           {selectedTask && (
             <>

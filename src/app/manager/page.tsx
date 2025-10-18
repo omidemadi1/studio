@@ -164,7 +164,12 @@ export default function ManagerPage() {
   const [addSkillOpen, setAddSkillOpen] = useState(false);
   const [editSkillState, setEditSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
   const [deleteSkillState, setDeleteSkillState] = useState<{ open: boolean, skill: Skill | null }>({ open: false, skill: null });
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+
+  const selectedTask = useMemo(() => {
+    if (!selectedTaskId) return null;
+    return tasks.find(task => task.id === selectedTaskId) ?? null;
+  }, [selectedTaskId, tasks]);
 
 
   const selectableSkills = getFlattenedSkills(skills);
@@ -323,14 +328,14 @@ export default function ManagerPage() {
   }
 
   function handleTaskClick(task: Task) {
-    setSelectedTask(task);
+    setSelectedTaskId(task.id);
   }
 
   const handleDeleteTask = () => {
     if (deleteTaskState.task) {
       deleteTask(deleteTaskState.task.id);
-      if (selectedTask?.id === deleteTaskState.task.id) {
-          setSelectedTask(null);
+      if (selectedTaskId === deleteTaskState.task.id) {
+          setSelectedTaskId(null);
       }
       setDeleteTaskState({ open: false, task: null });
     }
@@ -1155,8 +1160,8 @@ export default function ManagerPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-      <TaskDetails task={selectedTask} onClose={() => setSelectedTask(null)} />
+    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTaskId(null)}>
+      <TaskDetails task={selectedTask} onClose={() => setSelectedTaskId(null)} />
     </Dialog>
     </>
   );

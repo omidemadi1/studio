@@ -160,7 +160,12 @@ export default function AreaDetailPage() {
   const [editAreaOpen, setEditAreaOpen] = useState(false);
   const [deleteAreaOpen, setDeleteAreaOpen] = useState(false);
   const [archiveAreaOpen, setArchiveAreaOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+
+  const selectedTask = useMemo(() => {
+    if (!selectedTaskId) return null;
+    return tasks.find(task => task.id === selectedTaskId) ?? null;
+  }, [selectedTaskId, tasks]);
 
 
   const selectableSkills = getFlattenedSkills(skills);
@@ -385,7 +390,7 @@ export default function AreaDetailPage() {
 
   function handleTaskClick(taskId: string) {
     const task = tasks.find(t => t.id === taskId);
-    if(task) setSelectedTask(task);
+    if (task) setSelectedTaskId(task.id);
   }
 
   const handleDeleteProject = () => {
@@ -397,6 +402,9 @@ export default function AreaDetailPage() {
   const handleDeleteTask = () => {
     if (!deleteTaskState.task) return;
     deleteTask(deleteTaskState.task.id);
+    if (selectedTaskId === deleteTaskState.task.id) {
+      setSelectedTaskId(null);
+    }
     setDeleteTaskState({ open: false, task: null });
   };
 
@@ -1125,8 +1133,8 @@ export default function AreaDetailPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-        <TaskDetails task={selectedTask} onClose={() => setSelectedTask(null)} />
+  <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTaskId(null)}>
+    <TaskDetails task={selectedTask} onClose={() => setSelectedTaskId(null)} />
     </Dialog>
     </>
   );

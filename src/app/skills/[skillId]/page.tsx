@@ -155,10 +155,15 @@ export default function SkillDetailPage() {
     const [addTaskOpen, setAddTaskOpen] = useState(false);
     const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
     const [isCreatingTask, setIsCreatingTask] = useState(false);
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
     const [isEditingMarkdown, setIsEditingMarkdown] = useState(false);
     
+    const selectedTask = useMemo(() => {
+        if (!selectedTaskId) return null;
+        return tasks.find(task => task.id === selectedTaskId) ?? null;
+    }, [selectedTaskId, tasks]);
+
     const selectableSkills = getFlattenedSkills(skills);
 
     const skill = useMemo(() => findSkillRecursive(skills, skillId as string), [skillId, skills]);
@@ -272,14 +277,14 @@ export default function SkillDetailPage() {
     };
 
     const handleTaskClick = (task: Task) => {
-        setSelectedTask(task);
+        setSelectedTaskId(task.id);
     };
 
     const handleDeleteTask = () => {
         if (!deleteTaskState.task) return;
         deleteTask(deleteTaskState.task.id);
-        if (selectedTask?.id === deleteTaskState.task.id) {
-            setSelectedTask(null);
+        if (selectedTaskId === deleteTaskState.task.id) {
+            setSelectedTaskId(null);
         }
         setDeleteTaskState({ open: false, task: null });
     };
@@ -906,7 +911,7 @@ export default function SkillDetailPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-             <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+             <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTaskId(null)}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <VisuallyHidden>

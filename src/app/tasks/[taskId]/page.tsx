@@ -149,10 +149,15 @@ export default function QuestsPage() {
   const [isClient, setIsClient] = useState(false);
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
-  const [addSkillOpen, setAddSkillOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [addSkillOpen, setAddSkillOpen] = useState(false);
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editableTaskData, setEditableTaskData] = useState<Partial<Task>>({});
   const [isEditingMarkdown, setIsEditingMarkdown] = useState(false);
+
+    const selectedTask = useMemo(() => {
+        if (!selectedTaskId) return null;
+        return tasks.find(task => task.id === selectedTaskId) ?? null;
+    }, [selectedTaskId, tasks]);
 
   const selectableSkills = getFlattenedSkills(skills);
 
@@ -394,7 +399,8 @@ export default function QuestsPage() {
   }, [timeRange, weekDays, monthDays]);
 
     const handleTaskClick = (task: Task) => {
-        setSelectedTask(task);
+        setSelectedTaskId(task.id);
+        setEditableTaskData(task);
     };
 
     const { dialogArea, dialogProject } = useMemo(() => {
@@ -436,7 +442,7 @@ export default function QuestsPage() {
      const handleDeleteTask = () => {
         if (selectedTask) {
             deleteTask(selectedTask.id);
-            setSelectedTask(null);
+            setSelectedTaskId(null);
         }
     };
 
@@ -901,7 +907,7 @@ export default function QuestsPage() {
             </Form>
         </DialogContent>
     </Dialog>
-    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTaskId(null)}>
         <DialogContent className="max-w-2xl">
            {selectedTask && (
              <div className="bg-card/80 p-6 rounded-lg">

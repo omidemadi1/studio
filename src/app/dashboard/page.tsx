@@ -138,9 +138,14 @@ export default function DashboardPage() {
   const [isClient, setIsClient] = useState(false);
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
-  const [addSkillOpen, setAddSkillOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [addSkillOpen, setAddSkillOpen] = useState(false);
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [deleteTaskState, setDeleteTaskState] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
+
+    const selectedTask = useMemo(() => {
+        if (!selectedTaskId) return null;
+        return tasks.find(task => task.id === selectedTaskId) ?? null;
+    }, [selectedTaskId, tasks]);
 
 
   const selectableSkills = getFlattenedSkills(skills);
@@ -351,14 +356,14 @@ export default function DashboardPage() {
   }, [tasks, isClient, timeRange, taskFilter, sortOption, taskDetailsMap]);
 
     const handleTaskClick = (task: Task) => {
-        setSelectedTask(task);
+        setSelectedTaskId(task.id);
     };
 
      const handleDeleteTask = () => {
         if (!deleteTaskState.task) return;
         deleteTask(deleteTaskState.task.id);
-        if (selectedTask?.id === deleteTaskState.task.id) {
-            setSelectedTask(null);
+        if (selectedTaskId === deleteTaskState.task.id) {
+            setSelectedTaskId(null);
         }
         setDeleteTaskState({ open: false, task: null });
     };
@@ -821,8 +826,8 @@ export default function DashboardPage() {
             </Form>
         </DialogContent>
     </Dialog>
-    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-        <TaskDetails task={selectedTask} onClose={() => setSelectedTask(null)} />
+    <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTaskId(null)}>
+        <TaskDetails task={selectedTask} onClose={() => setSelectedTaskId(null)} />
     </Dialog>
      <AlertDialog open={deleteTaskState.open} onOpenChange={(open) => setDeleteTaskState({ open, task: open ? deleteTaskState.task : null })}>
         <AlertDialogContent>
