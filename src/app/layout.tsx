@@ -6,6 +6,7 @@ import BottomNav from "@/components/bottom-nav";
 import { Toaster } from "@/components/ui/toaster";
 import { QuestProvider } from "@/context/quest-context";
 import { AuthProvider } from "@/context/auth-context";
+import { SessionMonitor } from "@/components/session-monitor";
 
 export const metadata: Metadata = {
   title: "Questify",
@@ -41,6 +42,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <QuestProvider>
+            <SessionMonitor />
             <div className="relative flex min-h-screen w-full flex-col">
               <main className="flex-1 pb-24">{children}</main>
               <BottomNav />

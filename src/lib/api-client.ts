@@ -1,25 +1,17 @@
 // API client configuration and utilities for JWT authentication
+import { sessionManager, User } from './session-manager';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export interface AuthResponse {
-  user: {
-    id: number;
-    name: string;
-    email: string;
-    level: number;
-    xp: number;
-    nextLevelXp: number;
-    tokens: number;
-    avatarUrl: string;
-  };
+  user: User;
   token: string;
   message: string;
 }
 
 class ApiClient {
   private getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('authToken');
+    return sessionManager.getToken();
   }
 
   private setToken(token: string): void {
@@ -28,9 +20,7 @@ class ApiClient {
   }
 
   private clearToken(): void {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    sessionManager.clearSession();
   }
 
   private getHeaders(): HeadersInit {
@@ -60,6 +50,20 @@ class ApiClient {
 
     if (response.status === 401) {
       this.clearToken();
+      
+      // Check if it's a token expiration
+      const errorData = await response.json().catch(() => ({ message: 'Unauthorized' }));
+      const message = errorData.message || errorData.error || '';
+      const lowerMessage = message.toLowerCase();
+      
+      if (lowerMessage.includes('token') || lowerMessage.includes('expired') || lowerMessage.includes('session')) {
+        console.log('[ApiClient] Session expired, redirecting to login');
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login?expired=true';
+        }
+        throw new Error('Session expired. Please login again.');
+      }
+      
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
@@ -68,7 +72,7 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(error.error || `HTTP ${response.status}`);
+      throw new Error(error.error || error.message || `HTTP ${response.status}`);
     }
 
     if (response.status === 204) {
@@ -79,29 +83,27 @@ class ApiClient {
   }
 
   // Auth methods
-  async signup(name: string, email: string, password: string): Promise<AuthResponse> {
+  async signup(name: string, email: string, password: string, rememberMe: boolean = false): Promise<AuthResponse> {
     const response = await this.request<AuthResponse>('/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ name, email, password }),
     });
 
-    this.setToken(response.token);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(response.user));
-    }
+    // Save session with SessionManager
+    sessionManager.saveSession(response.user, response.token, rememberMe);
+    
     return response;
   }
 
-  async signin(email: string, password: string): Promise<AuthResponse> {
+  async signin(email: string, password: string, rememberMe: boolean = false): Promise<AuthResponse> {
     const response = await this.request<AuthResponse>('/api/auth/signin', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
-    this.setToken(response.token);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(response.user));
-    }
+    // Save session with SessionManager
+    sessionManager.saveSession(response.user, response.token, rememberMe);
+    
     return response;
   }
 
@@ -109,10 +111,29 @@ class ApiClient {
     this.clearToken();
   }
 
-  getCurrentUser(): any | null {
-    if (typeof window === 'undefined') return null;
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+  getCurrentUser(): User | null {
+    return sessionManager.getCurrentUser();
+  }
+  
+  /**
+   * Check if session is valid
+   */
+  hasValidSession(): boolean {
+    return sessionManager.hasValidSession();
+  }
+  
+  /**
+   * Get session info
+   */
+  getSessionInfo() {
+    return sessionManager.getSessionInfo();
+  }
+  
+  /**
+   * Update activity
+   */
+  updateActivity(): void {
+    sessionManager.updateActivity();
   }
 
   // Users

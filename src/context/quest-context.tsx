@@ -133,15 +133,26 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
 
   const updateTaskCompletion = useCallback(async (taskId: string, completed: boolean, focusDuration?: number, bonusXp?: number) => {
     try {
-      await apiClient.updateTask(taskId, { completed });
+      // Get task data BEFORE updating (to show correct XP earned)
+      const taskDataBefore = getTask(taskId);
+      const totalXpEarned = taskDataBefore ? taskDataBefore.task.xp + (bonusXp || 0) : 0;
+      
+      // Update the task on the backend
+      await apiClient.updateTask(taskId, { completed, focusDuration, bonusXp });
+      
+      // Refresh all data to get updated user XP, skill points, etc.
       await refreshData();
       
-      const taskData = getTask(taskId);
-      if (taskData) {
-        const totalXpEarned = taskData.task.xp + (bonusXp || 0);
+      // Show success message
+      if (completed && totalXpEarned > 0) {
         toast({
-          title: completed ? 'Quest Complete!' : 'Quest Updated',
-          description: completed ? `You earned ${totalXpEarned} XP!` : 'Quest marked as incomplete.',
+          title: 'Quest Complete!',
+          description: `You earned ${totalXpEarned} XP and ${taskDataBefore?.task.tokens || 0} tokens!`,
+        });
+      } else if (!completed) {
+        toast({
+          title: 'Quest Updated',
+          description: 'Quest marked as incomplete.',
         });
       }
     } catch (error) {
@@ -151,7 +162,7 @@ export const QuestProvider = ({ children }: { children: ReactNode }) => {
         variant: 'destructive',
       });
     }
-  }, [getTask, toast, refreshData]);
+  }, [getTask, toast, refreshData, apiClient]);
   
   const addArea = async (name: string, icon: string) => {
     try {

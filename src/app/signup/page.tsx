@@ -14,6 +14,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      await signup(name, email, password);
+      await signup(name, email, password, rememberMe);
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed');
@@ -114,6 +115,20 @@ export default function SignupPage() {
                 disabled={loading}
                 minLength={6}
               />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                disabled={loading}
+              />
+              <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer">
+                Remember me (stay logged in)
+              </Label>
             </div>
 
             <Button
