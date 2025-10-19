@@ -46,5 +46,3 @@ export async function getWeeklyMissions(): Promise<WeeklyMission[]> {
     // Try to call the API endpoint for missions
     return apiGet<WeeklyMission[]>('/api/missions');
 }
-export function getAllTasks(): Task[] {
-
