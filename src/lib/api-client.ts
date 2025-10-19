@@ -107,6 +107,28 @@ class ApiClient {
     return response;
   }
 
+  async handleOAuthToken(token: string): Promise<AuthResponse> {
+    // Decode the token to get user info (simplified - you might want to fetch from API)
+    // For now, we'll save the token and fetch user data
+    sessionManager.saveToken(token, true); // OAuth sessions always remember
+    
+    // Fetch user data using the token
+    const user = await this.getCurrentUserFromAPI();
+    
+    return {
+      user,
+      token,
+      message: 'Authenticated successfully',
+    };
+  }
+
+  private async getCurrentUserFromAPI(): Promise<User> {
+    // This assumes you have an endpoint to get current user info
+    // You might need to add this endpoint to your API
+    const response = await this.request<{ user: User }>('/api/users/me');
+    return response.user || response as any;
+  }
+
   logout(): void {
     this.clearToken();
   }

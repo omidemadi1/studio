@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signup: (name: string, email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  handleOAuthCallback: (token: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -84,6 +85,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRememberMe(rememberMe);
   };
 
+  const handleOAuthCallback = async (token: string) => {
+    // Store the token and fetch user data
+    const response = await apiClient.handleOAuthToken(token);
+    setUser(response.user);
+    setRememberMe(true); // OAuth sessions are always "remember me"
+  };
+
   const logout = () => {
     apiClient.logout();
     setUser(null);
@@ -104,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         login,
         signup,
+        handleOAuthCallback,
         logout,
         isAuthenticated: !!user,
         isLoading,

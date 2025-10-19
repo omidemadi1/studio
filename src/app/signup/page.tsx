@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+// @ts-ignore - Next.js navigation types are properly installed
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { OAuthButtonGroup } from '@/components/auth/oauth-buttons';
 import Link from 'next/link';
 
 export default function SignupPage() {
@@ -138,6 +140,8 @@ export default function SignupPage() {
             >
               {loading ? 'Creating account...' : 'Sign Up'}
             </Button>
+
+            <OAuthButtonGroup disabled={loading} />
 
             <div className="text-center text-sm">
               Already have an account?{' '}

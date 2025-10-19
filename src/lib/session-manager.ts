@@ -152,6 +152,30 @@ class SessionManager {
   }
 
   /**
+   * Save token and update session (for OAuth)
+   */
+  saveToken(token: string, rememberMe: boolean = false): void {
+    if (!this.isBrowser()) return;
+
+    try {
+      localStorage.setItem(this.KEYS.AUTH_TOKEN, token);
+      localStorage.setItem(this.KEYS.REMEMBER_ME, rememberMe.toString());
+
+      // Calculate token expiry (default 7 days as per backend)
+      const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      localStorage.setItem(this.KEYS.TOKEN_EXPIRY, tokenExpiry.toISOString());
+
+      // Update last activity
+      this.updateLastActivity();
+
+      console.log('[SessionManager] Token saved');
+    } catch (error) {
+      console.error('[SessionManager] Error saving token:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Load session data
    */
   loadSession(): SessionData | null {
