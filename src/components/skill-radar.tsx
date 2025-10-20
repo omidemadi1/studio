@@ -13,7 +13,11 @@ import { useQuestData } from '@/context/quest-context';
 export default function SkillRadar() {
   const { skills } = useQuestData();
   
-  const chartData = skills.map((skill) => ({
+  // Only include top-level skills (those without a parentId).
+  // Some APIs may return nested `subSkills`; handle both shapes.
+  const topLevelSkills = skills.filter(s => !s.parentId);
+
+  const chartData = topLevelSkills.map((skill) => ({
     subject: skill.name,
     A: skill.level,
     fullMark: 10,
