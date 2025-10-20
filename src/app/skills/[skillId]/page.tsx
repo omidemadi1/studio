@@ -76,6 +76,7 @@ const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required.'),
   description: z.string().optional(),
   dueDate: z.date().optional(),
+  reminder: z.number().optional(),
   skillId: z.string().optional(),
   areaId: z.string().optional(),
   projectId: z.string().optional(),
@@ -250,6 +251,7 @@ export default function SkillDetailPage() {
                 description: data.description || '',
                 difficulty: result.xp > 120 ? 'Very Hard' : result.xp > 80 ? 'Hard' : result.xp > 40 ? 'Medium' : 'Easy',
                 dueDate: data.dueDate?.toISOString(),
+                reminder: data.reminder,
                 skillId: data.skillId,
                 projectId: data.projectId,
             };
@@ -884,6 +886,31 @@ export default function SkillDetailPage() {
                                 )}
                                 />
                             </div>
+
+                            <FormField
+                              control={taskForm.control}
+                              name="reminder"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value !== undefined && field.value !== null}
+                                      onCheckedChange={(checked) => {
+                                        field.onChange(checked ? 30 : undefined);
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel>
+                                      Enable Reminder
+                                    </FormLabel>
+                                    <p className="text-sm text-muted-foreground">
+                                      Get notified 30 minutes before the task is due
+                                    </p>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
 
                             <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>

@@ -964,6 +964,31 @@ export default function ManagerPage() {
                 />
               </div>
 
+              <FormField
+                control={taskForm.control}
+                name="reminder"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value !== undefined && field.value !== null}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked ? 30 : undefined);
+                        }}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Enable Reminder
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified 30 minutes before the task is due
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
               <DialogFooter>
                 <Button type="submit" disabled={isCreatingTask}>
                     {isCreatingTask ? <Loader2 className="animate-spin" /> : "Create Task" }
