@@ -76,6 +76,7 @@ const initializeDb = () => {
                 dueDate TEXT,
                 reminder INTEGER,
                 skillId TEXT,
+                skillIds TEXT,
                 focusDuration INTEGER DEFAULT 0,
                 bonusXp INTEGER DEFAULT 0,
                 projectId TEXT,
@@ -127,6 +128,20 @@ const initializeDb = () => {
                 dbInstance.exec('DROP TABLE tasks');
                 dbInstance.exec('ALTER TABLE tasks_new RENAME TO tasks');
             })();
+        }
+    }
+    
+    // Migration for adding 'skillIds' column to 'tasks' table for multi-skill support
+    const hasSkillIdsColumn = tableInfo.some(col => col.name === 'skillIds');
+    
+    if (!hasSkillIdsColumn) {
+        console.log("Migrating tasks table: adding 'skillIds' column for multi-skill support.");
+        try {
+            dbInstance.exec('ALTER TABLE tasks ADD COLUMN skillIds TEXT');
+            // Migrate existing skillId values to skillIds as JSON array
+            dbInstance.exec(`UPDATE tasks SET skillIds = json_array(skillId) WHERE skillId IS NOT NULL`);
+        } catch (e) {
+            console.error("Failed to add 'skillIds' column.", e);
         }
     }
 

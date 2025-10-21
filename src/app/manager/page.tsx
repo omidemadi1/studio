@@ -85,7 +85,8 @@ const taskSchema = z.object({
   description: z.string().optional(),
   dueDate: z.date().optional(),
   reminder: z.number().optional(),
-  skillId: z.string().optional(),
+  skillId: z.string().optional(), // Keep for backward compatibility
+  skillIds: z.array(z.string()).optional(), // New multi-skill support
   areaId: z.string({ required_error: 'Please select an area.'}),
   projectId: z.string({ required_error: 'Please select a project.'}),
 });
@@ -307,7 +308,8 @@ export default function ManagerPage() {
             difficulty: xp > 120 ? 'Very Hard' : xp > 80 ? 'Hard' : xp > 40 ? 'Medium' : 'Easy',
             dueDate: data.dueDate?.toISOString(),
             reminder: data.reminder,
-            skillId: data.skillId,
+            skillId: data.skillId, // Keep for backward compatibility
+            skillIds: data.skillIds, // New multi-skill support
             projectId: projectId,
         };
         
@@ -911,36 +913,52 @@ export default function ManagerPage() {
               <div className="grid grid-cols-2 gap-4">
                  <FormField
                   control={taskForm.control}
-                  name="skillId"
+                  name="skillIds"
                   render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Skill Category</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a skill" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {selectableSkills.map(skill => (
-                            <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
-                          ))}
-                            <Separator />
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start opacity-70"
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    setAddTaskState(prev => ({ ...prev, open: false }));
-                                    setAddSkillOpen(true);
-                                }}
-                            >
-                                <PlusCircle className="h-4 w-4 mr-2" /> Add new skill...
-                            </Button>
-                        </SelectContent>
-                      </Select>
+                        <FormLabel>Skill Categories (Select one or more)</FormLabel>
+                        <div className="rounded-md border p-4 max-h-48 overflow-y-auto space-y-2">
+                          {selectableSkills.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No skills available</p>
+                          ) : (
+                            selectableSkills.map(skill => (
+                              <div key={skill.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`skill-${skill.id}`}
+                                  checked={field.value?.includes(skill.id) || false}
+                                  onCheckedChange={(checked) => {
+                                    const currentValues = field.value || [];
+                                    if (checked) {
+                                      field.onChange([...currentValues, skill.id]);
+                                    } else {
+                                      field.onChange(currentValues.filter((id: string) => id !== skill.id));
+                                    }
+                                  }}
+                                />
+                                <label
+                                  htmlFor={`skill-${skill.id}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                >
+                                  {skill.name}
+                                </label>
+                              </div>
+                            ))
+                          )}
+                          <Separator />
+                          <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start opacity-70"
+                              type="button"
+                              onClick={(e) => {
+                                  e.preventDefault();
+                                  setAddTaskState(prev => ({ ...prev, open: false }));
+                                  setAddSkillOpen(true);
+                              }}
+                          >
+                              <PlusCircle className="h-4 w-4 mr-2" /> Add new skill...
+                          </Button>
+                        </div>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -71,7 +71,11 @@ export async function updateProject(id: string, name: string) {
 export async function addTask(task: Task, areaId?: string) {
     await apiPost('/api/tasks', task);
     if (areaId) revalidatePath(`/areas/${areaId}`);
+    // Revalidate all skill paths (both old skillId and new skillIds)
     if (task.skillId) revalidatePath(`/skills/${task.skillId}`);
+    if (task.skillIds && task.skillIds.length > 0) {
+        task.skillIds.forEach(skillId => revalidatePath(`/skills/${skillId}`));
+    }
     revalidatePath('/manager');
     revalidatePath('/dashboard');
     return { tasks: getAllTasks(), areas: getAreas() };

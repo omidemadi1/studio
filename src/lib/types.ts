@@ -32,7 +32,8 @@ export interface Task {
   difficulty?: Difficulty;
   dueDate?: string;
   reminder?: number; // minutes before due date
-  skillId?: string;
+  skillId?: string; // DEPRECATED: Use skillIds instead
+  skillIds?: string[]; // Array of skill IDs for multi-skill support
   focusDuration?: number;
   bonusXp?: number;
   projectId?: string;
