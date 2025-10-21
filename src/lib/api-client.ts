@@ -91,6 +91,10 @@ class ApiClient {
 
     // Save session with SessionManager
     sessionManager.saveSession(response.user, response.token, rememberMe);
+    // Persist sessionId if provided by server
+    if ((response as any).sessionId) {
+      sessionManager.setSessionId((response as any).sessionId as number);
+    }
     
     return response;
   }
@@ -103,6 +107,9 @@ class ApiClient {
 
     // Save session with SessionManager
     sessionManager.saveSession(response.user, response.token, rememberMe);
+    if ((response as any).sessionId) {
+      sessionManager.setSessionId((response as any).sessionId as number);
+    }
     
     return response;
   }
@@ -131,6 +138,7 @@ class ApiClient {
 
   logout(): void {
     this.clearToken();
+    sessionManager.setSessionId(null);
   }
 
   getCurrentUser(): User | null {
@@ -161,6 +169,32 @@ class ApiClient {
   // Users
   async getUser(): Promise<any> {
     return this.request('/api/users/me');
+  }
+
+  // Sessions
+  async getSessionsForUser(userId: number): Promise<any[]> {
+    return this.request(`/api/users/${userId}/sessions`);
+  }
+
+  async closeSession(userId: number, sessionId: number): Promise<void> {
+    await this.request(`/api/users/${userId}/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+
+    // If the closed session is the current session, clear local session and redirect to login
+    const current = sessionManager.getSessionId();
+    if (current && current === sessionId) {
+      sessionManager.clearSession();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login?expired=true';
+      }
+    }
+  }
+
+  async closeOtherSessions(userId: number): Promise<void> {
+    return this.request(`/api/users/${userId}/sessions/close-others`, {
+      method: 'POST',
+    });
   }
 
   async updateUser(updates: any): Promise<any> {

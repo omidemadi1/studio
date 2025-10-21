@@ -40,6 +40,7 @@ class SessionManager {
     USER_ID: 'questify_userId',
     USER_EMAIL: 'questify_userEmail',
     AUTH_TOKEN: 'authToken', // Keep existing key for compatibility
+    SESSION_ID: 'questify_sessionId',
     TOKEN_EXPIRY: 'questify_tokenExpiry',
     LAST_ACTIVITY: 'questify_lastActivity',
     REMEMBER_ME: 'questify_rememberMe',
@@ -132,6 +133,8 @@ class SessionManager {
 
     try {
       localStorage.setItem(this.KEYS.USER_ID, user.id.toString());
+  // Session ID may be set by the server separately; leave nil if unknown
+  // (The ApiClient will write it when available)
       localStorage.setItem(this.KEYS.USER_EMAIL, user.email);
       localStorage.setItem(this.KEYS.AUTH_TOKEN, token);
       localStorage.setItem(this.KEYS.REMEMBER_ME, rememberMe.toString());
@@ -216,6 +219,7 @@ class SessionManager {
     try {
       localStorage.removeItem(this.KEYS.USER_ID);
       localStorage.removeItem(this.KEYS.USER_EMAIL);
+  localStorage.removeItem(this.KEYS.SESSION_ID);
       localStorage.removeItem(this.KEYS.AUTH_TOKEN);
       localStorage.removeItem(this.KEYS.TOKEN_EXPIRY);
       localStorage.removeItem(this.KEYS.LAST_ACTIVITY);
@@ -270,6 +274,7 @@ class SessionManager {
       const tokenExpiryStr = localStorage.getItem(this.KEYS.TOKEN_EXPIRY);
       const lastActivityStr = localStorage.getItem(this.KEYS.LAST_ACTIVITY);
       const rememberMe = localStorage.getItem(this.KEYS.REMEMBER_ME) === 'true';
+  const sessionIdStr = localStorage.getItem(this.KEYS.SESSION_ID);
 
       return {
         userId: userId ? parseInt(userId, 10) : null,
@@ -342,6 +347,23 @@ class SessionManager {
   getToken(): string | null {
     if (!this.isBrowser()) return null;
     return localStorage.getItem(this.KEYS.AUTH_TOKEN);
+  }
+
+  getSessionId(): number | null {
+    if (!this.isBrowser()) return null;
+    const s = localStorage.getItem(this.KEYS.SESSION_ID);
+    if (!s) return null;
+    const n = parseInt(s, 10);
+    return Number.isNaN(n) ? null : n;
+  }
+
+  setSessionId(sessionId: number | null): void {
+    if (!this.isBrowser()) return;
+    if (sessionId == null) {
+      localStorage.removeItem(this.KEYS.SESSION_ID);
+    } else {
+      localStorage.setItem(this.KEYS.SESSION_ID, sessionId.toString());
+    }
   }
 
   /**
